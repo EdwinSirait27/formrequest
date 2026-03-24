@@ -1,4 +1,4 @@
-@extends('layouts.app')
+{{-- @extends('layouts.app')
 
 @section('title', 'Request Form Dashboard')
 @section('header', 'Request Dashboard')
@@ -57,7 +57,6 @@
             border-bottom: none !important;
         }
 
-        /* Custom radio priority */
         input[type="radio"].sr-only:checked+div {
             ring-width: 2px;
         }
@@ -94,8 +93,6 @@
                 </svg>
 
             </div>
-            {{-- <p class="text-2xl md:text-3xl font-bold mb-1">pray without ceasing</p> --}}
-            {{-- <p class="text-purple-100 text-xs">Christ is King!</p> --}}
         </div>
         <div
             class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl md:rounded-2xl p-4 md:p-6 text-white shadow-lg">
@@ -107,9 +104,7 @@
                     </path>
                 </svg>
             </div>
-            {{-- <p class="text-2xl md:text-3xl font-bold mb-1">Edwin Sirait</p> --}}
-            {{-- <p class="text-orange-100 text-xs">namanya juga yang buat ya mau gimana</p> --}}
-        </div>
+            </div>
     </div>
     <div class="rounded-xl lg:rounded-2xl p-4 lg:p-5 mb-6 lg:mb-8 border"
         style="background-color: var(--bg-card); border-color: var(--border-color);">
@@ -123,7 +118,6 @@
 
         <div class="flex items-center justify-between">
 
-            <!-- Step 1 -->
             <div class="flex flex-col items-center text-center">
                 <div class="w-10 h-10 flex items-center justify-center rounded-full bg-blue-500 text-white font-semibold">
                     1
@@ -132,10 +126,8 @@
                 <span class="text-[11px]" style="color: var(--text-muted)">Create Draft</span>
             </div>
 
-            <!-- Line -->
             <div class="flex-1 h-[2px] mx-2 bg-slate-300 dark:bg-slate-700"></div>
 
-            <!-- Step 2 -->
             <div class="flex flex-col items-center text-center">
                 <div class="w-10 h-10 flex items-center justify-center rounded-full bg-yellow-500 text-white font-semibold">
                     2
@@ -144,10 +136,8 @@
                 <span class="text-[11px]" style="color: var(--text-muted)">Approval</span>
             </div>
 
-            <!-- Line -->
             <div class="flex-1 h-[2px] mx-2 bg-slate-300 dark:bg-slate-700"></div>
 
-            <!-- Step 3 -->
             <div class="flex flex-col items-center text-center">
                 <div class="w-10 h-10 flex items-center justify-center rounded-full bg-green-500 text-white font-semibold">
                     3
@@ -159,14 +149,12 @@
         </div>
 
     </div>
-    {{-- disiin --}}
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
 
         <div class="xl:col-span-2">
             <div class="rounded-xl lg:rounded-2xl border overflow-hidden"
                 style="background-color: var(--bg-card); border-color: var(--border-color);">
 
-                <!-- Card Header -->
                 <div class="px-5 lg:px-6 py-4 lg:py-5 border-b flex items-center justify-between"
                     style="border-color: var(--border-color)">
                     <div>
@@ -175,10 +163,8 @@
                             submit a procurement request</p>
                     </div>
                 </div>
-                <!-- Form Body -->
                 <form method="POST" action="{{ route('formrequest.post') }}" enctype="multipart/form-data">
                     @csrf
-                    <!-- Request Type Selector -->
                     <div>
                         <label class="block text-sm font-semibold mb-2" style="color: var(--text-secondary)">
                             Request Type <span class="text-red-400">*</span>
@@ -188,10 +174,6 @@
                         </div>
                     </div>
                     <div class="border-t" style="border-color: var(--border-color)"></div>
-                    <!-- ═══════════════════════════════════════════════ -->
-                    <!-- DYNAMIC SECTIONS per request type              -->
-                    <!-- ═══════════════════════════════════════════════ -->
-                    {{-- ── CAPEX ──────────────────────────────────── --}}
                     <div id="section-CAPEX" class="dynamic-section space-y-4 hidden">
                         <div class="flex items-center gap-2 mb-1">
                             <div class="w-1 h-5 rounded-full bg-gradient-to-b from-violet-500 to-purple-600"></div>
@@ -248,7 +230,6 @@
                         </div>
                     </div>
 
-                    {{-- ── CASH ADVANCE ────────────────────────────── --}}
                     <div id="section-CA" class="dynamic-section space-y-4 hidden">
                         <div class="flex items-center gap-2 mb-1">
                             <div class="w-1 h-5 rounded-full bg-gradient-to-b from-amber-500 to-orange-500"></div>
@@ -325,7 +306,6 @@
                                                     class="w-16 px-3 py-1.5 rounded-lg text-xs border focus:outline-none focus:ring-1 focus:ring-blue-500"
                                                     style="background-color: var(--bg-hover); border-color: var(--border-color); color: var(--text-primary);">
                                             </td>
-                                            {{-- <td class="px-2 py-2"><input type="text" name="items[0][uom]" placeholder="pcs" class="w-20 px-3 py-1.5 rounded-lg text-xs border focus:outline-none focus:ring-1 focus:ring-blue-500" style="background-color: var(--bg-hover); border-color: var(--border-color); color: var(--text-primary);"></td> --}}
                                             <td class="px-2 py-2">
                                                 <select name="items[0][uom]"
                                                     class="w-full px-3 py-1.5 rounded-lg text-xs border focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -370,7 +350,6 @@
                         </div>
                     </div>
 
-                    {{-- ── PURCHASE REQUEST ────────────────────────── --}}
                     <div id="section-PR" class="dynamic-section space-y-4 hidden">
                         <div class="flex items-center gap-2 mb-1">
                             <div class="w-1 h-5 rounded-full bg-gradient-to-b from-blue-500 to-cyan-500"></div>
@@ -402,7 +381,6 @@
                                     style="background-color: var(--bg-hover); border-color: var(--border-color); color: var(--text-primary);">
                             </div>
                         </div>
-                        <!-- Item Table -->
                         <div>
                             <div class="flex items-center justify-between mb-2">
                                 <label class="block text-sm font-semibold" style="color: var(--text-secondary)">Item List
@@ -445,7 +423,6 @@
                                                     class="w-16 px-3 py-1.5 rounded-lg text-xs border focus:outline-none focus:ring-1 focus:ring-blue-500"
                                                     style="background-color: var(--bg-hover); border-color: var(--border-color); color: var(--text-primary);">
                                             </td>
-                                            {{-- <td class="px-2 py-2"><input type="text" name="items[0][uom]" placeholder="pcs" class="w-20 px-3 py-1.5 rounded-lg text-xs border focus:outline-none focus:ring-1 focus:ring-blue-500" style="background-color: var(--bg-hover); border-color: var(--border-color); color: var(--text-primary);"></td> --}}
                                             <td class="px-2 py-2">
                                                 <select name="items[0][uom]"
                                                     class="w-full px-3 py-1.5 rounded-lg text-xs border focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -479,7 +456,6 @@
                         </div>
                     </div>
 
-                    {{-- ── PAYMENT REQUEST ─────────────────────────── --}}
                     <div id="section-PMT" class="dynamic-section space-y-4 hidden">
                         <div class="flex items-center gap-2 mb-1">
                             <div class="w-1 h-5 rounded-full bg-gradient-to-b from-emerald-500 to-teal-500"></div>
@@ -553,7 +529,6 @@
                         </div>
                     </div>
 
-                    {{-- ── REIMBURSE ────────────────────────────────── --}}
                     <div id="section-RMB" class="dynamic-section space-y-4 hidden">
                         <div class="flex items-center gap-2 mb-1">
                             <div class="w-1 h-5 rounded-full bg-gradient-to-b from-rose-500 to-pink-500"></div>
@@ -602,7 +577,6 @@
                                     style="background-color: var(--bg-hover); border-color: var(--border-color); color: var(--text-primary);">
                             </div>
                         </div>
-                        <!-- Receipt Upload Notice -->
                         <div class="rounded-xl p-3 border flex items-start gap-3"
                             style="background-color: var(--bg-hover); border-color: var(--border-color);">
                             <svg class="w-4 h-4 mt-0.5 flex-shrink-0 text-rose-400" fill="none" stroke="currentColor"
@@ -625,9 +599,6 @@
                         </div>
                     </div>
 
-                    <!-- ═══════════════════════════════════════════════ -->
-                    <!-- ATTACHMENT (always visible)                    -->
-                    <!-- ═══════════════════════════════════════════════ -->
                     <div>
                         <label class="block text-sm font-semibold mb-1.5" style="color: var(--text-secondary)">
                             Supporting Document
@@ -661,7 +632,6 @@
 
 
 
-                    <!-- Submit Button -->
                     <div class="flex flex-col sm:flex-row items-center gap-3 pt-2">
                         <button type="submit"
                             class="w-full sm:w-auto flex-1 inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-semibold shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-200 text-sm hover:scale-[1.01]">
@@ -680,10 +650,8 @@
                 </form>
             </div>
         </div>
-        {{-- RIGHT: RECENT REQUESTS + QUICK ACTIONS --}}
         <div class="space-y-6">
 
-            {{-- Quick Actions --}}
             @role('manager')
                 <div class="rounded-xl lg:rounded-2xl border overflow-hidden"
                     style="background-color: var(--bg-card); border-color: var(--border-color);">
@@ -727,9 +695,7 @@
                                             {{ $item['name'] }}</p>
                                         <p class="text-xs truncate" style="color: var(--text-muted)">{{ $item['item'] }}</p>
                                     </div>
-                                    {{-- <span class="text-xs font-medium px-2 py-0.5 rounded-full shrink-0 {{ $priorityColor[$item['priority']] }}">
-                            {{ ucfirst($item['priority']) }}
-                        </span> --}}
+                                   
                                 </div>
                                 <div class="flex items-center justify-between">
                                     <span class="text-xs font-bold"
@@ -813,7 +779,6 @@
                 </div>
             @endrole
 
-            {{-- My Recent Requests --}}
             <div class="rounded-xl lg:rounded-2xl border overflow-hidden"
                 style="background-color: var(--bg-card); border-color: var(--border-color);">
                 <div class="px-5 py-4 border-b" style="border-color: var(--border-color)">
@@ -862,9 +827,7 @@
                                         style="color: var(--text-secondary)">{{ $req['amount'] }}</span>
                                 </div>
                             </div>
-                            {{-- <span class="text-xs font-semibold px-2.5 py-1 rounded-full {{ $statusBadge[$req['status']]['bg'] }} {{ $statusBadge[$req['status']]['text'] }} shrink-0">
-                        {{ $statusBadge[$req['status']]['label'] }}
-                    </span> --}}
+                          
                         </div>
                     @endforeach
                 </div>
@@ -877,10 +840,7 @@
         </div>
     </div>
 
-    {{-- =============================================
-     ALL REQUESTS TABLE (Admin / Manager)
-============================================= --}}
-    {{-- @role('admin|manager')
+    @role('admin|manager')
 <div class="mt-6 lg:mt-8 rounded-xl lg:rounded-2xl border overflow-hidden"
      style="background-color: var(--bg-card); border-color: var(--border-color);">
     <div class="px-5 lg:px-6 py-4 lg:py-5 border-b flex items-center justify-between"
@@ -971,15 +931,11 @@
         </table>
     </div>
 </div>
-@endrole --}}
+@endrole
 
 @endsection
 @push('scripts')
 
-    {{-- ╔══════════════════════════════════════════════════════════════╗ --}}
-    {{-- ║  SUBTOTAL CALCULATOR                                        ║ --}}
-    {{-- ║  Hanya hitung row di dalam section yang aktif               ║ --}}
-    {{-- ╚══════════════════════════════════════════════════════════════╝ --}}
     <script>
         function getActiveSection() {
             return document.querySelector('.dynamic-section:not(.hidden)');
@@ -1003,7 +959,6 @@
             subtotalEl.innerText = 'Rp ' + subtotal.toLocaleString('id-ID');
         }
 
-        // Trigger subtotal saat ada input qty/price di mana pun
         document.addEventListener('input', function (e) {
             if (e.target.name && (e.target.name.includes('[qty]') || e.target.name.includes('[price]'))) {
                 calculateSubtotal();
@@ -1011,9 +966,6 @@
         });
     </script>
 
-    {{-- ╔══════════════════════════════════════════════════════════════╗ --}}
-    {{-- ║  FILE ATTACHMENT PREVIEW                                    ║ --}}
-    {{-- ╚══════════════════════════════════════════════════════════════╝ --}}
     <script>
         document.getElementById('attachments')?.addEventListener('change', function (e) {
             const fileList = document.getElementById('file-list');
@@ -1029,9 +981,6 @@
         });
     </script>
 
-    {{-- ╔══════════════════════════════════════════════════════════════╗ --}}
-    {{-- ║  MAIN LOGIC                                                 ║ --}}
-    {{-- ╚══════════════════════════════════════════════════════════════╝ --}}
     <script>
         const uomOptions = @json($uomOptions);
 
@@ -1045,7 +994,6 @@
 
         document.addEventListener('DOMContentLoaded', function () {
 
-            // ── Inject animation keyframe ─────────────────────────────
             const style = document.createElement('style');
             style.textContent = `
                 @keyframes fadeSlideIn {
@@ -1055,7 +1003,6 @@
             `;
             document.head.appendChild(style);
 
-            // ── Request Type Switcher ─────────────────────────────────
             const radios   = document.querySelectorAll('.request-type-radio');
             const sections = document.querySelectorAll('.dynamic-section');
             const cards    = document.querySelectorAll('.request-type-card');
@@ -1063,30 +1010,26 @@
             function switchType(selectedRadio) {
                 const selectedType = selectedRadio.dataset.type;
 
-                // Reset semua card style
                 cards.forEach(card => {
                     card.style.borderColor = 'var(--border-color)';
                     card.className = card.className.replace(/ring-\S+/g, '').trim();
                     card.classList.remove('ring-2', 'border-transparent');
                 });
 
-                // Aktifkan card yang dipilih
                 const activeCard = selectedRadio.closest('label').querySelector('.request-type-card');
                 activeCard.style.borderColor = 'transparent';
                 activeCard.classList.add('ring-2', activeCard.dataset.ring);
 
-                // Sembunyikan semua section, tampilkan yang dipilih
                 sections.forEach(s => s.classList.add('hidden'));
 
                 const target = document.getElementById('section-' + selectedType);
                 if (target) {
                     target.classList.remove('hidden');
                     target.style.animation = 'none';
-                    target.offsetHeight; // force reflow
+                    target.offsetHeight; 
                     target.style.animation = 'fadeSlideIn 0.25s ease';
                 }
 
-                // Reset subtotal ke section yang baru aktif
                 calculateSubtotal();
             }
 
@@ -1096,17 +1039,10 @@
                 });
             });
 
-            // Init: tampilkan section sesuai radio yang sudah checked
             const checked = document.querySelector('.request-type-radio:checked');
             if (checked) switchType(checked);
 
 
-            // ── Dynamic Item Rows ─────────────────────────────────────
-            // Menggunakan event delegation di document level
-            // agar bekerja untuk SEMUA section (CA, PR, dll.)
-            // tanpa bergantung pada ID unik per section.
-
-            // Tiap section punya counter sendiri via data attribute
             function getItemCount(section) {
                 return parseInt(section.dataset.itemCount || '1');
             }
@@ -1114,7 +1050,6 @@
                 section.dataset.itemCount = val;
             }
 
-            // ── Add Item ──────────────────────────────────────────────
             document.addEventListener('click', function (e) {
                 const addBtn = e.target.closest('.add-item-btn');
                 if (!addBtn) return;
@@ -1124,13 +1059,12 @@
                 const index   = getItemCount(section);
                 setItemCount(section, index + 1);
 
-                const sectionId = section.id.replace('section-', '').toLowerCase(); // ca / pr
+                const sectionId = section.id.replace('section-', '').toLowerCase(); 
 
                 const tr = document.createElement('tr');
                 tr.className = 'item-row border-b';
                 tr.style.borderColor = 'var(--border-color)';
 
-                // Kolom bervariasi per section type — deteksi dari kolom header
                 const hasSPec = !!tbody.closest('table').querySelector('th[data-col="specification"]');
 
                 if (sectionId === 'ca') {
@@ -1169,7 +1103,6 @@
                             </button>
                         </td>`;
                 } else {
-                    // PR dan section lain yang hanya punya Item Name (tanpa Specification)
                     tr.innerHTML = `
                         <td class="px-4 py-2 text-xs font-medium" style="color:var(--text-muted)">${index + 1}</td>
                         <td class="px-2 py-2">
@@ -1206,7 +1139,6 @@
                 updateRemoveButtons(section);
             });
 
-            // ── Remove Item ───────────────────────────────────────────
             document.addEventListener('click', function (e) {
                 const removeBtn = e.target.closest('.remove-item-btn');
                 if (!removeBtn) return;
@@ -1218,7 +1150,6 @@
                 calculateSubtotal();
             });
 
-            // ── Helpers ───────────────────────────────────────────────
             function renumberItems(section) {
                 section.querySelectorAll('.item-list .item-row').forEach((row, i) => {
                     row.querySelector('td:first-child').textContent = i + 1;
@@ -1236,11 +1167,9 @@
                     btn.classList.toggle('cursor-not-allowed', isOnly);
                 });
             }
-        }); // END DOMContentLoaded
+        });
     </script>
-    {{-- ╔══════════════════════════════════════════════════════════════╗ --}}
-    {{-- ║  FLATPICKR & DATATABLE                                      ║ --}}
-    {{-- ╚══════════════════════════════════════════════════════════════╝ --}}
+  
     <script>
         document.querySelectorAll('.flatpickr').forEach(el => {
             flatpickr(el, {
@@ -1263,4 +1192,90 @@
         @endrole
     </script>
 
-@endpush
+@endpush --}}
+@extends('layouts.app')
+
+@section('title', 'Dashboard')
+@section('header', 'Dashboard')
+@section('subtitle', 'Overview of all form requests')
+
+@section('content')
+
+    {{-- Stats --}}
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        @foreach ([['label' => 'Total Requests', 'value' => $stats['total'], 'color' => 'text-slate-300'], ['label' => 'Pending', 'value' => $stats['pending'], 'color' => 'text-yellow-400'], ['label' => 'Approved', 'value' => $stats['approved'], 'color' => 'text-emerald-400'], ['label' => 'Rejected', 'value' => $stats['rejected'], 'color' => 'text-red-400']] as $stat)
+            <div class="bg-slate-800 rounded-xl p-4 border border-slate-700">
+                <p class="text-xs text-slate-400 mb-1">{{ $stat['label'] }}</p>
+                <p class="text-2xl font-semibold {{ $stat['color'] }}">{{ $stat['value'] }}</p>
+            </div>
+        @endforeach
+    </div>
+
+    {{-- Request Types --}}
+    <div class="mb-2">
+        <p class="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">Request Types</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            @foreach ($requestTypes as $type)
+                <a href="{{ route('request', ['type' => $type->id]) }}"
+                    class="group bg-slate-800 border border-slate-700 hover:border-slate-500 rounded-xl p-4 flex flex-col gap-3 transition-all">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-slate-100 truncate">{{ $type->request_type_name }}</p>
+                            <p class="text-xs text-slate-500">Code: {{ $type->code }}</p>
+                        </div>
+                        <span class="shrink-0 text-xs font-medium bg-slate-700 text-slate-300 px-2.5 py-1 rounded-full">
+                            {{ $type->requests_count ?? 0 }} active
+                        </span>
+                    </div>
+                </a>
+            @endforeach
+        </div>
+    </div>
+
+    {{-- Recent Activity --}}
+    <div class="mt-8">
+        <p class="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">Recent Activity</p>
+        <div class="bg-slate-800 border border-slate-700 rounded-xl divide-y divide-slate-700 overflow-hidden">
+            @forelse($recentRequests as $req)
+                <div class="flex items-center justify-between px-4 py-3 gap-3">
+                    <div class="min-w-0">
+                        <p class="text-sm font-medium text-slate-200">{{ $req->request_number ?? 'N/A' }}</p>
+                        <p class="text-xs text-slate-500">
+                            {{ $req->employee->employee_name ?? '-' }} &middot;
+                            {{ $req->requestType->request_type_name ?? '-' }}
+                        </p>
+                    </div>
+                    @php
+                        $statusMap = [
+                            'pending' => 'bg-yellow-900/50 text-yellow-400',
+                            'approved' => 'bg-emerald-900/50 text-emerald-400',
+                            'rejected' => 'bg-red-900/50 text-red-400',
+                        ];
+                        $cls = $statusMap[$req->status] ?? 'bg-slate-700 text-slate-300';
+                    @endphp
+                    <span class="shrink-0 text-xs font-medium px-2.5 py-1 rounded-full {{ $cls }}">
+                        {{ ucfirst($req->status) }}
+                    </span>
+                </div>
+            @empty
+                <div class="px-4 py-6 text-center text-sm text-slate-500">No recent requests.</div>
+            @endforelse
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        toastr.options = {
+            closeButton: true,
+            progressBar: true,
+            positionClass: "toast-top-right",
+            timeOut: "3000"
+        };
+        @if (session('success'))
+            toastr.success(@json(session('success')));
+        @endif
+        @if (session('error'))
+            toastr.error(@json(session('error')));
+        @endif
+    </script>
+@endsection

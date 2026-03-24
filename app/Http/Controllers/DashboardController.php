@@ -10,14 +10,36 @@ use App\Models\Requestitem;
 use App\Models\Formrequest;
 class DashboardController extends Controller
 {
+    // public function dashboardPage()
+    // {
+    //     $user = Auth::user();
+    //         $requestTypes = RequestType::all();
+    //         $uomOptions = Requestitem::getUomOptions();
+    //     return view('pages.dashboard', compact(
+    //         'user','requestTypes','uomOptions'
+    //     ));
+    // }
     public function dashboardPage()
     {
-        $user = Auth::user();
-            $requestTypes = RequestType::all();
-            $uomOptions = Requestitem::getUomOptions();
-        return view('pages.dashboard', compact(
-            'user','requestTypes','uomOptions'
-        ));
+        $requestTypes = Requesttype::withCount([
+            'requests as requests_count' => fn ($q) => $q->whereNotIn('status', ['rejected', 'cancelled'])
+        ])->get();
+
+        // Summary stats — adjust model/table names to your actual Request model
+        $stats = [
+            'total'    => Formrequest::count(),
+            'pending'  => Formrequest::where('status', 'pending')->count(),
+            'approved' => Formrequest::where('status', 'approved')->count(),
+            'rejected' => Formrequest::where('status', 'rejected')->count(),
+        ];
+
+        // Recent 10 requests, eager-load relations
+        $recentRequests = Formrequest::with(['user.employee', 'requestType'])
+            ->latest()
+            ->take(10)
+            ->get();
+
+        return view('pages.dashboard', compact('requestTypes', 'stats', 'recentRequests'));
     }
     public function store(Request $request)
 {

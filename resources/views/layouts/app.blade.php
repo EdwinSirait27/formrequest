@@ -5,8 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <title>@yield('title', 'Form Request')</title>
-    <link rel="icon" type="image/png"
-        href="{{ asset('img/AsianBay logomark.ico') }}">
+    <link rel="icon" type="image/png" href="{{ asset('img/AsianBay logomark.ico') }}">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
@@ -29,7 +28,7 @@
             --text-primary: #0F172A;
             --text-secondary: #64748B;
             --text-muted: #94A3B8;
-            --sidebar-bg: #FFFFFF;
+            --sidebar-bg: #cfcdcd;
             --header-bg: rgba(255, 255, 255, 0.85);
             --toggle-bg: #E2E8F0;
             --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -240,33 +239,20 @@ if (localStorage.getItem('theme') === 'light') {
         class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
         <div
             class="sidebar-inner flex grow flex-col gap-y-5 overflow-y-auto bg-slate-900 border-r border-slate-800 px-6 pb-4">
-            {{-- <div class="flex h-24 shrink-0 items-center border-b border-slate-800">
-                <img src="{{ asset('img/AsianBay.png') }}"
-                    class="h-16 w-16 select-none pointer-events-none hidden dark:block" draggable="false"
-                    alt="icon">
-
-                <img src="{{ asset('img/AsianBaylogo.png') }}"
-                    class="h-16 w-16 select-none pointer-events-none block dark:hidden" draggable="false"
-                    alt="icon">
-                <div class="ml-3">
-                    <h2 class="text-base font-bold text-slate-400 font-medium">Form Request</h2>
-                    <p class="text-xs text-slate-400 font-medium">Information System</p>
-                </div>
-            </div> --}}
             <div class="flex items-center gap-3 h-24 border-b border-slate-800">
+                {{-- <img src="{{ asset('img/AsianBaylogo.png') }}" class="dark:hidden h-16 w-auto">
 
-    <img src="{{ asset('img/AsianBay.png') }}"
-        class="hidden dark:block h-16 w-auto">
+                <img src="{{ asset('img/AsianBay.png') }}" class="hidden dark:block h-16 w-auto"> --}}
+                <img src="{{ asset('img/AsianBaylogo.png') }}" class="block dark:hidden h-16 w-auto">
 
-    <img src="{{ asset('img/AsianBaylogo.png') }}"
-        class="block dark:hidden h-16 w-auto">
+<img src="{{ asset('img/AsianBay.png') }}" class="hidden dark:block h-16 w-auto">
 
-    <div>
-        <h2 class="text-base font-bold text-slate-400">Form Request</h2>
-        <p class="text-xs text-slate-400">Information System</p>
-    </div>
+                <div>
+                    <h2 class="text-base font-bold text-slate-700 dark:text-slate-400">Form Request</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Information System</p>
+                </div>
 
-</div>
+            </div>
             <nav class="flex flex-1 flex-col">
                 <ul role="list" class="flex flex-1 flex-col gap-y-7">
                     <li>
@@ -299,118 +285,125 @@ if (localStorage.getItem('theme') === 'light') {
                                 </a>
                             </li>
                             @role('admin')
-                             <a href="{{ route('vendor') }}"
+                                <a href="{{ route('vendor') }}"
                                     class="group flex gap-x-3 rounded-lg p-3 text-sm leading-6 font-semibold transition-all
                                           {{ request()->routeIs('vendor')
                                               ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md'
                                               : 'nav-item-default' }}">
-                                    <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
+                                    <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                                     </svg>
                                     Vendor
                                 </a>
-                            </li>
-                             <a href="{{ route('requesttype') }}"
-                                    class="group flex gap-x-3 rounded-lg p-3 text-sm leading-6 font-semibold transition-all
+                        </li>
+                        <a href="{{ route('requesttype') }}"
+                            class="group flex gap-x-3 rounded-lg p-3 text-sm leading-6 font-semibold transition-all
                                           {{ request()->routeIs('requesttype')
                                               ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md'
                                               : 'nav-item-default' }}">
-                                    <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                                    </svg>
-                                    Request Type
-                                </a>
-                            </li>
-                                <li x-data="{ open: {{ request()->routeIs('users.*') ? 'true' : 'false' }} }">
-                                    <button @click="open = !open"
-                                        class="w-full group flex items-center justify-between gap-x-3 rounded-lg p-3 text-sm font-semibold transition-all duration-300
+                            <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                            </svg>
+                            Request Type
+                        </a>
+                        <a href="{{ route('request') }}"
+                            class="group flex gap-x-3 rounded-lg p-3 text-sm leading-6 font-semibold transition-all
+                                          {{ request()->routeIs('request')
+                                              ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md'
+                                              : 'nav-item-default' }}">
+                            <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                            </svg>
+                            Create Form 
+                        </a>
+                        </li>
+                        <li x-data="{ open: {{ request()->routeIs('users.*') ? 'true' : 'false' }} }">
+                            <button @click="open = !open"
+                                class="w-full group flex items-center justify-between gap-x-3 rounded-lg p-3 text-sm font-semibold transition-all duration-300
                                                    {{ request()->routeIs('users.*')
                                                        ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md'
                                                        : 'nav-item-default' }}">
-                                        <div class="flex items-center gap-x-3">
-                                            <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                            </svg>
-                                            Users
-                                        </div>
-                                        <svg class="h-4 w-4 transition-transform duration-300"
-                                            :class="open ? 'rotate-90' : ''" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 5l7 7-7 7" />
-                                        </svg>
-                                    </button>
-                                    <ul x-show="open" x-transition:enter="transition ease-out duration-300"
-                                        x-transition:enter-start="opacity-0 -translate-y-2"
-                                        x-transition:enter-end="opacity-100 translate-y-0"
-                                        x-transition:leave="transition ease-in duration-200"
-                                        x-transition:leave-start="opacity-100 translate-y-0"
-                                        x-transition:leave-end="opacity-0 -translate-y-2"
-                                        class="mt-1 space-y-1 pl-12 overflow-hidden">
-                                        <li>
-                                            <a href="{{ route('users') }}"
-                                                class="block rounded-md px-3 py-2 text-sm transition
-                                                      {{ request()->routeIs('users.*') ? 'nav-sub-item-active' : 'nav-sub-item' }}">
-                                                List Users
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="{{ route('users') }}"
-                                                class="block rounded-md px-3 py-2 text-sm transition
-                                                      {{ request()->routeIs('users.*') ? 'nav-sub-item-active' : 'nav-sub-item' }}">
-                                                Roles & Permissions
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </li>
-                            @endrole
-                        </ul>
-                    </li>
-
-                    <!-- Settings section -->
-                    <li>
-                        <div class="text-xs font-semibold leading-6 text-slate-400 uppercase tracking-wider mb-2">
-                            Settings
-                        </div>
-                        <ul role="list" class="-mx-2 space-y-1">
-                            <li>
-                                <a href=""
-                                    class="group flex gap-x-3 rounded-lg p-3 text-sm leading-6 font-semibold transition-all nav-item-default">
+                                <div class="flex items-center gap-x-3">
                                     <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor"
                                         viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z" />
+                                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                     </svg>
-                                    About
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
+                                    Users
+                                </div>
+                                <svg class="h-4 w-4 transition-transform duration-300" :class="open ? 'rotate-90' : ''"
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
+                            <ul x-show="open" x-transition:enter="transition ease-out duration-300"
+                                x-transition:enter-start="opacity-0 -translate-y-2"
+                                x-transition:enter-end="opacity-100 translate-y-0"
+                                x-transition:leave="transition ease-in duration-200"
+                                x-transition:leave-start="opacity-100 translate-y-0"
+                                x-transition:leave-end="opacity-0 -translate-y-2"
+                                class="mt-1 space-y-1 pl-12 overflow-hidden">
+                                <li>
+                                    <a href="{{ route('users') }}"
+                                        class="block rounded-md px-3 py-2 text-sm transition
+                                                      {{ request()->routeIs('users.*') ? 'nav-sub-item-active' : 'nav-sub-item' }}">
+                                        List Users
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('users') }}"
+                                        class="block rounded-md px-3 py-2 text-sm transition
+                                                      {{ request()->routeIs('users.*') ? 'nav-sub-item-active' : 'nav-sub-item' }}">
+                                        Roles & Permissions
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    @endrole
+                </ul>
+                </li>
 
-                    @auth
-                        <li class="mt-auto">
-                            <div class="user-info-box flex items-center justify-between p-3 bg-slate-800 rounded-lg">
-                                <div class="flex items-center gap-x-3 min-w-0">
-                                    <div class="min-w-0 flex-1">
-                                        @role('admin')
-                                            <p class="text-sm font-semibold truncate" style="color: var(--text-primary)">
-                                                {{ Auth::user()->employee->employee_name ?? ' +62 812-3456-9999' }}
-                                            </p>
-                                            <p class="text-xs truncate" style="color: var(--text-secondary)">
-                                                {{ Auth::user()->roles->first()->name ?? '+62 812-3456-9999' }}
-                                            </p>
-                                        @endrole
-                                    </div>
+                <li>
+                    <div class="text-xs font-semibold leading-6 text-slate-400 uppercase tracking-wider mb-2">
+                        Settings
+                    </div>
+                    <ul role="list" class="-mx-2 space-y-1">
+                        <li>
+                            <a href=""
+                                class="group flex gap-x-3 rounded-lg p-3 text-sm leading-6 font-semibold transition-all nav-item-default">
+                                <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z" />
+                                </svg>
+                                About
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                @auth
+                    <li class="mt-auto">
+                        <div class="user-info-box flex items-center justify-between p-3 bg-slate-800 rounded-lg">
+                            <div class="flex items-center gap-x-3 min-w-0">
+                                <div class="min-w-0 flex-1">
+                                    @role('admin')
+                                        <p class="text-sm font-semibold truncate" style="color: var(--text-primary)">
+                                            {{ Auth::user()->employee->employee_name ?? ' +62 812-3456-9999' }}
+                                        </p>
+                                        <p class="text-xs truncate" style="color: var(--text-secondary)">
+                                            {{ Auth::user()->roles->first()->name ?? '+62 812-3456-9999' }}
+                                        </p>
+                                    @endrole
                                 </div>
                             </div>
-                        </li>
-                    @endauth
+                        </div>
+                    </li>
+                @endauth
                 </ul>
             </nav>
         </div>
@@ -426,8 +419,9 @@ if (localStorage.getItem('theme') === 'light') {
                             <img src="{{ asset('img/AsianBay.png') }}"
                                 class="w-16 h-16 select-none pointer-events-none" draggable="false" alt="icon">
                             <div>
-                                <h2 class="text-sm font-bold text-white">@yield('company', 'System')</h2>
-                                <p class="text-xs text-slate-400 font-medium">Form Request</p>
+                                <h2 class="text-xs text-slate-400 font-medium">Form Request</h2>
+
+                                <p class="text-xs text-slate-400 font-medium">Information System</p>
                             </div>
                         </div>
                         <button onclick="toggleTheme()" class="theme-toggle-btn" title="Toggle theme">
@@ -527,7 +521,7 @@ if (localStorage.getItem('theme') === 'light') {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-   <script>
+    <script>
         (function() {
             const saved = localStorage.getItem('theme');
             if (saved === 'light') {

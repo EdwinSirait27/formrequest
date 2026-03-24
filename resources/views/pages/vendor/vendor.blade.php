@@ -65,8 +65,8 @@
         }
 
         /* =============================================
-               DataTables Controls
-               ============================================= */
+                                           DataTables Controls
+                                           ============================================= */
         .dataTables_wrapper {
             font-family: inherit;
         }
@@ -99,8 +99,8 @@
         }
 
         /* =============================================
-               Table Styling
-               ============================================= */
+                                           Table Styling
+                                           ============================================= */
         #users-table {
             width: 100% !important;
         }
@@ -112,7 +112,7 @@
         #users-table thead th {
             padding: 1rem;
             font-weight: 600;
-            text-transform: uppercase;
+            /* text-transform: uppercase; */
             font-size: 0.75rem;
             letter-spacing: 0.05em;
             border: none;
@@ -141,8 +141,8 @@
         }
 
         /* =============================================
-               Pagination
-               ============================================= */
+                                           Pagination
+                                           ============================================= */
         .dataTables_wrapper .dataTables_paginate {
             display: flex;
             justify-content: flex-end;
@@ -196,8 +196,8 @@
         }
 
         /* =============================================
-               Action Buttons
-               ============================================= */
+                                           Action Buttons
+                                           ============================================= */
         .btn-action {
             padding: 0.5rem 0.75rem;
             border-radius: 0.5rem;
@@ -238,8 +238,8 @@
         }
 
         /* =============================================
-               Card & Input (main container)
-               ============================================= */
+                                           Card & Input (main container)
+                                           ============================================= */
         .vendor-card-container {
             background-color: var(--bg-card);
             border-color: var(--border-card);
@@ -283,8 +283,8 @@
         }
 
         /* =============================================
-               Mobile Responsive
-               ============================================= */
+                                           Mobile Responsive
+                                           ============================================= */
         @media (max-width: 767px) {
             #users-table-wrapper {
                 display: none !important;
@@ -322,8 +322,8 @@
         }
 
         /* =============================================
-               Mobile Card Styles
-               ============================================= */
+                                           Mobile Card Styles
+                                           ============================================= */
         .user-card {
             background: var(--bg-mobile-card);
             border: 1px solid var(--border-card);
@@ -392,7 +392,7 @@
             color: var(--text-muted);
             font-size: 0.75rem;
             font-weight: 600;
-            text-transform: uppercase;
+            /* text-transform: uppercase; */
             letter-spacing: 0.05em;
             min-width: 110px;
             flex-shrink: 0;
@@ -486,6 +486,46 @@
         #users-table th {
             text-align: center;
         }
+
+        /* select 2 */
+        /* LIGHT MODE */
+        .select2-container--default .select2-selection--single {
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            height: 50px;
+            border-radius: 12px;
+        }
+
+        .select2-selection__rendered {
+            color: #1e293b !important;
+            line-height: 50px !important;
+        }
+
+        .select2-selection__arrow {
+            height: 50px !important;
+        }
+
+        .select2-dropdown {
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #1e293b;
+        }
+
+        /* DARK MODE */
+        .dark .select2-container--default .select2-selection--single {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+        }
+
+        .dark .select2-selection__rendered {
+            color: #ffffff !important;
+        }
+
+        .dark .select2-dropdown {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            color: #ffffff;
+        }
     </style>
     <div class="space-y-4 md:space-y-6">
         <div class="vendor-card-container rounded-xl md:rounded-2xl shadow-lg border overflow-hidden">
@@ -496,23 +536,62 @@
                         <p class="vendor-subtitle text-xs md:text-sm mt-1">Manage and view all system vendor</p>
                     </div>
                     <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 md:gap-3">
+            
+                        <select id="bank-name-filter" class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
+                            <option value="">All Bank</option>
+                            @foreach ($banks as $bank)
+                                <option value="{{ $bank }}">{{ $bank }}</option>
+                            @endforeach
+                        </select>
+                        <select id="transfer-filter" class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
+                            <option value="">All Transfer</option>
+                            @foreach ($transfers as $transfer)
+                                <option value="{{ $transfer }}">{{ $transfer }}</option>
+                            @endforeach
+                        </select>
+                        <select id="type-filter" class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
+                            <option value="">All Types</option>
+                            @foreach ($types as $type)
+                                <option value="{{ $type }}">{{ $type }}</option>
+                            @endforeach
+                        </select>
+                        <select id="status-filter" class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
+                            <option value="">All Statuses</option>
+                            @foreach ($statuses as $status)
+                                <option value="{{ $status }}">{{ $status }}</option>
+                            @endforeach
+                        </select>
+                        <div class="flex gap-2">
+                            <button id="btnFilter"class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded">
+                                Apply
+                            </button>
+                            <a href="{{ url()->current() }}" class="text-red-400 py-2">Reset</a>
+                        </div>
+                        <!-- SEARCH -->
                         <div class="relative flex-1">
                             <input type="text" id="table-search" placeholder="Search vendor..."
                                 class="search-input w-full pl-10 pr-4 py-2 border rounded-lg text-sm">
+
                             <svg class="search-icon absolute left-3 top-2.5 w-5 h-5" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0
+                                    7 7 0 0114 0z">
+                                </path>
+
                             </svg>
                         </div>
+
+                        <!-- BUTTON -->
                         <a href="{{ route('createvendor') }}"
                             class="inline-flex items-center justify-center gap-2 px-4 py-2
-               bg-blue-600 hover:bg-blue-700
-               text-white text-sm font-medium
-               rounded-lg shadow-sm transition">
+        bg-blue-600 hover:bg-blue-700
+        text-white text-sm font-medium
+        rounded-lg shadow-sm transition">
 
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor" stroke-width="2">
+
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                             </svg>
 
@@ -523,10 +602,8 @@
                 </div>
             </div>
 
-            {{-- Card Body --}}
             <div class="p-4 md:p-6">
 
-                {{-- Loading State --}}
                 <div id="loading-state" class="flex items-center justify-center py-12">
                     <div class="text-center">
                         <svg class="animate-spin h-10 w-10 text-blue-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24">
@@ -540,13 +617,13 @@
                     </div>
                 </div>
 
-                {{-- Desktop Table View --}}
                 <div id="users-table-wrapper" class="overflow-x-auto -mx-4 md:mx-0" style="display: none;">
                     <div class="inline-block min-w-full align-middle">
                         <div class="overflow-hidden">
                             <table class="min-w-full" id="users-table">
                                 <thead>
                                     <tr>
+                                        <th class="text-center">No.</th>
                                         <th class="text-center">Vendor Name</th>
                                         <th class="text-center">Address</th>
                                         <th class="text-center">NPWP</th>
@@ -554,6 +631,8 @@
                                         <th class="text-center">Bank Account Name</th>
                                         <th class="text-center">Bank Account Number</th>
                                         <th class="text-center">Transfer Via</th>
+                                        <th class="text-center">Type</th>
+                                        <th class="text-center">Status</th>
                                         <th class="text-center">Action</th>
                                     </tr>
                                 </thead>
@@ -562,8 +641,6 @@
                         </div>
                     </div>
                 </div>
-
-                {{-- Mobile Cards View --}}
                 <div id="mobile-cards-view" style="display: none;">
                     <div id="mobile-cards-container"></div>
                     <div id="mobile-pagination"></div>
@@ -575,7 +652,37 @@
     </div>
 
     @push('scripts')
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+       
+        <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+        <script>
+            $(document).ready(function() {
+                $('#bank-name-filter').select2({
+                    placeholder: "All Banks...",
+                    allowClear: false
+                });
+            });
+            $(document).ready(function() {
+                $('#transfer-filter').select2({
+                    placeholder: "All Transfers...",
+                    allowClear: true
+                });
+            });
+            $(document).ready(function() {
+                $('#type-filter').select2({
+                    placeholder: "All Types...",
+                    allowClear: true
+                });
+            });
+            $(document).ready(function() {
+                $('#status-filter').select2({
+                    placeholder: "All Statuses...",
+                    allowClear: true
+                });
+            });
+        </script>
         <script>
             toastr.options = {
                 closeButton: true,
@@ -595,12 +702,47 @@
                     processing: true,
                     serverSide: true,
                     responsive: true,
+                  dom: '<"flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4"' +
+     '<"flex items-center gap-2"lB>' +
+     '<"info-wrapper"i>' +
+     '>' +
+     'rt' +
+     '<"flex justify-between items-center mt-4"ip>',
+                    buttons: [{
+                        extend: 'excelHtml5',
+                        text: 'Export Excel',
+                        title: 'All Vendors Form Request',
+                        filename: 'All Vendors Form Request',
+                        className: 'bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm',
+                        exportOptions: {
+    columns: ':not(.no-export)'
+}
+                        
+                    }],
+                  
                     lengthMenu: [
                         [10, 25, 50, 100, -1],
                         [10, 25, 50, 100, "All"]
                     ],
-                    ajax: "{{ route('vendorsdata') }}",
+                    ajax: {
+                        url: "{{ route('vendorsdata') }}",
+                        data: function(d) {
+                            d.bank_name = $('#bank-name-filter').val();
+                            d.transfer = $('#transfer-filter').val();
+                            d.type = $('#type-filter').val();
+                            d.status = $('#status-filter').val();
+                        }
+                    },
                     columns: [{
+                            data: 'DT_RowIndex',
+                            name: 'DT_RowIndex',
+                            width: '5%',
+                            className: 'text-center',
+                            orderable: false,
+                            searchable: false
+                        },
+
+                        {
                             data: 'vendor_name',
                             name: 'vendor_name',
                             className: 'text-center'
@@ -636,12 +778,48 @@
                             className: 'text-center'
                         },
                         {
-                            data: 'action',
-                            name: 'action',
-                            orderable: false,
-                            searchable: false,
+                            data: 'type',
+                            name: 'type',
                             className: 'text-center'
                         },
+                        {
+                            data: 'status',
+                            name: 'status',
+                            width: '10%',
+                            className: 'text-center',
+                            render: function(data, type, row) {
+                                if (!data) return '-';
+
+                                let status = data.toLowerCase();
+                                let badgeClass = 'bg-slate-500 text-white';
+
+                                if (status === 'active') {
+                                    badgeClass = 'bg-green-600 text-white';
+                                } else if (status === 'inactive') {
+                                    badgeClass = 'bg-red-500 text-white';
+                                }
+
+                                return `
+            <span class="px-3 py-1 rounded-full text-xs font-semibold ${badgeClass}">
+                ${data}
+            </span>
+        `;
+                            }
+                        },
+                        // {
+                        //     data: 'action',
+                        //     name: 'action',
+                        //     orderable: false,
+                        //     searchable: false,
+                        //     className: 'text-center'
+                        // },
+                        {
+    data: 'action',
+    name: 'action',
+    className: 'text-center no-export',
+    orderable: false,
+    searchable: false
+}
                     ],
                     language: {
                         lengthMenu: "_MENU_",
@@ -655,8 +833,9 @@
                             previous: "Prev"
                         }
                     },
+                    
                     pageLength: 10,
-                    dom: '<"flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4"<"length-wrapper"l><"info-wrapper"i>>rtip',
+                    // dom: '<"flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4"<"length-wrapper"l><"info-wrapper"i>>rtip',
                     initComplete: function() {
                         $('#loading-state').hide();
                         $('#users-table-wrapper').fadeIn();
@@ -667,6 +846,16 @@
                             renderMobileCards();
                         }
                     }
+                });
+                $('#btnFilter').on('click', function() {
+                    table.ajax.reload();
+                });
+                $('#btnReset').click(function() {
+                    $('#bank-name-filter').val(null).trigger('change');
+                    $('#transfer-filter').val(null).trigger('change');
+                    $('#type-filter').val(null).trigger('change');
+                    $('#status-filter').val(null).trigger('change');
+                    table.ajax.reload();
                 });
 
                 $('#table-search').on('keyup', function() {
@@ -685,7 +874,7 @@
                     if (data.length === 0) {
                         container.html(
                             '<div class="text-center py-8" style="color:var(--text-secondary)">No vendors found</div>'
-                            );
+                        );
                         return;
                     }
 
@@ -717,12 +906,36 @@
                                         <div class="user-card-value">${vendor.bank_account_number || 'N/A'}</div>
                                     </div>
                                     <div class="user-card-field">
+                                        <div class="user-card-label">NPWP</div>
+                                        <div class="user-card-value">${vendor.npwp || 'N/A'}</div>
+                                    </div>
+                                    <div class="user-card-field">
+                                        <div class="user-card-label">Type</div>
+                                        <div class="user-card-value">${vendor.type || 'N/A'}</div>
+                                    </div>
+                                    <div class="user-card-field">
                                         <div class="user-card-label">Transfer Via</div>
                                         <div class="user-card-value">
                                             <span class="user-card-badge">${vendor.transfer || '-'}</span>
                                         </div>
                                     </div>
-                                </div>
+                                    <div class="user-card-field">
+                                        <div class="user-card-label">Status</div>
+                                            <div class="user-card-value">
+                                                ${
+                                                    vendor.status 
+                                                        ? `<span class="px-3 py-1 rounded-full text-xs font-semibold ${
+                                                                vendor.status.toLowerCase() === 'active'
+                                                                ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400'
+                                                                : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
+                                                            }">
+                                                                ${vendor.status}
+                                                               </span>`
+                                                    : 'N/A'
+                                                }
+                                    </div>
+                                    </div>
+                                    </div>
                                 <div class="user-card-actions">
                                     ${vendor.action}
                                 </div>
@@ -730,36 +943,29 @@
                         `;
                         container.append(card);
                     });
-
                     renderMobilePagination();
                 }
 
-                // Mobile pagination
                 function renderMobilePagination() {
                     var info = table.page.info();
                     var pagination = $('#mobile-pagination');
                     pagination.empty();
-
                     var prevBtn = $('<button class="mobile-page-btn">Prev</button>');
                     if (info.page === 0) prevBtn.prop('disabled', true);
                     prevBtn.on('click', function() {
                         table.page('previous').draw('page');
                     });
                     pagination.append(prevBtn);
-
                     var pageInfo = $(`<span class="mobile-page-btn active">${info.page + 1} / ${info.pages}</span>`);
                     pagination.append(pageInfo);
-
                     var nextBtn = $('<button class="mobile-page-btn">Next</button>');
                     if (info.page >= info.pages - 1) nextBtn.prop('disabled', true);
                     nextBtn.on('click', function() {
                         table.page('next').draw('page');
                     });
                     pagination.append(nextBtn);
-
                     $('#mobile-info').text(`Showing ${info.start + 1} to ${info.end} of ${info.recordsTotal} entries`);
                 }
-
                 $(window).on('resize', function() {
                     if ($(window).width() < 768) renderMobileCards();
                 });

@@ -12,6 +12,15 @@ class Requestitem extends Model
     protected $connection = 'mysql';
     protected $keyType = 'string';
     public $timestamps = false;
+    protected $attributes = [
+    'qty' => 0.0,
+    'price' => 0.00,
+];
+    protected $casts = [
+    'qty' => 'decimal:2',
+    'price' => 'decimal:2',
+    'total_price' => 'decimal:2',
+];
     protected static function boot()
     {
         parent::boot();
@@ -19,19 +28,19 @@ class Requestitem extends Model
             if (!$model->getKey()) {
                 $model->{$model->getKeyName()} = Uuid::uuid7()->toString();
             }
-        });
+      });
+      static::saving(function ($model) {
+        // $model->total_price = ($model->qty ?? 0) * ($model->price ?? 0);
+        $model->total_price = round(
+    (float) ($model->qty ?? 0) * (float) ($model->price ?? 0),
+    2
+);
+    });
     }
      protected $fillable = [
-        'request_id','item_name','spesification','qty','uom','price','total_price'
+        'request_id','item_name','specification','qty','uom','price','total_price'
     ];
-      public function setRequestTypeNameAttribute($value)
-    {
-        $this->attributes['request_type_name'] = strtoupper($value);
-    }
-      public function setCodeAttribute($value)
-    {;
-        $this->attributes['code'] = strtoupper($value);
-    }
+     
   public static function getUomOptions()
 {
     return ['pieces', 'unit', 'set', 'pack', 'box', 'rim','kg','liter','meter','roll'];

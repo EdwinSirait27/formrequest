@@ -29,7 +29,9 @@ class Vendor extends Model
         'bank_name',
         'bank_account_number',
         'transfer',
-        'bank_account_name'
+        'bank_account_name',
+        'type',
+        'status'
     ];
     public function setVendorNameAttribute($value)
     {
@@ -38,6 +40,18 @@ class Vendor extends Model
     public function setBankNameAttribute($value)
     {
         $this->attributes['bank_name'] = strtoupper($value);
+    }
+    public function setAddressAttribute($value)
+    {
+        $this->attributes['address'] = strtoupper($value);
+    }
+    public function setCityAttribute($value)
+    {
+        $this->attributes['city'] = strtoupper($value);
+    }
+    public function setProvinceAttribute($value)
+    {
+        $this->attributes['province'] = strtoupper($value);
     }
     public function setBankAccountNameAttribute($value)
     {

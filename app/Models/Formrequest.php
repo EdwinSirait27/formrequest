@@ -50,18 +50,32 @@ class Formrequest extends Model
         'request_date',
         'user_id',
         'total_amount',
+        'title',
         'notes',
         'vendor_id',
         'destination',
         'deadline',
         'status'
     ];
+      protected $casts = [
+    'request_date' => 'date',
+    'deadline' => 'date',
+    
+];
     public function vendor()
     {
         return $this->belongsTo(Vendor::class, 'vendor_id');
     }
-    public function requestitem()
-    {
-        return $this->belongsTo(Vendor::class, 'vendor_id');
-    }
+   public function items()
+{
+    return $this->hasMany(Requestitem::class, 'request_id');
+}
+    public function requesttype()
+{
+    return $this->belongsTo(Requesttype::class, 'request_type_id');
+}
+    public function user()
+{
+    return $this->belongsTo(User::class, 'user_id');
+}
 }

@@ -12,6 +12,12 @@ class Company extends Model
     public $incrementing = false; // kalau kamu pakai UUID
     protected $keyType = 'string';
     protected $fillable = [
-        'name',
+        'name','foto','address',
     ];
+    public function getFotoUrlAttribute()
+{
+    if (!$this->foto) return null;
+
+    return config('app.hrx_url') . '/storage/' . $this->foto;
+}
 }

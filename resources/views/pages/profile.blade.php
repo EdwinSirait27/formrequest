@@ -14,11 +14,24 @@
 
         {{-- Avatar & Name --}}
         <div class="flex items-center gap-5 pb-6 mb-6 border-b" style="border-color: var(--border-color);">
-            <div class="flex-shrink-0 w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
+            {{-- <div class="flex-shrink-0 w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
                 <span class="text-2xl font-bold text-white select-none">
                     {{ strtoupper(substr(Auth::user()->employee->employee_name ?? Auth::user()->name ?? 'U', 0, 1)) }}
                 </span>
-            </div>
+            </div> --}}
+            <div class="flex-shrink-0 w-16 h-16 rounded-2xl overflow-hidden shadow-lg shadow-blue-500/30 bg-gray-200 flex items-center justify-center">
+    @if(Auth::user()->employee && Auth::user()->employee->photos)
+        <img 
+            src="{{ asset('storage/' . Auth::user()->employee->photos) }}"
+            alt="Photo"
+            class="w-full h-full object-cover"
+        >
+    @else
+        <span class="text-2xl font-bold text-gray-700">
+            {{ strtoupper(substr(Auth::user()->employee->employee_name ?? Auth::user()->name ?? 'U', 0, 1)) }}
+        </span>
+    @endif
+</div>
             <div>
                 <h2 class="text-xl font-bold" style="color: var(--text-primary)">
                     {{ Auth::user()->employee->employee_name ?? Auth::user()->name ?? '-' }}
@@ -196,6 +209,54 @@
                     </span>
                 </div>
             </div>
+            {{-- <canvas id="signature-pad" class="border w-full h-40"></canvas>
+
+<button type="button" onclick="clearPad()">Clear</button>
+
+<form method="POST" action="{{ route('save.signature') }}">
+    @csrf
+    <input type="hidden" name="signature" id="signature">
+    <button type="submit" onclick="saveSignature()">Submit</button>
+</form> --}}
+<div class="max-w-lg space-y-4">
+
+    <h3 class="text-lg font-semibold">Signature</h3>
+
+    {{-- Preview signature lama --}}
+    @if(auth()->user()->employee->signature)
+        <div class="border rounded-lg p-3 bg-gray-50">
+            <p class="text-sm text-gray-500 mb-2">Current signature:</p>
+            <img 
+                src="{{ asset('storage/' . auth()->user()->employee->signature) }}" 
+                class="h-24"
+            >
+        </div>
+    @endif
+
+    {{-- Canvas --}}
+    <div class="border rounded-lg p-3 bg-white">
+        <canvas id="signature-pad" class="w-full h-40"></canvas>
+    </div>
+
+    {{-- Action --}}
+    <div class="flex gap-2">
+        <button type="button" onclick="clearPad()" 
+            class="px-4 py-2 bg-gray-500 text-white rounded">
+            Clear
+        </button>
+
+        <form method="POST" action="{{ route('save.signature') }}">
+            @csrf
+            <input type="hidden" name="signature" id="signature">
+
+            <button type="submit" onclick="saveSignature()" 
+                class="px-4 py-2 bg-blue-600 text-white rounded">
+                Simpan
+            </button>
+        </form>
+    </div>
+
+</div>
 
         </div>
     </div>
@@ -213,5 +274,79 @@
     </div>
 
 </div>
+    @push('scripts')
 
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+{{-- <script>
+const canvas = document.getElementById('signature-pad');
+const signaturePad = new SignaturePad(canvas);
+
+function clearPad() {
+    signaturePad.clear();
+}
+
+function saveSignature() {
+    if (!signaturePad.isEmpty()) {
+        document.getElementById('signature').value = signaturePad.toDataURL();
+    }
+}
+</script> --}}
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+
+<script>
+const canvas = document.getElementById('signature-pad');
+
+// 🔥 fix ukuran biar tidak blur
+function resizeCanvas() {
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    canvas.width = canvas.offsetWidth * ratio;
+    canvas.height = canvas.offsetHeight * ratio;
+    canvas.getContext("2d").scale(ratio, ratio);
+}
+resizeCanvas();
+
+const signaturePad = new SignaturePad(canvas);
+
+// ✅ Load signature lama ke canvas
+const existingSignature = @json(auth()->user()->employee->signature ? asset('storage/' . auth()->user()->employee->signature) : null);
+
+if (existingSignature) {
+    const image = new Image();
+    image.src = existingSignature;
+
+    image.onload = function () {
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    };
+}
+
+// clear
+function clearPad() {
+    signaturePad.clear();
+}
+
+// save
+function saveSignature() {
+    if (signaturePad.isEmpty()) {
+        alert("signature has not been filled in!");
+        event.preventDefault();
+        return false;
+    }
+
+    document.getElementById('signature').value = signaturePad.toDataURL();
+}
+</script>
+ <script>
+            toastr.options = {
+                closeButton: true,
+                progressBar: true,
+                positionClass: "toast-top-right",
+                timeOut: "3000"
+            };
+
+            @if (session('success'))
+                toastr.success(@json(session('success')));
+            @endif
+        </script>
+@endpush
 @endsection
