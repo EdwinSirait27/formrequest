@@ -586,260 +586,73 @@ if ($user->hasRole('manager')) {
                 ->with('error', 'Gagal membuat request: ' . $e->getMessage());
         }
     }
-    //     public function store(Request $request)
-    //     {
-    //         $request->merge([
-    //             'items' => collect($request->items)->map(function ($item) {
-    //                 $item['qty'] = isset($item['qty'])
-    //                     ? str_replace(['.', ','], ['', '.'], $item['qty'])
-    //                     : 0;
+   
 
-    //                 $item['price'] = isset($item['price'])
-    //                     ? str_replace(['.', ','], ['', '.'], $item['price'])
-    //                     : 0;
-
-    //                 return $item;
-    //             })->toArray()
-    //         ]);
-    //         $validated = $request->validate([
-    //             'request_type_id'       => ['required', 'exists:request_type,id'],
-    //             // 'company_id'       => ['nullable', 'exists:company_tables,id'],
-    //             'company_id' => [
-    //     'nullable',
-    //     'exists:hrx.company_tables,id'
-    // ],
-    //             'vendor_id'             => ['nullable', 'exists:vendor,id'],
-    //             'transfer'             => ['required', 'string'],
-    //             'request_date'          => ['required', 'date'],
-    //             'deadline'              => ['required', 'date', 'after_or_equal:request_date'],
-    //             'title'                 => ['required', 'string', 'max:255'],
-    //             'notes'                 => ['nullable', 'string'],
-    //             'destination'           => ['nullable', 'string', 'max:255'],
-    //             'items'                 => ['required', 'array', 'min:1'],
-    //             'items.*.item_name'     => ['required', 'string', 'max:255'],
-    //             'items.*.specification' => ['nullable', 'string'],
-    //             'items.*.qty'           => ['required', 'numeric', 'min:0'],
-    //             'items.*.uom'           => ['required', Rule::in(Requestitem::getUomOptions())],
-    //             'items.*.price'         => ['required', 'numeric', 'min:0'],
-    //             'items.*.total_price'   => ['nullable'],
-    //         ]);
-    //         DB::beginTransaction();
-    //         try {
-    //             $totalAmount = 0;
-    //             foreach ($validated['items'] as $item) {
-    //                 $totalAmount += $item['qty'] * $item['price'];
-    //             }
-    //             $formrequest = Formrequest::create([
-    //                 'request_type_id' => $validated['request_type_id'],
-    //                 'vendor_id'       => $validated['vendor_id'] ?? null,
-    //                 'user_id'         => Auth::id(),
-    //                 'request_date'    => $validated['request_date'],
-    //                 'company_id'        => $validated['company_id'],
-    //                 // 'transfer'        => $validated[''],
-    //                 'transfer'   => optional(Company::find($validated['company_id']))->name,
-    //                 'deadline'        => $validated['deadline'],
-    //                 'title'           => $validated['title'],
-    //                 'notes'           => $validated['notes'] ?? null,
-    //                 'total_amount'    => round($totalAmount, 2),
-    //                 'status'          => 'Draft',
-    //             ]);
-    //             foreach ($validated['items'] as $item) {
-    //                 Requestitem::create([
-    //                     'request_id'    => $formrequest->id,
-    //                     'item_name'     => $item['item_name'],
-    //                     'specification' => $item['specification'] ?? null,
-    //                     'qty'           => $item['qty'],
-    //                     'uom'           => $item['uom'],
-    //                     'price'         => $item['price'],
-    //                 ]);
-    //             }
-    //             DB::commit();
-    //             return redirect()
-    //                 ->route('request')
-    //                 ->with('success', 'Request berhasil dibuat.');
-    //         } catch (\Throwable $e) {
-    //             DB::rollBack();
-    //             return back()
-    //                 ->withInput()
-    //                 ->with('error', 'Gagal membuat request: ' . $e->getMessage());
-    //         }
-    //     }
-
-    public function update(Request $request, $hash)
-    {
-        $formrequest = Formrequest::with('items')->get()->first(function ($u) use ($hash) {
-            return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
-        });
-
-        $request->merge([
-            'items' => collect($request->items)->map(function ($item) {
-                $item['qty'] = isset($item['qty'])
-                    ? str_replace(['.', ','], ['', '.'], $item['qty'])
-                    : 0;
-                $item['price'] = isset($item['price'])
-                    ? str_replace(['.', ','], ['', '.'], $item['price'])
-                    : 0;
-                return $item;
-            })->toArray()
-        ]);
-
-        $validated = $request->validate([
-            'request_type_id'       => ['required', 'exists:request_type,id'],
-            'company_id'            => ['nullable', 'exists:hrx.company_tables,id'],
-            'vendor_id'             => ['nullable', 'exists:vendor,id'],
-            'transfer'              => ['nullable', 'string'],
-            'request_date'          => ['required', 'date'],
-            'deadline'              => ['required', 'date', 'after_or_equal:request_date'],
-            'title'                 => ['required', 'string', 'max:255'],
-            'notes'                 => ['nullable', 'string'],
-            'addressed_to'          => ['nullable', 'string'],
-            'destination'           => ['nullable', 'string', 'max:255'],
-            'items'                 => ['required', 'array', 'min:1'],
-            'items.*.item_name'     => ['required', 'string', 'max:255'],
-            'items.*.specification' => ['nullable', 'string'],
-            'items.*.qty'           => ['required', 'numeric', 'min:0'],
-            'items.*.uom'           => ['required', Rule::in(Requestitem::getUomOptions())],
-            'items.*.price'         => ['required', 'numeric', 'min:0'],
-        ]);
-
-        DB::beginTransaction();
-        try {
-            $companyName = null;
-            if (!empty($validated['company_id'])) {
-                $companyName = Company::on('hrx')
-                    ->where('id', $validated['company_id'])
-                    ->value('name');
-            }
-
-            $totalAmount = collect($validated['items'])->sum(function ($item) {
-                return $item['qty'] * $item['price'];
-            });
-
-            $formrequest->update([
-                'request_type_id' => $validated['request_type_id'],
-                'vendor_id'       => $validated['vendor_id'] ?? null,
-                'request_date'    => $validated['request_date'],
-                'company_id'      => $validated['company_id'],
-                // 'addressed_to'    => $validated['addressed_to'],
-                'addressed_to' => $validated['addressed_to'] ?? null,
-                'transfer'        => $companyName,
-                'deadline'        => $validated['deadline'],
-                'title'           => $validated['title'],
-                'notes'           => $validated['notes'] ?? null,
-                'total_amount'    => round($totalAmount, 2),
-            ]);
-            // Hapus items lama lalu insert ulang
-            $formrequest->items()->delete();
-            foreach ($validated['items'] as $item) {
-                Requestitem::create([
-                    'request_id'    => $formrequest->id,
-                    'item_name'     => $item['item_name'],
-                    'specification' => $item['specification'] ?? null,
-                    'qty'           => $item['qty'],
-                    'uom'           => $item['uom'],
-                    'price'         => $item['price'],
-                ]);
-            }
-
-            DB::commit();
-            return redirect()
-                ->route('request')
-                ->with('success', 'Request berhasil diupdate.');
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            Log::error('UPDATE ERROR', [
-                'message' => $e->getMessage(),
-                'trace'   => $e->getTraceAsString()
-            ]);
-            return back()
-                ->withInput()
-                ->with('error', 'Gagal mengupdate request: ' . $e->getMessage());
-        }
-    }
-    // ini yang benar
     // public function update(Request $request, $hash)
     // {
-    //     Log::info('UPDATE REQUEST - START', [
-    //         'hash' => $hash,
-    //         'user_id' => auth()->id(),
-    //         'payload' => $request->all()
-    //     ]);
+    //     $formrequest = Formrequest::with('items')->get()->first(function ($u) use ($hash) {
+    //         return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
+    //     });
 
     //     $request->merge([
     //         'items' => collect($request->items)->map(function ($item) {
     //             $item['qty'] = isset($item['qty'])
     //                 ? str_replace(['.', ','], ['', '.'], $item['qty'])
     //                 : 0;
-
     //             $item['price'] = isset($item['price'])
     //                 ? str_replace(['.', ','], ['', '.'], $item['price'])
     //                 : 0;
-
     //             return $item;
     //         })->toArray()
     //     ]);
 
     //     $validated = $request->validate([
     //         'request_type_id'       => ['required', 'exists:request_type,id'],
+    //         'company_id'            => ['nullable', 'exists:hrx.company_tables,id'],
     //         'vendor_id'             => ['nullable', 'exists:vendor,id'],
+    //         'transfer'              => ['nullable', 'string'],
     //         'request_date'          => ['required', 'date'],
     //         'deadline'              => ['required', 'date', 'after_or_equal:request_date'],
     //         'title'                 => ['required', 'string', 'max:255'],
     //         'notes'                 => ['nullable', 'string'],
+    //         'addressed_to'          => ['nullable', 'string'],
     //         'destination'           => ['nullable', 'string', 'max:255'],
-    //         'status' => 'required|in:Draft,Submitted,Approved Manager,Rejected Manager,Approved Finance,Rejected Finance,Approved Director,Rejected Director,Done',
     //         'items'                 => ['required', 'array', 'min:1'],
     //         'items.*.item_name'     => ['required', 'string', 'max:255'],
     //         'items.*.specification' => ['nullable', 'string'],
     //         'items.*.qty'           => ['required', 'numeric', 'min:0'],
     //         'items.*.uom'           => ['required', Rule::in(Requestitem::getUomOptions())],
     //         'items.*.price'         => ['required', 'numeric', 'min:0'],
-    //         'items.*.total_price'   => ['nullable'],
     //     ]);
 
     //     DB::beginTransaction();
-
     //     try {
-    //         $formrequest = Formrequest::with('items')->get()->first(function ($u) use ($hash) {
-    //             return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
+    //         $companyName = null;
+    //         if (!empty($validated['company_id'])) {
+    //             $companyName = Company::on('hrx')
+    //                 ->where('id', $validated['company_id'])
+    //                 ->value('name');
+    //         }
+
+    //         $totalAmount = collect($validated['items'])->sum(function ($item) {
+    //             return $item['qty'] * $item['price'];
     //         });
-
-    //         if (!$formrequest) {
-    //             Log::warning('UPDATE REQUEST - NOT FOUND', ['hash' => $hash]);
-    //             return back()->with('error', 'Data tidak ditemukan.');
-    //         }
-
-    //         Log::info('UPDATE REQUEST - BEFORE UPDATE', [
-    //             'id' => $formrequest->id,
-    //             'data' => $formrequest->toArray()
-    //         ]);
-
-    //         $totalAmount = 0;
-    //         foreach ($validated['items'] as $item) {
-    //             $totalAmount += $item['qty'] * $item['price'];
-    //         }
 
     //         $formrequest->update([
     //             'request_type_id' => $validated['request_type_id'],
     //             'vendor_id'       => $validated['vendor_id'] ?? null,
     //             'request_date'    => $validated['request_date'],
+    //             'company_id'      => $validated['company_id'],
+    //             // 'addressed_to'    => $validated['addressed_to'],
+    //             'addressed_to' => $validated['addressed_to'] ?? null,
+    //             'transfer'        => $companyName,
     //             'deadline'        => $validated['deadline'],
     //             'title'           => $validated['title'],
     //             'notes'           => $validated['notes'] ?? null,
     //             'total_amount'    => round($totalAmount, 2),
-    //             'status'          => $validated['status'],
     //         ]);
-
-    //         // log setelah update header
-    //         Log::info('UPDATE REQUEST - AFTER HEADER UPDATE', [
-    //             'id' => $formrequest->id,
-    //             'data' => $formrequest->fresh()->toArray()
-    //         ]);
-
-    //         // delete items lama
-    //         Requestitem::where('request_id', $formrequest->id)->delete();
-
-    //         // insert ulang
+    //         // Hapus items lama lalu insert ulang
+    //         $formrequest->items()->delete();
     //         foreach ($validated['items'] as $item) {
     //             Requestitem::create([
     //                 'request_id'    => $formrequest->id,
@@ -851,35 +664,145 @@ if ($user->hasRole('manager')) {
     //             ]);
     //         }
 
-    //         Log::info('UPDATE REQUEST - ITEMS REPLACED', [
-    //             'request_id' => $formrequest->id,
-    //             'total_items' => count($validated['items'])
-    //         ]);
-
     //         DB::commit();
-
-    //         Log::info('UPDATE REQUEST - SUCCESS', [
-    //             'request_id' => $formrequest->id
-    //         ]);
-
     //         return redirect()
     //             ->route('request')
     //             ->with('success', 'Request berhasil diupdate.');
     //     } catch (\Throwable $e) {
     //         DB::rollBack();
-
-    //         Log::error('UPDATE REQUEST - ERROR', [
+    //         Log::error('UPDATE ERROR', [
     //             'message' => $e->getMessage(),
-    //             'file'    => $e->getFile(),
-    //             'line'    => $e->getLine(),
     //             'trace'   => $e->getTraceAsString()
     //         ]);
-
     //         return back()
     //             ->withInput()
-    //             ->with('error', 'Gagal update request: ' . $e->getMessage());
+    //             ->with('error', 'Gagal mengupdate request: ' . $e->getMessage());
     //     }
     // }
+    // ini yang benar
+    public function update(Request $request, $hash)
+    {
+        Log::info('UPDATE REQUEST - START', [
+            'hash' => $hash,
+            'user_id' => auth()->id(),
+            'payload' => $request->all()
+        ]);
+
+        $request->merge([
+            'items' => collect($request->items)->map(function ($item) {
+                $item['qty'] = isset($item['qty'])
+                    ? str_replace(['.', ','], ['', '.'], $item['qty'])
+                    : 0;
+
+                $item['price'] = isset($item['price'])
+                    ? str_replace(['.', ','], ['', '.'], $item['price'])
+                    : 0;
+
+                return $item;
+            })->toArray()
+        ]);
+
+        $validated = $request->validate([
+            'request_type_id'       => ['required', 'exists:request_type,id'],
+            'vendor_id'             => ['nullable', 'exists:vendor,id'],
+            'request_date'          => ['required', 'date'],
+            'deadline'              => ['required', 'date', 'after_or_equal:request_date'],
+            'title'                 => ['required', 'string', 'max:255'],
+            'notes'                 => ['nullable', 'string'],
+            'destination'           => ['nullable', 'string', 'max:255'],
+            'status' => 'required|in:Draft,Submitted,Approved Manager,Rejected Manager,Approved Finance,Rejected Finance,Approved Director,Rejected Director,Done',
+            'items'                 => ['required', 'array', 'min:1'],
+            'items.*.item_name'     => ['required', 'string', 'max:255'],
+            'items.*.specification' => ['nullable', 'string'],
+            'items.*.qty'           => ['required', 'numeric', 'min:0'],
+            'items.*.uom'           => ['required', Rule::in(Requestitem::getUomOptions())],
+            'items.*.price'         => ['required', 'numeric', 'min:0'],
+            'items.*.total_price'   => ['nullable'],
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $formrequest = Formrequest::with('items')->get()->first(function ($u) use ($hash) {
+                return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
+            });
+
+            if (!$formrequest) {
+                Log::warning('UPDATE REQUEST - NOT FOUND', ['hash' => $hash]);
+                return back()->with('error', 'Data tidak ditemukan.');
+            }
+
+            Log::info('UPDATE REQUEST - BEFORE UPDATE', [
+                'id' => $formrequest->id,
+                'data' => $formrequest->toArray()
+            ]);
+
+            $totalAmount = 0;
+            foreach ($validated['items'] as $item) {
+                $totalAmount += $item['qty'] * $item['price'];
+            }
+
+            $formrequest->update([
+                'request_type_id' => $validated['request_type_id'],
+                'vendor_id'       => $validated['vendor_id'] ?? null,
+                'request_date'    => $validated['request_date'],
+                'deadline'        => $validated['deadline'],
+                'title'           => $validated['title'],
+                'notes'           => $validated['notes'] ?? null,
+                'total_amount'    => round($totalAmount, 2),
+                'status'          => $validated['status'],
+            ]);
+
+            // log setelah update header
+            Log::info('UPDATE REQUEST - AFTER HEADER UPDATE', [
+                'id' => $formrequest->id,
+                'data' => $formrequest->fresh()->toArray()
+            ]);
+
+            // delete items lama
+            Requestitem::where('request_id', $formrequest->id)->delete();
+
+            // insert ulang
+            foreach ($validated['items'] as $item) {
+                Requestitem::create([
+                    'request_id'    => $formrequest->id,
+                    'item_name'     => $item['item_name'],
+                    'specification' => $item['specification'] ?? null,
+                    'qty'           => $item['qty'],
+                    'uom'           => $item['uom'],
+                    'price'         => $item['price'],
+                ]);
+            }
+
+            Log::info('UPDATE REQUEST - ITEMS REPLACED', [
+                'request_id' => $formrequest->id,
+                'total_items' => count($validated['items'])
+            ]);
+
+            DB::commit();
+
+            Log::info('UPDATE REQUEST - SUCCESS', [
+                'request_id' => $formrequest->id
+            ]);
+
+            return redirect()
+                ->route('request')
+                ->with('success', 'Request berhasil diupdate.');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            Log::error('UPDATE REQUEST - ERROR', [
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+                'trace'   => $e->getTraceAsString()
+            ]);
+
+            return back()
+                ->withInput()
+                ->with('error', 'Gagal update request: ' . $e->getMessage());
+        }
+    }
     // private function resolveHashedId(string $hashedId): Formrequest
     // {
     //     $formrequest = Formrequest::all()->first(function ($row) use ($hashedId) {
