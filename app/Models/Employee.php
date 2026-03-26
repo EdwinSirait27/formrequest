@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 class Employee extends Model
@@ -9,10 +8,10 @@ class Employee extends Model
     protected $primaryKey = 'id';
     public $incrementing = false; // kalau kamu pakai UUID
     protected $keyType = 'string';
-
     protected $fillable = [
         'employee_name',
         'employee_pengenal',
+        'company_email',
         'signature',
         'company_id',
         'store_id',

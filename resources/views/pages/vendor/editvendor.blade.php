@@ -817,14 +817,14 @@
         {{-- ── TRANSFER SECTION ── --}}
         <div class="flex items-center gap-3 pt-2">
             <div class="flex-1 h-px bg-slate-700"></div>
-            <span class="text-xs font-semibold text-slate-500 uppercase tracking-widest flex-shrink-0">Transfer & Type</span>
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-widest flex-shrink-0">Type</span>
             <div class="flex-1 h-px bg-slate-700"></div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
             {{-- Transfer Via --}}
-            <div>
+            {{-- <div>
                 <label for="transfer" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
                     <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -857,7 +857,7 @@
                         {{ $message }}
                     </p>
                 @enderror
-            </div>
+            </div> --}}
 
             {{-- Vendor Type — now its own field with proper label --}}
             <div>
@@ -961,13 +961,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
 <script>
-    $(document).ready(function () {
-        $('#transfer').select2({
-            placeholder: "Choose Transfer...",
-            allowClear: true,
-            width: '100%'
-        });
-    });
+    // $(document).ready(function () {
+    //     $('#transfer').select2({
+    //         placeholder: "Choose Transfer...",
+    //         allowClear: true,
+    //         width: '100%'
+    //     });
+    // });
     $(document).ready(function () {
         $('#status').select2({
             placeholder: "Choose Statuses...",

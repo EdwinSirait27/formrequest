@@ -1,12 +1,10 @@
 <?php
 
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Model;
 use Ramsey\Uuid\Uuid;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
-
 class Formrequest extends Model
 {
     protected $table = 'form_request';
@@ -43,39 +41,79 @@ class Formrequest extends Model
                 });
             }
         });
+        static::updating(function ($model) {
+
+            // Ambil status lama dari database
+            $originalStatus = $model->getOriginal('status');
+            $newStatus = $model->status;
+
+            // List status rejected
+            $rejectedStatuses = [
+                'Rejected Manager',
+                'Rejected Director'
+            ];
+
+            // Jika status berubah DAN masuk kategori rejected
+            if ($originalStatus !== $newStatus && in_array($newStatus, $rejectedStatuses)) {
+                $model->revision_number = ($model->revision_number ?? 0) + 1;
+            }
+        });
     }
     protected $fillable = [
         'request_type_id',
         'document_number',
         'request_date',
         'user_id',
+        'transfer',
+        'company_id',
+        'user_id',
         'total_amount',
         'title',
+        'addressed_to',
         'notes',
+        'notes_fa',
         'vendor_id',
         'destination',
+        'revision_number',
         'deadline',
         'status'
     ];
-      protected $casts = [
-    'request_date' => 'date',
-    'deadline' => 'date',
-    
-];
+    protected $casts = [
+        'request_date' => 'date',
+        'deadline' => 'date',
+
+    ];
     public function vendor()
     {
         return $this->belongsTo(Vendor::class, 'vendor_id');
     }
-   public function items()
-{
-    return $this->hasMany(Requestitem::class, 'request_id');
-}
+    public function setTransferAttribute($value)
+    {
+        $this->attributes['transfer'] = strtoupper($value);
+    }
+    public function items()
+    {
+        return $this->hasMany(Requestitem::class, 'request_id');
+    }
     public function requesttype()
-{
-    return $this->belongsTo(Requesttype::class, 'request_type_id');
-}
+    {
+        return $this->belongsTo(Requesttype::class, 'request_type_id');
+    }
     public function user()
-{
-    return $this->belongsTo(User::class, 'user_id');
-}
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+    public function addressedto()
+    {
+        return $this->belongsTo(User::class, 'addressed_to');
+    }
+    public function company()
+    {
+        return $this->belongsTo(Company::class, 'company_id');
+    }
+
+
+
+
+    
 }

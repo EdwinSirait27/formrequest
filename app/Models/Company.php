@@ -12,7 +12,7 @@ class Company extends Model
     public $incrementing = false; // kalau kamu pakai UUID
     protected $keyType = 'string';
     protected $fillable = [
-        'name','foto','address',
+        'id','name','foto','address',
     ];
     public function getFotoUrlAttribute()
 {

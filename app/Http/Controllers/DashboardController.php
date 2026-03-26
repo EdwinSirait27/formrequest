@@ -41,85 +41,85 @@ class DashboardController extends Controller
 
         return view('pages.dashboard', compact('requestTypes', 'stats', 'recentRequests'));
     }
-    public function store(Request $request)
-{
-    $request->validate([
-        'request_type_id' => 'required',
-        'request_date' => 'required|date',
-        'items' => 'required|array|min:1',
-        'items.*.request' => 'required|string',
-        'items.*.qty' => 'required|numeric|min:1',
-        'items.*.uom' => 'required',
-        'items.*.price' => 'required|numeric|min:0',
-    ]);
+//     public function store(Request $request)
+// {
+//     $request->validate([
+//         'request_type_id' => 'required',
+//         'request_date' => 'required|date',
+//         'items' => 'required|array|min:1',
+//         'items.*.request' => 'required|string',
+//         'items.*.qty' => 'required|numeric|min:1',
+//         'items.*.uom' => 'required',
+//         'items.*.price' => 'required|numeric|min:0',
+//     ]);
 
-    DB::beginTransaction();
+//     DB::beginTransaction();
 
-    try {
+//     try {
 
-        $formRequest = Formrequest::create([
-            'request_type_id' => $request->request_type_id,
-            'request_date' => $request->request_date,
-            'user_id' => auth()->id(),
-            'notes' => $request->notes,
-            'vendor_id' => $request->vendor_id,
-            'destination' => $request->destination,
-            'deadline' => $request->deadline,
-            'status' => 'draft'
-        ]);
-        $totalAmount = 0;
-        foreach ($request->items as $item) {
+//         $formRequest = Formrequest::create([
+//             'request_type_id' => $request->request_type_id,
+//             'request_date' => $request->request_date,
+//             'user_id' => auth()->id(),
+//             'notes' => $request->notes,
+//             'vendor_id' => $request->vendor_id,
+//             'destination' => $request->destination,
+//             'deadline' => $request->deadline,
+//             'status' => 'draft'
+//         ]);
+//         $totalAmount = 0;
+//         foreach ($request->items as $item) {
 
-            $total = $item['qty'] * $item['price'];
+//             $total = $item['qty'] * $item['price'];
 
-            Requestitem::create([
-                'form_request_id' => $formRequest->id,
-                'request' => $item['request'],
-                'specification' => $item['specification'] ?? null,
-                'qty' => $item['qty'],
-                'uom' => $item['uom'],
-                'price' => $item['price'],
-                'total' => $total
-            ]);
+//             Requestitem::create([
+//                 'form_request_id' => $formRequest->id,
+//                 'request' => $item['request'],
+//                 'specification' => $item['specification'] ?? null,
+//                 'qty' => $item['qty'],
+//                 'uom' => $item['uom'],
+//                 'price' => $item['price'],
+//                 'total' => $total
+//             ]);
 
-            $totalAmount += $total;
-        }
-       if ($request->hasFile('attachments')) {
+//             $totalAmount += $total;
+//         }
+//        if ($request->hasFile('attachments')) {
 
-    $files = $request->file('attachments');
+//     $files = $request->file('attachments');
 
-    if (!is_array($files)) {
-        $files = [$files];
-    }
+//     if (!is_array($files)) {
+//         $files = [$files];
+//     }
 
-    foreach ($files as $file) {
+//     foreach ($files as $file) {
 
-        $path = $file->store('request-attachments');
+//         $path = $file->store('request-attachments');
 
-        DB::table('form_request_attachments')->insert([
-            'id' => \Ramsey\Uuid\Uuid::uuid7()->toString(),
-            'form_request_id' => $formRequest->id,
-            'file_path' => $path,
-            'created_at' => now()
-        ]);
-    }
-}
+//         DB::table('form_request_attachments')->insert([
+//             'id' => \Ramsey\Uuid\Uuid::uuid7()->toString(),
+//             'form_request_id' => $formRequest->id,
+//             'file_path' => $path,
+//             'created_at' => now()
+//         ]);
+//     }
+// }
 
-        $formRequest->update([
-            'total_amount' => $totalAmount
-        ]);
+//         $formRequest->update([
+//             'total_amount' => $totalAmount
+//         ]);
 
-        DB::commit();
+//         DB::commit();
 
-        return redirect()
-            ->route('requests.index')
-            ->with('success', 'Request created successfully');
+//         return redirect()
+//             ->route('requests.index')
+//             ->with('success', 'Request created successfully');
 
-    } catch (\Exception $e) {
+//     } catch (\Exception $e) {
 
-        DB::rollBack();
+//         DB::rollBack();
 
-        return back()->with('error', $e->getMessage());
-    }
-}
+//         return back()->with('error', $e->getMessage());
+//     }
+// }
 }

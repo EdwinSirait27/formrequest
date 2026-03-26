@@ -1,7 +1,7 @@
 @extends('layouts.app')
-@section('title', 'Vendor')
-@section('header', 'Vendor List')
-@section('subtitle', 'Manage Vendor for Form')
+@section('title', 'Request Form')
+@section('header', 'Request Form List')
+@section('subtitle', 'Manage Request Form')
 @section('content')
     <style>
         :root,
@@ -532,29 +532,38 @@
             <div class="vendor-card-header px-4 py-4 md:px-6 md:py-5 border-b">
                 <div class="flex flex-col gap-3 md:gap-4">
                     <div>
-                        <h2 class="vendor-title text-lg md:text-xl font-bold">All Vendor</h2>
-                        <p class="vendor-subtitle text-xs md:text-sm mt-1">Manage and view all system vendor</p>
+                        <h2 class="vendor-title text-lg md:text-xl font-bold">All Request Form</h2>
+                        <p class="vendor-subtitle text-xs md:text-sm mt-1">Manage and view all system request Form</p>
                     </div>
                     <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 md:gap-3">
             
-                        <select id="bank-name-filter" class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
-                            <option value="">All Bank</option>
-                            @foreach ($banks as $bank)
-                                <option value="{{ $bank }}">{{ $bank }}</option>
+                        <select id="request-type-filter" class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
+                            <option value="">All Request Types</option>
+                            @foreach ($requesttypes as $requesttype)
+                                <option value="{{ $requesttype }}">{{ $requesttype }}</option>
                             @endforeach
                         </select>
-                        {{-- <select id="transfer-filter" class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
-                            <option value="">All Transfer</option>
-                            @foreach ($transfers as $transfer)
-                                <option value="{{ $transfer }}">{{ $transfer }}</option>
-                            @endforeach
-                        </select> --}}
-                        <select id="type-filter" class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
-                            <option value="">All Types</option>
-                            @foreach ($types as $type)
-                                <option value="{{ $type }}">{{ $type }}</option>
+                        <select id="vendor-filter" class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
+                            <option value="">All Vendors</option>
+                            @foreach ($vendors as $vendor)
+                                <option value="{{ $vendor }}">{{ $vendor }}</option>
                             @endforeach
                         </select>
+                        <select id="company-filter" class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
+                            <option value="">All Companies</option>
+                            @foreach ($companies as $company)
+                                <option value="{{ $company }}">{{ $company }}</option>
+                            @endforeach
+                        </select>
+                        
+                         <label for="request_date" class="text-xs text-slate-300">Request Date</label>
+
+                        <input type="date" id="request_date" placeholder="YYYY-MM-DD"
+                            class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
+                        <label for="deadline" class="text-xs text-slate-300">Deadline</label>
+                        <input placeholder="YYYY-MM-DD" type="date" id="deadline"
+                            class="w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
+
                         <select id="status-filter" class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
                             <option value="">All Statuses</option>
                             @foreach ($statuses as $status)
@@ -569,7 +578,7 @@
                         </div>
                         <!-- SEARCH -->
                         <div class="relative flex-1">
-                            <input type="text" id="table-search" placeholder="Search vendor..."
+                            <input type="text" id="table-search" placeholder="Search requests..."
                                 class="search-input w-full pl-10 pr-4 py-2 border rounded-lg text-sm">
 
                             <svg class="search-icon absolute left-3 top-2.5 w-5 h-5" fill="none" stroke="currentColor"
@@ -583,7 +592,7 @@
                         </div>
 
                         <!-- BUTTON -->
-                        <a href="{{ route('createvendor') }}"
+                        <a href="{{ route('admin.createrequest') }}"
                             class="inline-flex items-center justify-center gap-2 px-4 py-2
         bg-blue-600 hover:bg-blue-700
         text-white text-sm font-medium
@@ -595,7 +604,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                             </svg>
 
-                            Create Vendor
+                            Create Request
                         </a>
 
                     </div>
@@ -613,7 +622,7 @@
                                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                             </path>
                         </svg>
-                        <p class="text-sm">Loading vendor...</p>
+                        <p class="text-sm">Loading request...</p>
                     </div>
                 </div>
 
@@ -624,14 +633,14 @@
                                 <thead>
                                     <tr>
                                         <th class="text-center">No.</th>
-                                        <th class="text-center">Vendor Name</th>
-                                        <th class="text-center">Address</th>
-                                        <th class="text-center">NPWP</th>
-                                        <th class="text-center">Bank Name</th>
-                                        <th class="text-center">Bank Account Name</th>
-                                        <th class="text-center">Bank Account Number</th>
-                                        {{-- <th class="text-center">Transfer Via</th> --}}
-                                        <th class="text-center">Type</th>
+                                        <th class="text-center">Document Number</th>
+                                        <th class="text-center">Companies</th>
+                                        <th class="text-center">Request Type</th>
+                                        <th class="text-center">Towards</th>
+                                        <th class="text-center">User</th>
+                                        <th class="text-center">Title</th>
+                                        <th class="text-center">Request Date</th>
+                                        <th class="text-center">Deadline</th>
                                         <th class="text-center">Status</th>
                                         <th class="text-center">Action</th>
                                     </tr>
@@ -657,22 +666,40 @@
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+ <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+            <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
+           <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                    flatpickr("#request_date", {
+                        dateFormat: "Y-m-d",
+                        defaultDate: "{{ request('request_date') }}",
+                        allowInput: true
+                    });
+                });
+                document.addEventListener('DOMContentLoaded', function() {
+                    flatpickr("#deadline", {
+                        dateFormat: "Y-m-d",
+                        defaultDate: "{{ request('deadline') }}",
+                        allowInput: true
+                    });
+                });
+            </script>
         <script>
             $(document).ready(function() {
-                $('#bank-name-filter').select2({
-                    placeholder: "All Banks...",
+                $('#request-type-filter').select2({
+                    placeholder: "All Types...",
                     allowClear: false
                 });
             });
-            // $(document).ready(function() {
-            //     $('#transfer-filter').select2({
-            //         placeholder: "All Transfers...",
-            //         allowClear: true
-            //     });
-            // });
             $(document).ready(function() {
-                $('#type-filter').select2({
-                    placeholder: "All Types...",
+                $('#vendor-filter').select2({
+                    placeholder: "All Vendors...",
+                    allowClear: true
+                });
+            });
+            $(document).ready(function() {
+                $('#company-filter').select2({
+                    placeholder: "All Companies...",
                     allowClear: true
                 });
             });
@@ -711,8 +738,8 @@
                     buttons: [{
                         extend: 'excelHtml5',
                         text: 'Export Excel',
-                        title: 'All Vendors Form Request',
-                        filename: 'All Vendors Form Request',
+                        title: 'All Form Request',
+                        filename: 'All Form Request',
                         className: 'bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm',
                         exportOptions: {
     columns: ':not(.no-export)'
@@ -725,102 +752,99 @@
                         [10, 25, 50, 100, "All"]
                     ],
                     ajax: {
-                        url: "{{ route('vendorsdata') }}",
-                        data: function(d) {
-                            d.bank_name = $('#bank-name-filter').val();
-                            // d.transfer = $('#transfer-filter').val();
-                            d.type = $('#type-filter').val();
-                            d.status = $('#status-filter').val();
-                        }
-                    },
-                    columns: [{
-                            data: 'DT_RowIndex',
-                            name: 'DT_RowIndex',
-                            width: '5%',
-                            className: 'text-center',
-                            orderable: false,
-                            searchable: false
-                        },
+    url: "{{ route('admin.requestsdata') }}", // sesuaikan nama route Anda
+    data: function(d) {
+        d.request_type_name = $('#request-type-filter').val();
+        d.name       = $('#company-filter').val();
+        d.vendor_name       = $('#vendor-filter').val();
+        d.request_date      = $('#request_date').val();
+        d.deadline          = $('#deadline').val();
+        d.status            = $('#status-filter').val();
+    }
+},
+columns: [
+    {
+        data: 'DT_RowIndex',
+        name: 'DT_RowIndex',
+        width: '5%',
+        className: 'text-center',
+        orderable: false,
+        searchable: false
+    },
+    {
+        data: 'document_number',
+        name: 'document_number',
+        className: 'text-center'
+    },
+    {
+        data: 'name',
+        name: 'name',
+        className: 'text-center'
+    },
+    {
+        data: 'request_type_name',
+        name: 'request_type_name',
+        className: 'text-center'
+    },
+    {
+        data: 'vendor_name',
+        name: 'vendor_name',
+        className: 'text-center'
+    },
+    {
+        data: 'employee_name',
+        name: 'employee_name',
+        className: 'text-center',
+                                orderable: false,
+                                searchable: false
+    },
+    {
+        data: 'title',
+        name: 'title',
+        className: 'text-center'
+    },
+    {
+        data: 'request_date',
+        name: 'request_date',
+        className: 'text-center'
+    },
+    {
+        data: 'deadline',
+        name: 'deadline',
+        className: 'text-center'
+    },
+    {
+        data: 'status',
+        name: 'status',
+        width: '10%',
+        className: 'text-center',
+        render: function(data, type, row) {
+            if (!data) return '-';
 
-                        {
-                            data: 'vendor_name',
-                            name: 'vendor_name',
-                            className: 'text-center'
-                        },
-                        {
-                            data: 'address',
-                            name: 'address',
-                            className: 'text-center'
-                        },
-                        {
-                            data: 'npwp',
-                            name: 'npwp',
-                            className: 'text-center'
-                        },
-                        {
-                            data: 'bank_name',
-                            name: 'bank_name',
-                            className: 'text-center'
-                        },
-                        {
-                            data: 'bank_account_name',
-                            name: 'bank_account_name',
-                            className: 'text-center'
-                        },
-                        {
-                            data: 'bank_account_number',
-                            name: 'bank_account_number',
-                            className: 'text-center'
-                        },
-                        // {
-                        //     data: 'transfer',
-                        //     name: 'transfer',
-                        //     className: 'text-center'
-                        // },
-                        {
-                            data: 'type',
-                            name: 'type',
-                            className: 'text-center'
-                        },
-                        {
-                            data: 'status',
-                            name: 'status',
-                            width: '10%',
-                            className: 'text-center',
-                            render: function(data, type, row) {
-                                if (!data) return '-';
+            let status = data.toLowerCase();
+            let badgeClass = 'bg-slate-500 text-white';
 
-                                let status = data.toLowerCase();
-                                let badgeClass = 'bg-slate-500 text-white';
+            if (status === 'approved') {
+                badgeClass = 'bg-green-600 text-white';
+            } else if (status === 'pending') {
+                badgeClass = 'bg-yellow-500 text-white';
+            } else if (status === 'rejected') {
+                badgeClass = 'bg-red-500 text-white';
+            } else if (status === 'on progress') {
+                badgeClass = 'bg-blue-500 text-white';
+            }
 
-                                if (status === 'active') {
-                                    badgeClass = 'bg-green-600 text-white';
-                                } else if (status === 'inactive') {
-                                    badgeClass = 'bg-red-500 text-white';
-                                }
-
-                                return `
-            <span class="px-3 py-1 rounded-full text-xs font-semibold ${badgeClass}">
-                ${data}
-            </span>
-        `;
-                            }
-                        },
-                        // {
-                        //     data: 'action',
-                        //     name: 'action',
-                        //     orderable: false,
-                        //     searchable: false,
-                        //     className: 'text-center'
-                        // },
-                        {
-    data: 'action',
-    name: 'action',
-    className: 'text-center no-export',
-    orderable: false,
-    searchable: false
-}
-                    ],
+            return `<span class="px-3 py-1 rounded-full text-xs font-semibold ${badgeClass}">${data}</span>`;
+        }
+    },
+    {
+        data: 'action',
+        name: 'action',
+        className: 'text-center no-export',
+        orderable: false,
+        searchable: false
+    }
+],
                     language: {
                         lengthMenu: "_MENU_",
                         info: "Showing _START_ to _END_ of _TOTAL_ entries",
@@ -852,8 +876,9 @@
                 });
                 $('#btnReset').click(function() {
                     $('#bank-name-filter').val(null).trigger('change');
-                    // $('#transfer-filter').val(null).trigger('change');
+                    $('#transfer-filter').val(null).trigger('change');
                     $('#type-filter').val(null).trigger('change');
+                    $('#company-filter').val(null).trigger('change');
                     $('#status-filter').val(null).trigger('change');
                     table.ajax.reload();
                 });
@@ -873,71 +898,161 @@
 
                     if (data.length === 0) {
                         container.html(
-                            '<div class="text-center py-8" style="color:var(--text-secondary)">No vendors found</div>'
+                            '<div class="text-center py-8" style="color:var(--text-secondary)">No Form Requests found</div>'
                         );
                         return;
                     }
 
-                    data.each(function(vendor) {
-                        var initials = vendor.vendor_name ?
-                            vendor.vendor_name.substring(0, 2).toUpperCase() :
-                            'VN';
+                    // data.each(function(request) {
+                    //     var initials = request.user.employee.employee_name ?
+                    //         request.user.employee.employee_name.substring(0, 2).toUpperCase() :
+                    //         'VN';
 
-                        var card = `
-                            <div class="user-card">
-                                <div class="user-card-header">
-                                    <div class="user-card-avatar">${initials}</div>
-                                    <div class="user-card-title">
-                                        <div class="user-card-name">Name : ${vendor.vendor_name || 'N/A'}</div>
-                                        <div class="user-card-username">Address : ${vendor.address || '-'}</div>
-                                    </div>
-                                </div>
-                                <div class="user-card-body">
-                                    <div class="user-card-field">
-                                        <div class="user-card-label">Bank Name</div>
-                                        <div class="user-card-value">${vendor.bank_name || 'N/A'}</div>
-                                    </div>
-                                    <div class="user-card-field">
-                                        <div class="user-card-label">Acc Name</div>
-                                        <div class="user-card-value">${vendor.bank_account_name || 'N/A'}</div>
-                                    </div>
-                                    <div class="user-card-field">
-                                        <div class="user-card-label">Acc Number</div>
-                                        <div class="user-card-value">${vendor.bank_account_number || 'N/A'}</div>
-                                    </div>
-                                    <div class="user-card-field">
-                                        <div class="user-card-label">NPWP</div>
-                                        <div class="user-card-value">${vendor.npwp || 'N/A'}</div>
-                                    </div>
-                                    <div class="user-card-field">
-                                        <div class="user-card-label">Type</div>
-                                        <div class="user-card-value">${vendor.type || 'N/A'}</div>
-                                    </div>
-                                   
-                                    <div class="user-card-field">
-                                        <div class="user-card-label">Status</div>
-                                            <div class="user-card-value">
-                                                ${
-                                                    vendor.status 
-                                                        ? `<span class="px-3 py-1 rounded-full text-xs font-semibold ${
-                                                                vendor.status.toLowerCase() === 'active'
-                                                                ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400'
-                                                                : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
-                                                            }">
-                                                                ${vendor.status}
-                                                               </span>`
-                                                    : 'N/A'
-                                                }
-                                    </div>
-                                    </div>
-                                    </div>
-                                <div class="user-card-actions">
-                                    ${vendor.action}
-                                </div>
-                            </div>
-                        `;
-                        container.append(card);
-                    });
+                    //     var card = `
+                    //         <div class="user-card">
+                    //             <div class="user-card-header">
+                    //                 <div class="user-card-avatar">${initials}</div>
+                    //                 <div class="user-card-title">
+                    //                     <div class="user-card-name">Name : ${request.user.employee_name || 'N/A'}</div>
+                    //                     <div class="user-card-username">Document Number : ${request.document_number || '-'}</div>
+                    //                 </div>
+                    //             </div>
+                    //             <div class="user-card-body">
+                    //                 <div class="user-card-field">
+                    //                     <div class="user-card-label">Company :</div>
+                    //                     <div class="user-card-value">${request.company && request.company.name ? request.company.name : '-'}</div>
+                                        
+                    //                 </div>
+                    //                 <div class="user-card-field">
+                    //                     <div class="user-card-label">Request Type :</div>
+                    //                     <div class="user-card-value">${request.requesttype.request_type_name || 'N/A'}</div>
+                    //                 </div>
+                    //                 <div class="user-card-field">
+                    //                     <div class="user-card-label">Title Request</div>
+                    //                     <div class="user-card-value">${request.title || 'N/A'}</div>
+                    //                 </div>
+                    //                 <div class="user-card-field">
+                    //                     <div class="user-card-label">Towards</div>
+                    //                     <div class="user-card-value">${request.vendor.vendor_name || 'N/A'}</div>
+                    //                 </div>
+                    //                 <div class="user-card-field">
+                    //                     <div class="user-card-label">Request Date</div>
+                    //                     <div class="user-card-value">${request.request_date || 'N/A'}</div>
+                    //                 </div>
+                    //                 <div class="user-card-field">
+                    //                     <div class="user-card-label">Deadline</div>
+                    //                     <div class="user-card-value">${request.deadline || 'N/A'}</div>
+                    //                 </div>
+                    //                 <div class="user-card-field">
+                    //                     <div class="user-card-label">Transfer By</div>
+                    //                     <div class="user-card-value">
+                    //                         <span class="user-card-badge">${request.transfer || '-'}</span>
+                    //                     </div>
+                    //                 </div>
+                    //                 <div class="user-card-field">
+                    //                     <div class="user-card-label">Status</div>
+                    //                         <div class="user-card-value">
+                    //                             ${
+                    //                                 request.status 
+                    //                                     ? `<span class="px-3 py-1 rounded-full text-xs font-semibold ${
+                    //                                             request.status.toLowerCase() === 'active'
+                    //                                             ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400'
+                    //                                             : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
+                    //                                         }">
+                    //                                             ${requedt.status}
+                    //                                            </span>`
+                    //                                 : 'N/A'
+                    //                             }
+                    //                 </div>
+                    //                 </div>
+                    //                 </div>
+                    //             <div class="user-card-actions">
+                    //                 ${request.action}
+                    //             </div>
+                    //         </div>
+                    //     `;
+                    //     container.append(card);
+                    // });
+                    data.each(function(request) {
+
+    var initials = request.user?.employee?.employee_name
+        ? request.user.employee.employee_name.substring(0, 2).toUpperCase()
+        : 'VN';
+
+    var card = `
+        <div class="user-card">
+            <div class="user-card-header">
+                <div class="user-card-avatar">${initials}</div>
+                <div class="user-card-title">
+                    <div class="user-card-name">Name : ${request.employee_name || 'N/A'}</div>
+                    <div class="user-card-username">Document Number : ${request.document_number || '-'}</div>
+                </div>
+            </div>
+
+            <div class="user-card-body">
+                <div class="user-card-field">
+                    <div class="user-card-label">Company :</div>
+                    <div class="user-card-value">${request.company?.name || '-'}</div>
+                </div>
+
+                <div class="user-card-field">
+                    <div class="user-card-label">Request Type :</div>
+                    <div class="user-card-value">${request.requesttype?.request_type_name || 'N/A'}</div>
+                </div>
+
+                <div class="user-card-field">
+                    <div class="user-card-label">Title Request</div>
+                    <div class="user-card-value">${request.title || 'N/A'}</div>
+                </div>
+
+                <div class="user-card-field">
+                    <div class="user-card-label">Towards</div>
+                    <div class="user-card-value">${request.vendor?.vendor_name || 'N/A'}</div>
+                </div>
+
+                <div class="user-card-field">
+                    <div class="user-card-label">Request Date</div>
+                    <div class="user-card-value">${request.request_date || 'N/A'}</div>
+                </div>
+
+                <div class="user-card-field">
+                    <div class="user-card-label">Deadline</div>
+                    <div class="user-card-value">${request.deadline || 'N/A'}</div>
+                </div>
+
+                <div class="user-card-field">
+                    <div class="user-card-label">Transfer By</div>
+                    <div class="user-card-value">
+                        <span class="user-card-badge">${request.transfer || '-'}</span>
+                    </div>
+                </div>
+
+                <div class="user-card-field">
+                    <div class="user-card-label">Status</div>
+                    <div class="user-card-value">
+                        ${
+                            request.status 
+                                ? `<span class="px-3 py-1 rounded-full text-xs font-semibold ${
+                                        request.status.toLowerCase() === 'active'
+                                        ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400'
+                                        : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
+                                    }">
+                                        ${request.status}
+                                   </span>`
+                                : 'N/A'
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="user-card-actions">
+                ${request.action}
+            </div>
+        </div>
+    `;
+
+    container.append(card);
+});
                     renderMobilePagination();
                 }
 

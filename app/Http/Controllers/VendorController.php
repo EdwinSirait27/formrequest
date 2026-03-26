@@ -39,7 +39,7 @@ class VendorController extends Controller
             'npwp',
             'bank_account_name',
             'bank_account_number',
-            'transfer',
+            // 'transfer',
             'type',
             'status',
         ]);
@@ -53,7 +53,7 @@ class VendorController extends Controller
                     ->orWhere('npwp', 'like', "%{$search}%")
                     ->orWhere('bank_account_name', 'like', "%{$search}%")
                     ->orWhere('bank_account_number', 'like', "%{$search}%")
-                    ->orWhere('transfer', 'like', "%{$search}%")
+                    // ->orWhere('transfer', 'like', "%{$search}%")
                     ->orWhere('type', 'like', "%{$search}%")
                     ->orWhere('status', 'like', "%{$search}%");
             });
@@ -67,9 +67,9 @@ class VendorController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-        if ($request->filled('transfer')) {
-            $query->where('transfer', $request->transfer);
-        }
+        // if ($request->filled('transfer')) {
+        //     $query->where('transfer', $request->transfer);
+        // }
         return DataTables::eloquent($query)
             ->addIndexColumn()
             ->addColumn('action', function ($vendor) {
@@ -127,9 +127,9 @@ class VendorController extends Controller
             return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
         });
         abort_if(!$vendor, 404);
-        $transfer = ['ABD', 'MJM', 'TNJ', 'BIB'];
+        // $transfer = ['ABD', 'MJM', 'TNJ', 'BIB'];
 
-        return view('pages.vendor.editvendor', compact('vendor','transfer'));
+        return view('pages.vendor.editvendor', compact('vendor'));
     }
     public function show($hash)
     {
@@ -141,9 +141,9 @@ class VendorController extends Controller
     }
     public function create()
     {
-        $transfer = ['ABD', 'MJM', 'TNJ', 'BIB'];
+        // $transfer = ['ABD', 'MJM', 'TNJ', 'BIB'];
         $types = ['Vendor', 'Non Vendor'];
-        return view('pages.vendor.createvendor', compact('transfer','types'));
+        return view('pages.vendor.createvendor', compact('types'));
     }
     public function update(Request $request, $hash)
     {
@@ -165,7 +165,7 @@ class VendorController extends Controller
             'bank_name' => 'required|string',
             'bank_account_name' => 'required|string',
             'bank_account_number' => 'required|string',
-            'transfer' => 'required|in:ABD,MJM,TNJ,BIB',
+            // 'transfer' => 'required|in:ABD,MJM,TNJ,BIB',
             'type' => 'required|in:Vendor,Non Vendor',
             'status' => 'required|in:Active,Inactive',
         ]);
@@ -188,7 +188,7 @@ class VendorController extends Controller
             'bank_name' => 'nullable|string|max:100',
             'bank_account_name' => 'nullable|string|max:100',
             'bank_account_number' => 'nullable|string|max:50',
-            'transfer' => 'required|in:ABD,MJM,TNJ,BIB',
+            // 'transfer' => 'required|in:ABD,MJM,TNJ,BIB',
             'type' => 'required|in:Vendor,Non Vendor',
         ]);
         $validated['status'] = 'Active';

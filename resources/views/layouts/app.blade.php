@@ -240,12 +240,9 @@ if (localStorage.getItem('theme') === 'light') {
         <div
             class="sidebar-inner flex grow flex-col gap-y-5 overflow-y-auto bg-slate-900 border-r border-slate-800 px-6 pb-4">
             <div class="flex items-center gap-3 h-24 border-b border-slate-800">
-                {{-- <img src="{{ asset('img/AsianBaylogo.png') }}" class="dark:hidden h-16 w-auto">
-
-                <img src="{{ asset('img/AsianBay.png') }}" class="hidden dark:block h-16 w-auto"> --}}
                 <img src="{{ asset('img/AsianBaylogo.png') }}" class="block dark:hidden h-16 w-auto">
 
-<img src="{{ asset('img/AsianBay.png') }}" class="hidden dark:block h-16 w-auto">
+                <img src="{{ asset('img/AsianBay.png') }}" class="hidden dark:block h-16 w-auto">
 
                 <div>
                     <h2 class="text-base font-bold text-slate-700 dark:text-slate-400">Form Request</h2>
@@ -284,7 +281,7 @@ if (localStorage.getItem('theme') === 'light') {
                                     Dashboard
                                 </a>
                             </li>
-                            @role('admin')
+                            @role('admin|finance')
                                 <a href="{{ route('vendor') }}"
                                     class="group flex gap-x-3 rounded-lg p-3 text-sm leading-6 font-semibold transition-all
                                           {{ request()->routeIs('vendor')
@@ -296,7 +293,9 @@ if (localStorage.getItem('theme') === 'light') {
                                     </svg>
                                     Vendor
                                 </a>
-                        </li>
+                            @endrole
+                    </li>
+                    @role('admin|executor')
                         <a href="{{ route('requesttype') }}"
                             class="group flex gap-x-3 rounded-lg p-3 text-sm leading-6 font-semibold transition-all
                                           {{ request()->routeIs('requesttype')
@@ -308,18 +307,20 @@ if (localStorage.getItem('theme') === 'light') {
                             </svg>
                             Request Type
                         </a>
-                        <a href="{{ route('request') }}"
-                            class="group flex gap-x-3 rounded-lg p-3 text-sm leading-6 font-semibold transition-all
+                    @endrole
+                    <a href="{{ route('request') }}"
+                        class="group flex gap-x-3 rounded-lg p-3 text-sm leading-6 font-semibold transition-all
                                           {{ request()->routeIs('request')
                                               ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md'
                                               : 'nav-item-default' }}">
-                            <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                            </svg>
-                            Create Form 
-                        </a>
-                        </li>
+                        <svg class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                        Create Form
+                    </a>
+                    </li>
+                    @role('admin')
                         <li x-data="{ open: {{ request()->routeIs('users.*') ? 'true' : 'false' }} }">
                             <button @click="open = !open"
                                 class="w-full group flex items-center justify-between gap-x-3 rounded-lg p-3 text-sm font-semibold transition-all duration-300
@@ -354,13 +355,13 @@ if (localStorage.getItem('theme') === 'light') {
                                         List Users
                                     </a>
                                 </li>
-                                <li>
+                                {{-- <li>
                                     <a href="{{ route('users') }}"
                                         class="block rounded-md px-3 py-2 text-sm transition
                                                       {{ request()->routeIs('users.*') ? 'nav-sub-item-active' : 'nav-sub-item' }}">
                                         Roles & Permissions
                                     </a>
-                                </li>
+                                </li> --}}
                             </ul>
                         </li>
                     @endrole
