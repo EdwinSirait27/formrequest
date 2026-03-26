@@ -692,7 +692,7 @@ if ($user->hasRole('manager')) {
             'deadline'              => ['required', 'date', 'after_or_equal:request_date'],
             'title'                 => ['required', 'string', 'max:255'],
             'notes'                 => ['nullable', 'string'],
-            'addressed_to'          => ['nullable'],
+            'addressed_to'          => ['nullable', 'string'],
             'destination'           => ['nullable', 'string', 'max:255'],
             'items'                 => ['required', 'array', 'min:1'],
             'items.*.item_name'     => ['required', 'string', 'max:255'],
