@@ -57,7 +57,7 @@ class AuthController extends Controller
         Log::info('Employee status valid', [
             'employee_status' => $user->employee->status
         ]);
-        if (! $user->hasAnyRole(['human', 'admin', 'executor'])) {
+        if (! $user->hasAnyRole(['user', 'admin', 'finance','manager','director'])) {
             Log::warning('Login blocked - role not allowed', [
                 'user_id' => $user->id,
                 'roles' => $user->getRoleNames()

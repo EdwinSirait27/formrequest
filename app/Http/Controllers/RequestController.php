@@ -46,7 +46,6 @@ class RequestController extends Controller
         $query = Formrequest::with([
             'vendor',
             'requesttype',
-            // 'company',
             'user.employee'
         ])->select([
             'id',
@@ -112,29 +111,34 @@ class RequestController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-// $user = auth()->user();
-// $employee = $user->employee;
+        // untuk manager
+$user = auth()->user();
 
-// if ($employee && $employee->structure_id) {
+if ($user->hasRole('manager')) {
+    $employee = $user->employee;
 
-//     $structure = Structuresnew::with('allChildren')
-//         ->find($employee->structure_id);
+    if ($employee && $employee->structure_id) {
 
-//     if ($structure) {
+        $structure = Structuresnew::with('allChildren')
+            ->find($employee->structure_id);
 
-//         // ✅ ambil SEMUA (parent + child)
-//         $structureIds = $structure->getAllIds();
+        if ($structure) {
 
-//         // ✅ ambil semua employee (termasuk manager)
-//         $employeeIds = Employee::whereIn('structure_id', $structureIds)
-//             ->pluck('id');
+            $structureIds = $structure->getAllIds();
 
-//         // ✅ filter request berdasarkan employee
-//         $query->whereHas('user.employee', function ($q) use ($employeeIds) {
-//             $q->whereIn('id', $employeeIds);
-//         });
-//     }
-// }
+            // ambil employee dari HRX
+            $employeeIds = Employee::whereIn('structure_id', $structureIds)
+                ->pluck('id');
+
+            // ambil user_id dari DB utama (form)
+            $userIds = User::whereIn('employee_id', $employeeIds)
+                ->pluck('id');
+
+            // ✅ filter pakai user_id (AMAN)
+            $query->whereIn('user_id', $userIds);
+        }
+    }
+}
         // =============================
         // 📊 DATATABLES RESPONSE
         // =============================
@@ -663,7 +667,6 @@ class RequestController extends Controller
 
     public function update(Request $request, $hash)
     {
-        // $formrequest = Formrequest::findOrFail($id);
         $formrequest = Formrequest::with('items')->get()->first(function ($u) use ($hash) {
             return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
         });
@@ -703,7 +706,7 @@ class RequestController extends Controller
         try {
             $companyName = null;
             if (!empty($validated['company_id'])) {
-                $companyName = \App\Models\Company::on('hrx')
+                $companyName = Company::on('hrx')
                     ->where('id', $validated['company_id'])
                     ->value('name');
             }
@@ -717,7 +720,8 @@ class RequestController extends Controller
                 'vendor_id'       => $validated['vendor_id'] ?? null,
                 'request_date'    => $validated['request_date'],
                 'company_id'      => $validated['company_id'],
-                'addressed_to'    => $validated['addressed_to'],
+                // 'addressed_to'    => $validated['addressed_to'],
+                'addressed_to' => $validated['addressed_to'] ?? null,
                 'transfer'        => $companyName,
                 'deadline'        => $validated['deadline'],
                 'title'           => $validated['title'],
