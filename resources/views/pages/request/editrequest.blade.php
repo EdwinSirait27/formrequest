@@ -211,7 +211,7 @@
                     </label>
                     <input type="date" id="request_date" name="request_date"
                         class="form-input w-full px-4 py-3 rounded-xl"
-                        value="{{ old('deadline', optional($request->deadline)->format('Y-m-d')) }}" required>
+                        value="{{ old('request_date', optional($request->request_date)->format('Y-m-d')) }}" required>
                     @error('request_date')
                         <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
                             <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -233,7 +233,7 @@
                         Deadline
                     </label>
                     <input type="date" id="deadline" name="deadline" class="form-input w-full px-4 py-3 rounded-xl"
-                        required>
+                          value="{{ old('deadline', optional($request->deadline)->format('Y-m-d')) }}" required> 
                     @error('deadline')
                         <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
                             <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
