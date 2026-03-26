@@ -112,29 +112,29 @@ class RequestController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-$user = auth()->user();
-$employee = $user->employee;
+// $user = auth()->user();
+// $employee = $user->employee;
 
-if ($employee && $employee->structure_id) {
+// if ($employee && $employee->structure_id) {
 
-    $structure = Structuresnew::with('allChildren')
-        ->find($employee->structure_id);
+//     $structure = Structuresnew::with('allChildren')
+//         ->find($employee->structure_id);
 
-    if ($structure) {
+//     if ($structure) {
 
-        // ✅ ambil SEMUA (parent + child)
-        $structureIds = $structure->getAllIds();
+//         // ✅ ambil SEMUA (parent + child)
+//         $structureIds = $structure->getAllIds();
 
-        // ✅ ambil semua employee (termasuk manager)
-        $employeeIds = Employee::whereIn('structure_id', $structureIds)
-            ->pluck('id');
+//         // ✅ ambil semua employee (termasuk manager)
+//         $employeeIds = Employee::whereIn('structure_id', $structureIds)
+//             ->pluck('id');
 
-        // ✅ filter request berdasarkan employee
-        $query->whereHas('user.employee', function ($q) use ($employeeIds) {
-            $q->whereIn('id', $employeeIds);
-        });
-    }
-}
+//         // ✅ filter request berdasarkan employee
+//         $query->whereHas('user.employee', function ($q) use ($employeeIds) {
+//             $q->whereIn('id', $employeeIds);
+//         });
+//     }
+// }
         // =============================
         // 📊 DATATABLES RESPONSE
         // =============================
