@@ -905,10 +905,10 @@ public function pdfview($id)
     // }
     $baseUrl = config('services.manager_api.url');
 
-if ($employee && $showManagerSignature) {
-    $promises['manager'] = Http::async()
-        ->get("{$baseUrl}/api/manager/{$employee->id}");
-}
+$promises['manager'] = Http::async()
+    ->retry(3, 1000)
+    ->timeout(5)
+    ->get("{$baseUrl}/api/manager/{$employee->id}");
 
     // Tunggu semua sekaligus
     $responses = [];
