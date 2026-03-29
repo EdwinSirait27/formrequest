@@ -527,7 +527,7 @@
             color: #ffffff;
         }
     </style>
-                    @role('user')
+                    @role('user|admin')
 
      <div class="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-2xl p-4 mb-6">
         <div class="flex items-start space-x-3">
@@ -547,6 +547,81 @@
                 </p>
                 <p class="text-xs text-slate-400 leading-relaxed">
                    - untuk status Draft masih bisa diupdate oleh user, setelah mengganti ke submitted maka sudah tidak bisa diedit
+                </p>
+            </div>
+        </div>
+    </div>
+    @endrole
+                    @role('finance')
+
+     <div class="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-2xl p-4 mb-6">
+        <div class="flex items-start space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+            </div>
+            <div class="flex-1">
+                <h3 class="text-sm font-semibold text-amber-400 mb-1">Request Information</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                   - finance hanya bisa memproses form request yang berstatus Approved Director.
+                </p>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                   - alurnya yaitu mencari menu Form Request lalu mengecek status, jika sudah dirasa seleesai bisa update menjadi done untuk status.
+                </p>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                   - untuk status Installment masih bisa diupdate oleh finance, setelah merasa sudah melunasi request terkait maka bisa status untuk diupdate menjadi done.
+                </p>
+            </div>
+        </div>
+    </div>
+    @endrole
+                    @role('manager')
+
+     <div class="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-2xl p-4 mb-6">
+        <div class="flex items-start space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+            </div>
+            <div class="flex-1">
+                <h3 class="text-sm font-semibold text-amber-400 mb-1">Request Information</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                   - manager hanya bisa meng approved form request \ tidak bisa mengajukan form request.
+                </p>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                   - alurnya yaitu mencari menu Form Request lalu mengecek status Submitted milik bawahan, jika sudah dirasa selesai bisa update menjadi Approved Manager untuk status.
+                </p>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                   - untuk status Submitted masih bisa diupdate oleh manager, karena untuk mengecek pengajuan bawahan user yang akan dikirim ke director.
+                </p>
+            </div>
+        </div>
+    </div>
+    @endrole
+                    @role('director')
+
+     <div class="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-2xl p-4 mb-6">
+        <div class="flex items-start space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+            </div>
+            <div class="flex-1">
+                <h3 class="text-sm font-semibold text-amber-400 mb-1">Request Information</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                   - Director hanya bisa meng approved form request \ tidak bisa mengajukan form request.
+                </p>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                   - alurnya yaitu mencari menu Form Request lalu mengecek status Approved Manager, jika sudah dirasa selesai untuk mengecek bisa update menjadi Approved Director untuk status agar finance bisa memproses request tersebut.
+                </p>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                   - untuk status Approved Manager masih bisa diupdate oleh Director, karena untuk mengecek pengajuan manager yang akan di approved.
                 </p>
             </div>
         </div>
@@ -617,7 +692,7 @@
                         </div>
 
                         <!-- BUTTON -->
-                    @role('user')
+                    @role('user|admin')
                         
                         <a href="{{ route('createrequest') }}"
                             class="inline-flex items-center justify-center gap-2 px-4 py-2
