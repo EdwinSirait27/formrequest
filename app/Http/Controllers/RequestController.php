@@ -484,178 +484,46 @@ $request->load('approval.approver1User.employee');
         'uoms'
     ));
 }
-   
-// public function pdfview($id)
-// {
-//     set_time_limit(120);
-//     ini_set('memory_limit', '512M');
+private function resolveManager(Employee $employee): ?Employee
+{
+    $employee->loadMissing('structuresnew.parent');
 
-//     $request = Formrequest::with([
-//         'vendor',
-//         'requesttype',
-//         'items',
-//         'company',
-//         'user.employee.company',
-//         'user.employee.position',
-//         'approval.approver2User.employee',
-//         'approval.approver2User.employee.position',
-//     ])->findOrFail($id);
+    if (!$employee->structuresnew) return null;
 
-//     $employee  = $request->user?->employee;
-//     $companyId = $request->company?->id;
+    $current          = $employee->structuresnew->parent;
+    $managerStructure = null;
 
-//     $requestDate = $request->request_date
-//         ->timezone('Asia/Makassar')
-//         ->translatedFormat('d F Y');
-//     $Deadline = $request->deadline
-//         ->timezone('Asia/Makassar')
-//         ->translatedFormat('d F Y');
+    while ($current) {
+        if ($current->is_manager) {
+            $managerStructure = $current;
+            break;
+        }
+        $current->load('parent');
+        $current = $current->parent;
+    }
 
-//     $toBase64 = function (string $localPath): ?string {
-//         if (!file_exists($localPath)) return null;
-//         $image = file_get_contents($localPath);
-//         if ($image === false) return null;
-//         $finfo = finfo_open(FILEINFO_MIME_TYPE);
-//         $mime  = finfo_buffer($finfo, $image);
-//         finfo_close($finfo);
-//         return 'data:' . $mime . ';base64,' . base64_encode($image);
-//     };
+    if (!$managerStructure) return null;
 
-//     $signatureBase64 = $employee?->signature
-//         ? $toBase64(public_path('storage/' . $employee->signature))
-//         : null;
+    return Employee::with([
+        'structuresnew.submissionposition.positionRelation',
+    ])->where('structure_id', $managerStructure->id)->first();
+}
 
-//     $showManagerSignature = in_array($request->status, ['Approved Manager', 'Approved Director']);
-//     $showSignature        = $showManagerSignature;
-
-//     $logoBase64             = null;
-//     $managerName            = null;
-//     $positionName           = null;
-//     $managerSignatureBase64 = null;
-
-//     $promises = [];
-
-//     if ($companyId) {
-//         $promises['logo'] = Http::withoutVerifying()
-//             ->async()
-//             ->get("https://hrx.asianbay.co.id/api/company/{$companyId}");
-//     }
-
-//     $baseUrl = config('services.manager_api.url');
-
-// if ($employee && $showManagerSignature) {
-//     $promises['manager'] = Http::async()
-//         ->retry(3, 1000)
-//         ->timeout(5)
-//         ->get("{$baseUrl}/api/manager/{$employee->id}");
-// }
-
-//     // Tunggu semua sekaligus
-//     $responses = [];
-//     foreach ($promises as $key => $promise) {
-//         try {
-//             $responses[$key] = $promise->wait();
-//         } catch (\Exception $e) {
-//     Log::error(ucfirst($key) . ' fetch error: ' . $e->getMessage());
-
-//     $responses[$key] = null; // 🔥 WAJIB
-// }
-//     }
-
-//     $logoResponse = $responses['logo'] ?? null;
-
-// if ($logoResponse instanceof Response && $logoResponse->successful()) {
-//         try {
-//             $logoUrl = $responses['logo']->json('logo_url');
-//             if ($logoUrl) {
-//                 $image = @file_get_contents($logoUrl);
-//                 if ($image !== false) {
-//                     $finfo      = finfo_open(FILEINFO_MIME_TYPE);
-//                     $mime       = finfo_buffer($finfo, $image);
-//                     finfo_close($finfo);
-//                     $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($image);
-//                 }
-//             }
-//         } catch (\Exception $e) {
-//             Log::error('Logo parse error: ' . $e->getMessage());
-//         }
-//     }
-
-   
-//     $managerResponse = $responses['manager'] ?? null;
-
-// if ($managerResponse instanceof Response && $managerResponse->successful()) {
-
-//     $managerData  = $managerResponse->json('manager');
-//     $managerName  = $managerData['employee_name'] ?? null;
-//     $positionName = $managerData['position'] ?? null;
-//     $signatureUrl = $managerData['signature'] ?? null;
-
-//     if ($signatureUrl) {
-//         $relativePath = ltrim(parse_url($signatureUrl, PHP_URL_PATH), '/');
-//         $relativePath = str_replace('storage/', '', $relativePath);
-
-//         $managerSignatureBase64 = $toBase64(public_path('storage/' . $relativePath));
-//     }
-
-// } else {
-//     Log::warning('Manager API tidak valid / gagal');
-// }
-
-   
-//     $approver2 = $request->approval?->approver2User?->employee;
-
-// $signatories = [
-//     'approver2' => [
-//         'name'      => $approver2?->employee_name,
-//         'position'  => $approver2?->position?->name,
-//         'signature' => $approver2?->signature
-//             ? $toBase64(public_path('storage/' . $approver2->signature))
-//             : null,
-//     ]
-// ];
-
-//     // ── 7. Render PDF — SATU KALI, hapus pass 1 ──
-//     $viewData = [
-//         'request'                => $request,
-//         'logoBase64'             => $logoBase64,
-//         'signatureBase64'        => $signatureBase64,
-//         'managerSignatureBase64' => $managerSignatureBase64,
-//         'managerName'            => $managerName,
-//         'positionName'           => $positionName,
-//         'signatories'            => $signatories,
-//         'total'                  => $request->items->sum('total_price'),
-//         'Deadline'               => $Deadline,
-//         'requestDate'            => $requestDate,
-//         'itemCount'              => $request->items->count(),
-//       ];
-
-//     return Pdf::loadView('pages.request.pdf', $viewData)
-//         ->setPaper('A4')
-//         ->setOptions([
-//             'isRemoteEnabled'      => true,
-//             'isHtml5ParserEnabled' => true,
-//             'isPhpEnabled'         => true,
-//         ])
-//         ->download('request-' . $request->document_number . '.pdf');
-// }
 public function pdfview($id)
 {
-    set_time_limit(60); // turunkan dari 120, kalau masih 408 berarti ada yang stuck
-    ini_set('memory_limit', '256M');
+    set_time_limit(120);
+    ini_set('memory_limit', '512M');
 
-    // ── 1. Query DB — ambil hanya kolom yang dibutuhkan ──────────────────
     $request = Formrequest::with([
-        'vendor:id,name',
-        'requesttype:id,name',
-        'items:id,formrequest_id,description,total_price',
-        'company:id,name',
-        'user:id,employee_id',
-        'user.employee:id,employee_name,signature,position_id',
+        'vendor',
+        'requesttype',
+        'items',
+        'company:id',
+        'user.employee',
+        'user.employee.company',
         'user.employee.position:id,name',
-        'approval:id,formrequest_id,approver2_user_id',
-        'approval.approver2User:id,employee_id',
-        'approval.approver2User.employee:id,employee_name,signature,position_id',
+        'user.employee.department:id,department_name',
+        'approval.approver2User.employee',
         'approval.approver2User.employee.position:id,name',
     ])->findOrFail($id);
 
@@ -665,30 +533,99 @@ public function pdfview($id)
     $requestDate = $request->request_date
         ->timezone('Asia/Makassar')
         ->translatedFormat('d F Y');
-    $deadline = $request->deadline
+
+    $Deadline = $request->deadline
         ->timezone('Asia/Makassar')
         ->translatedFormat('d F Y');
 
-    $showManagerSignature = in_array($request->status, ['Approved Manager', 'Approved Director']);
+    $cache    = [];
+    $toBase64 = static function (string $localPath) use (&$cache): ?string {
+        if (isset($cache[$localPath])) return $cache[$localPath];
+        if (!is_file($localPath))      return $cache[$localPath] = null;
 
-    // ── 2. Helper: baca file lokal → base64 ──────────────────────────────
-    $toBase64 = static function (string $localPath): ?string {
-        if (!is_file($localPath)) return null;
-        $bytes = @file_get_contents($localPath);
-        if ($bytes === false) return null;
+        $image = @file_get_contents($localPath);
+        if ($image === false)          return $cache[$localPath] = null;
+
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime  = finfo_buffer($finfo, $bytes);
+        $mime  = finfo_buffer($finfo, $image);
         finfo_close($finfo);
-        return 'data:' . $mime . ';base64,' . base64_encode($bytes);
+
+        return $cache[$localPath] = 'data:' . $mime . ';base64,' . base64_encode($image);
     };
 
-    // ── 3. Tanda tangan requester (lokal, tidak perlu HTTP) ───────────────
+    $showManagerSignature = in_array($request->status, ['Approved Manager', 'Approved Director']);
+
+    // HTTP — hanya untuk logo
+    $responses = Http::pool(function ($pool) use ($companyId) {
+        if (!$companyId) return [];
+
+        return [
+            $pool->as('logo')
+                ->withoutVerifying()
+                ->timeout(8)
+                ->get("https://hrx.asianbay.co.id/api/company/{$companyId}"),
+        ];
+    });
+
+    $logoBase64   = null;
+    $logoResponse = $responses['logo'] ?? null;
+
+    if ($logoResponse instanceof \Illuminate\Http\Client\Response && $logoResponse->successful()) {
+        $logoUrl = $logoResponse->json('logo_url');
+
+        if ($logoUrl) {
+            try {
+                $imgResponse = Http::withoutVerifying()->timeout(5)->get($logoUrl);
+
+                if ($imgResponse->successful()) {
+                    $body       = $imgResponse->body();
+                    $finfo      = finfo_open(FILEINFO_MIME_TYPE);
+                    $mime       = finfo_buffer($finfo, $body);
+                    finfo_close($finfo);
+                    $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($body);
+                }
+            } catch (\Exception $e) {
+                Log::error('Logo fetch error: ' . $e->getMessage());
+            }
+        }
+    }
+
+    // Manager — dari DB langsung, tanpa HTTP
+    $managerName            = null;
+    $positionName           = null;
+    $managerSignatureBase64 = null;
+
+    if ($employee && $showManagerSignature) {
+        $manager = $this->resolveManager($employee);
+
+        if ($manager) {
+            $managerName  = $manager->employee_name;
+            $positionName = optional(
+                                optional($manager->structuresnew?->submissionposition)
+                                ->positionRelation
+                            )->name ?? null;
+
+            if ($manager->signature) {
+                $managerSignatureBase64 = $toBase64(
+                    public_path('storage/' . $manager->signature)
+                );
+
+                if (!$managerSignatureBase64) {
+                    Log::warning('Manager signature tidak ditemukan di disk', [
+                        'path' => public_path('storage/' . $manager->signature),
+                    ]);
+                }
+            }
+        }
+    }
+
+    // Signature employee
     $signatureBase64 = $employee?->signature
         ? $toBase64(public_path('storage/' . $employee->signature))
         : null;
 
-    // ── 4. Tanda tangan approver2 (lokal, tidak perlu HTTP) ───────────────
-    $approver2 = $request->approval?->approver2User?->employee;
+    // Approver2
+    $approver2   = $request->approval?->approver2User?->employee;
     $signatories = [
         'approver2' => [
             'name'      => $approver2?->employee_name,
@@ -699,115 +636,6 @@ public function pdfview($id)
         ],
     ];
 
-    // ── 5. HTTP eksternal — jalankan BENAR-BENAR paralel ─────────────────
-    //    Kunci: kumpulkan semua promise DULU, baru resolve bersama-sama.
-    //    Cache logo per company agar tidak fetch ulang tiap request PDF.
-    $logoBase64             = null;
-    $managerName            = null;
-    $positionName           = null;
-    $managerSignatureBase64 = null;
-
-    $logoPromise    = null;
-    $managerPromise = null;
-
-    // Logo — cache 60 menit per company
-    $logoCacheKey = "pdf_logo_{$companyId}";
-    $logoBase64   = Cache::get($logoCacheKey); // null kalau belum ada
-
-    if ($companyId && $logoBase64 === null) {
-        $logoPromise = Http::withoutVerifying()
-            ->timeout(5)
-            ->async()
-            ->get("https://hrx.asianbay.co.id/api/company/{$companyId}");
-    }
-
-    // Manager — hanya kalau perlu tanda tangan
-    $baseUrl = config('services.manager_api.url');
-
-    if ($employee && $showManagerSignature) {
-        $managerPromise = Http::timeout(5)
-            ->retry(2, 500)  // retry 2x, jeda 500ms (bukan 1000ms × 3)
-            ->async()
-            ->get("{$baseUrl}/api/manager/{$employee->id}");
-    }
-
-    // Resolve paralel sekaligus (Promise::all bawaan Guzzle via wait())
-    // Trik: simpan promise ke array DULU, baru wait semua dalam satu pass
-    $pending = array_filter([
-        'logo'    => $logoPromise,
-        'manager' => $managerPromise,
-    ]);
-
-    $resolved = [];
-    foreach ($pending as $key => $promise) {
-        // wait() bisa dipanggil paralel kalau promise sudah di-send.
-        // Untuk Guzzle concurrent sejati, gunakan GuzzleHttp\Promise\Utils::unwrap()
-        $resolved[$key] = $promise; 
-    }
-
-    // ── Cara benar untuk concurrent HTTP di Laravel (Guzzle) ─────────────
-    if (!empty($resolved)) {
-        try {
-            $waited = \GuzzleHttp\Promise\Utils::unwrap($resolved);
-        } catch (\Throwable $e) {
-            Log::error('HTTP concurrent fetch error: ' . $e->getMessage());
-            $waited = [];
-        }
-    } else {
-        $waited = [];
-    }
-
-    // ── 6. Parse logo ─────────────────────────────────────────────────────
-    if (isset($waited['logo'])) {
-        try {
-            $logoResponse = $waited['logo'];
-            if ($logoResponse->successful()) {
-                $logoUrl = $logoResponse->json('logo_url');
-                if ($logoUrl) {
-                    // Fetch logo URL dengan timeout ketat
-                    $ctx = stream_context_create(['http' => [
-                        'timeout'         => 5,
-                        'follow_location' => true,
-                    ]]);
-                    $image = @file_get_contents($logoUrl, false, $ctx);
-                    if ($image !== false) {
-                        $finfo      = finfo_open(FILEINFO_MIME_TYPE);
-                        $mime       = finfo_buffer($finfo, $image);
-                        finfo_close($finfo);
-                        $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($image);
-                        Cache::put($logoCacheKey, $logoBase64, now()->addHour());
-                    }
-                }
-            }
-        } catch (\Throwable $e) {
-            Log::error('Logo parse error: ' . $e->getMessage());
-        }
-    }
-
-    // ── 7. Parse manager ──────────────────────────────────────────────────
-    if (isset($waited['manager'])) {
-        try {
-            $managerResponse = $waited['manager'];
-            if ($managerResponse->successful()) {
-                $managerData  = $managerResponse->json('manager');
-                $managerName  = $managerData['employee_name'] ?? null;
-                $positionName = $managerData['position'] ?? null;
-                $signatureUrl = $managerData['signature'] ?? null;
-
-                if ($signatureUrl) {
-                    $relativePath           = ltrim(parse_url($signatureUrl, PHP_URL_PATH), '/');
-                    $relativePath           = str_replace('storage/', '', $relativePath);
-                    $managerSignatureBase64 = $toBase64(public_path('storage/' . $relativePath));
-                }
-            } else {
-                Log::warning('Manager API gagal: status ' . $managerResponse->status());
-            }
-        } catch (\Throwable $e) {
-            Log::error('Manager parse error: ' . $e->getMessage());
-        }
-    }
-
-    // ── 8. Render PDF ─────────────────────────────────────────────────────
     $viewData = [
         'request'                => $request,
         'logoBase64'             => $logoBase64,
@@ -817,19 +645,19 @@ public function pdfview($id)
         'positionName'           => $positionName,
         'signatories'            => $signatories,
         'total'                  => $request->items->sum('total_price'),
-        'deadline'               => $deadline,
+        'Deadline'               => $Deadline,
         'requestDate'            => $requestDate,
         'itemCount'              => $request->items->count(),
+        'showSignature'          => $showManagerSignature,
     ];
 
     return Pdf::loadView('pages.request.pdf', $viewData)
         ->setPaper('A4')
         ->setOptions([
-            'isRemoteEnabled'      => false, // ← MATIKAN, semua gambar sudah base64
+            'isRemoteEnabled'      => false,
             'isHtml5ParserEnabled' => true,
-            'isPhpEnabled'         => false, // matikan kalau tidak pakai PHP di blade
+            'isPhpEnabled'         => false,
             'defaultFont'          => 'sans-serif',
-            'dpi'                  => 96,
         ])
         ->download('request-' . $request->document_number . '.pdf');
 }
@@ -1187,3 +1015,530 @@ if ($validated['status'] === 'Approved Director' && $previousStatus !== 'Approve
     }
 }
 }
+
+   
+// public function pdfview($id)
+// {
+//     set_time_limit(120);
+//     ini_set('memory_limit', '512M');
+
+//     $request = Formrequest::with([
+//         'vendor',
+//         'requesttype',
+//         'items',
+//         'company',
+//         'user.employee.company',
+//         'user.employee.position',
+//         'approval.approver2User.employee',
+//         'approval.approver2User.employee.position',
+//     ])->findOrFail($id);
+
+//     $employee  = $request->user?->employee;
+//     $companyId = $request->company?->id;
+
+//     $requestDate = $request->request_date
+//         ->timezone('Asia/Makassar')
+//         ->translatedFormat('d F Y');
+//     $Deadline = $request->deadline
+//         ->timezone('Asia/Makassar')
+//         ->translatedFormat('d F Y');
+
+//     $toBase64 = function (string $localPath): ?string {
+//         if (!file_exists($localPath)) return null;
+//         $image = file_get_contents($localPath);
+//         if ($image === false) return null;
+//         $finfo = finfo_open(FILEINFO_MIME_TYPE);
+//         $mime  = finfo_buffer($finfo, $image);
+//         finfo_close($finfo);
+//         return 'data:' . $mime . ';base64,' . base64_encode($image);
+//     };
+
+//     $signatureBase64 = $employee?->signature
+//         ? $toBase64(public_path('storage/' . $employee->signature))
+//         : null;
+
+//     $showManagerSignature = in_array($request->status, ['Approved Manager', 'Approved Director']);
+//     $showSignature        = $showManagerSignature;
+
+//     $logoBase64             = null;
+//     $managerName            = null;
+//     $positionName           = null;
+//     $managerSignatureBase64 = null;
+
+//     $promises = [];
+
+//     if ($companyId) {
+//         $promises['logo'] = Http::withoutVerifying()
+//             ->async()
+//             ->get("https://hrx.asianbay.co.id/api/company/{$companyId}");
+//     }
+
+//     $baseUrl = config('services.manager_api.url');
+
+// if ($employee && $showManagerSignature) {
+//     $promises['manager'] = Http::async()
+//         ->retry(3, 1000)
+//         ->timeout(5)
+//         ->get("{$baseUrl}/api/manager/{$employee->id}");
+// }
+
+//     // Tunggu semua sekaligus
+//     $responses = [];
+//     foreach ($promises as $key => $promise) {
+//         try {
+//             $responses[$key] = $promise->wait();
+//         } catch (\Exception $e) {
+//     Log::error(ucfirst($key) . ' fetch error: ' . $e->getMessage());
+
+//     $responses[$key] = null; // 🔥 WAJIB
+// }
+//     }
+
+//     $logoResponse = $responses['logo'] ?? null;
+
+// if ($logoResponse instanceof Response && $logoResponse->successful()) {
+//         try {
+//             $logoUrl = $responses['logo']->json('logo_url');
+//             if ($logoUrl) {
+//                 $image = @file_get_contents($logoUrl);
+//                 if ($image !== false) {
+//                     $finfo      = finfo_open(FILEINFO_MIME_TYPE);
+//                     $mime       = finfo_buffer($finfo, $image);
+//                     finfo_close($finfo);
+//                     $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($image);
+//                 }
+//             }
+//         } catch (\Exception $e) {
+//             Log::error('Logo parse error: ' . $e->getMessage());
+//         }
+//     }
+
+   
+//     $managerResponse = $responses['manager'] ?? null;
+
+// if ($managerResponse instanceof Response && $managerResponse->successful()) {
+
+//     $managerData  = $managerResponse->json('manager');
+//     $managerName  = $managerData['employee_name'] ?? null;
+//     $positionName = $managerData['position'] ?? null;
+//     $signatureUrl = $managerData['signature'] ?? null;
+
+//     if ($signatureUrl) {
+//         $relativePath = ltrim(parse_url($signatureUrl, PHP_URL_PATH), '/');
+//         $relativePath = str_replace('storage/', '', $relativePath);
+
+//         $managerSignatureBase64 = $toBase64(public_path('storage/' . $relativePath));
+//     }
+
+// } else {
+//     Log::warning('Manager API tidak valid / gagal');
+// }
+
+   
+//     $approver2 = $request->approval?->approver2User?->employee;
+
+// $signatories = [
+//     'approver2' => [
+//         'name'      => $approver2?->employee_name,
+//         'position'  => $approver2?->position?->name,
+//         'signature' => $approver2?->signature
+//             ? $toBase64(public_path('storage/' . $approver2->signature))
+//             : null,
+//     ]
+// ];
+
+//     // ── 7. Render PDF — SATU KALI, hapus pass 1 ──
+//     $viewData = [
+//         'request'                => $request,
+//         'logoBase64'             => $logoBase64,
+//         'signatureBase64'        => $signatureBase64,
+//         'managerSignatureBase64' => $managerSignatureBase64,
+//         'managerName'            => $managerName,
+//         'positionName'           => $positionName,
+//         'signatories'            => $signatories,
+//         'total'                  => $request->items->sum('total_price'),
+//         'Deadline'               => $Deadline,
+//         'requestDate'            => $requestDate,
+//         'itemCount'              => $request->items->count(),
+//       ];
+
+//     return Pdf::loadView('pages.request.pdf', $viewData)
+//         ->setPaper('A4')
+//         ->setOptions([
+//             'isRemoteEnabled'      => true,
+//             'isHtml5ParserEnabled' => true,
+//             'isPhpEnabled'         => true,
+//         ])
+//         ->download('request-' . $request->document_number . '.pdf');
+// }
+// public function pdfview($id)
+// {
+//     set_time_limit(120);
+//     ini_set('memory_limit', '512M');
+
+//     // ── 1. Query — hanya relasi yang benar-benar dipakai di view ──────────────
+//     $request = Formrequest::with([
+//         'vendor',
+//         'requesttype',
+//         'items',
+//         'company:id',                                   // hanya id saja, cukup
+//         'user.employee',                      // hindari load position jika tidak dipakai
+//         'user.employee.company',
+//         'user.employee.position:id,name',
+//         'user.employee.department:id,department_name',
+//         'approval.approver2User.employee',
+//         'approval.approver2User.employee.position:id,name',
+//     ])->findOrFail($id);
+
+//     $employee  = $request->user?->employee;
+//     $companyId = $request->company?->id;
+
+//     $requestDate = $request->request_date
+//         ->timezone('Asia/Makassar')
+//         ->translatedFormat('d F Y');
+//     $Deadline = $request->deadline
+//         ->timezone('Asia/Makassar')
+//         ->translatedFormat('d F Y');
+
+//     // ── 2. toBase64 dengan memoize — file yang sama tidak dibaca dua kali ─────
+//     $cache = [];
+//     $toBase64 = static function (string $localPath) use (&$cache): ?string {
+//         if (isset($cache[$localPath])) return $cache[$localPath];
+//         if (!is_file($localPath)) return $cache[$localPath] = null;
+
+//         $image = @file_get_contents($localPath);
+//         if ($image === false) return $cache[$localPath] = null;
+
+//         $finfo  = finfo_open(FILEINFO_MIME_TYPE);
+//         $mime   = finfo_buffer($finfo, $image);
+//         finfo_close($finfo);
+
+//         return $cache[$localPath] = 'data:' . $mime . ';base64,' . base64_encode($image);
+//     };
+
+//     $showManagerSignature = in_array($request->status, ['Approved Manager', 'Approved Director']);
+
+//     // ── 3. HTTP parallel via Http::pool() — satu round-trip, bukan dua ───────
+//     $baseUrl     = config('services.manager_api.url');
+//     $logoBase64  = null;
+//     $managerData = null;
+
+//     $responses = Http::pool(function ($pool) use ($companyId, $employee, $showManagerSignature, $baseUrl) {
+//         $calls = [];
+
+//         if ($companyId) {
+//             $calls['logo'] = $pool->as('logo')
+//                 ->withoutVerifying()
+//                 ->timeout(8)
+//                 ->get("https://hrx.asianbay.co.id/api/company/{$companyId}");
+//         }
+
+//         if ($employee && $showManagerSignature) {
+//             $calls['manager'] = $pool->as('manager')
+//                 ->retry(2, 500)          // 2 retry cukup, interval lebih pendek
+//                 ->timeout(5)
+//                 ->get("{$baseUrl}/api/manager/{$employee->id}");
+//         }
+
+//         return $calls;
+//     });
+
+//     // ── 4. Proses respons logo — pakai Http::get() dalam pool ─────────────────
+//     $logoResponse = $responses['logo'] ?? null;
+
+//     if ($logoResponse instanceof \Illuminate\Http\Client\Response && $logoResponse->successful()) {
+//         $logoUrl = $logoResponse->json('logo_url');
+
+//         if ($logoUrl) {
+//             // Ambil binary logo via Http (bukan file_get_contents) agar bisa timeout
+//             try {
+//                 $imgResponse = Http::withoutVerifying()->timeout(5)->get($logoUrl);
+//                 if ($imgResponse->successful()) {
+//                     $body       = $imgResponse->body();
+//                     $finfo      = finfo_open(FILEINFO_MIME_TYPE);
+//                     $mime       = finfo_buffer($finfo, $body);
+//                     finfo_close($finfo);
+//                     $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($body);
+//                 }
+//             } catch (\Exception $e) {
+//                 Log::error('Logo fetch error: ' . $e->getMessage());
+//             }
+//         }
+//     }
+
+//     // ── 5. Proses respons manager ─────────────────────────────────────────────
+//     $managerName            = null;
+//     $positionName           = null;
+//     $managerSignatureBase64 = null;
+
+//     // $managerResponse = $responses['manager'] ?? null;
+// // ── DEBUG SEMENTARA — hapus setelah ketemu masalahnya ──
+// $managerResponse = $responses['manager'] ?? null;
+
+// if ($managerResponse instanceof \Illuminate\Http\Client\Response && $managerResponse->successful()) {
+//     $managerData  = $managerResponse->json('manager');
+//     $managerName  = $managerData['employee_name'] ?? null;
+//     $positionName = $managerData['position'] ?? null;
+//     $signatureUrl = $managerData['signature'] ?? null;
+
+//     if ($signatureUrl) {
+//         try {
+//             $imgResponse = Http::withoutVerifying()->timeout(5)->get($signatureUrl);
+
+//             if ($imgResponse->successful()) {
+//                 $body   = $imgResponse->body();
+//                 $finfo  = finfo_open(FILEINFO_MIME_TYPE);
+//                 $mime   = finfo_buffer($finfo, $body);
+//                 finfo_close($finfo);
+//                 $managerSignatureBase64 = 'data:' . $mime . ';base64,' . base64_encode($body);
+//             } else {
+//                 Log::warning('Manager signature HTTP gagal', [
+//                     'url'    => $signatureUrl,
+//                     'status' => $imgResponse->status(),
+//                 ]);
+//             }
+//         } catch (\Exception $e) {
+//             Log::error('Manager signature fetch error: ' . $e->getMessage());
+//         }
+//     }
+// } else {
+//     Log::warning('Manager API tidak valid / gagal');
+// }
+
+//     // ── 6. Signature employee (memoized, tidak dibaca ulang) ──────────────────
+//     $signatureBase64 = $employee?->signature
+//         ? $toBase64(public_path('storage/' . $employee->signature))
+//         : null;
+
+//     $showSignature = $showManagerSignature;
+
+//     // ── 7. Approver2 ──────────────────────────────────────────────────────────
+//     $approver2 = $request->approval?->approver2User?->employee;
+
+//     $signatories = [
+//         'approver2' => [
+//             'name'      => $approver2?->employee_name,
+//             'position'  => $approver2?->position?->name,
+//             'signature' => $approver2?->signature
+//                 ? $toBase64(public_path('storage/' . $approver2->signature))
+//                 : null,
+//         ],
+//     ];
+
+//     // ── 8. Render PDF — opsi minimal, isPhpEnabled dimatikan ─────────────────
+//     $viewData = [
+//         'request'                => $request,
+//         'logoBase64'             => $logoBase64,
+//         'signatureBase64'        => $signatureBase64,
+//         'managerSignatureBase64' => $managerSignatureBase64,
+//         'managerName'            => $managerName,
+//         'positionName'           => $positionName,
+//         'signatories'            => $signatories,
+//         'total'                  => $request->items->sum('total_price'),
+//         'Deadline'               => $Deadline,
+//         'requestDate'            => $requestDate,
+//         'itemCount'              => $request->items->count(),
+//         'showSignature'          => $showSignature,      // tambahkan ini agar view tidak perlu hitung ulang
+//     ];
+
+//     return Pdf::loadView('pages.request.pdf', $viewData)
+//         ->setPaper('A4')
+//         ->setOptions([
+//             'isRemoteEnabled'      => false,    // matikan — semua gambar sudah base64
+//             'isHtml5ParserEnabled' => true,
+//             'isPhpEnabled'         => false,    // tidak perlu PHP di blade PDF
+//             'defaultFont'          => 'sans-serif',
+//         ])
+//         ->download('request-' . $request->document_number . '.pdf');
+// }
+// private function resolveManager(Employee $employee): ?Employee
+// {
+//     $employee->loadMissing('structuresnew.parent');
+
+//     if (!$employee->structuresnew) return null;
+
+//     $current          = $employee->structuresnew->parent;
+//     $managerStructure = null;
+
+//     while ($current) {
+//         if ($current->is_manager) {
+//             $managerStructure = $current;
+//             break;
+//         }
+//         $current->load('parent');
+//         $current = $current->parent;
+//     }
+
+//     if (!$managerStructure) return null;
+
+//     return Employee::with([
+//         'structuresnew.submissionposition.positionRelation',
+//     ])->where('structure_id', $managerStructure->id)->first();
+// }
+ 
+// public function pdfview($id)
+// {
+//     set_time_limit(120);
+//     ini_set('memory_limit', '512M');
+
+//     $request = Formrequest::with([
+//         'vendor',
+//         'requesttype',
+//         'items',
+//         'company:id',
+//         'user.employee',
+//         'user.employee.company',
+//         'user.employee.position:id,name',
+//         'user.employee.department:id,department_name',
+//         'approval.approver2User.employee',
+//         'approval.approver2User.employee.position:id,name',
+//     ])->findOrFail($id);
+
+//     $employee  = $request->user?->employee;
+//     $companyId = $request->company?->id;
+
+//     $requestDate = $request->request_date
+//         ->timezone('Asia/Makassar')
+//         ->translatedFormat('d F Y');
+
+//     $Deadline = $request->deadline
+//         ->timezone('Asia/Makassar')
+//         ->translatedFormat('d F Y');
+
+//     // toBase64 dengan memoize — file yang sama tidak dibaca dua kali
+//     $cache    = [];
+//     $toBase64 = static function (string $localPath) use (&$cache): ?string {
+//         if (isset($cache[$localPath])) return $cache[$localPath];
+//         if (!is_file($localPath))      return $cache[$localPath] = null;
+
+//         $image = @file_get_contents($localPath);
+//         if ($image === false)          return $cache[$localPath] = null;
+
+//         $finfo = finfo_open(FILEINFO_MIME_TYPE);
+//         $mime  = finfo_buffer($finfo, $image);
+//         finfo_close($finfo);
+
+//         return $cache[$localPath] = 'data:' . $mime . ';base64,' . base64_encode($image);
+//     };
+
+//     $showManagerSignature = in_array($request->status, ['Approved Manager', 'Approved Director']);
+
+//     // HTTP parallel — logo & manager dalam satu round-trip
+//     $baseUrl = config('services.manager_api.url');
+
+//     $responses = Http::pool(function ($pool) use ($companyId, $employee, $showManagerSignature, $baseUrl) {
+//         $calls = [];
+
+//         if ($companyId) {
+//             $calls['logo'] = $pool->as('logo')
+//                 ->withoutVerifying()
+//                 ->timeout(8)
+//                 ->get("https://hrx.asianbay.co.id/api/company/{$companyId}");
+//         }
+
+//         if ($employee && $showManagerSignature) {
+//             $calls['manager'] = $pool->as('manager')
+//                 ->retry(2, 500)
+//                 ->timeout(5)
+//                 ->get("{$baseUrl}/api/manager/{$employee->id}");
+//         }
+
+//         return $calls;
+//     });
+
+//     // Proses logo
+//     $logoBase64   = null;
+//     $logoResponse = $responses['logo'] ?? null;
+
+//     if ($logoResponse instanceof \Illuminate\Http\Client\Response && $logoResponse->successful()) {
+//         $logoUrl = $logoResponse->json('logo_url');
+
+//         if ($logoUrl) {
+//             try {
+//                 $imgResponse = Http::withoutVerifying()->timeout(5)->get($logoUrl);
+
+//                 if ($imgResponse->successful()) {
+//                     $body       = $imgResponse->body();
+//                     $finfo      = finfo_open(FILEINFO_MIME_TYPE);
+//                     $mime       = finfo_buffer($finfo, $body);
+//                     finfo_close($finfo);
+//                     $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($body);
+//                 }
+//             } catch (\Exception $e) {
+//                 Log::error('Logo fetch error: ' . $e->getMessage());
+//             }
+//         }
+//     }
+
+//     // ── 5. Manager — langsung dari DB, tanpa HTTP ─────────────────────────────
+// $managerName            = null;
+// $positionName           = null;
+// $managerSignatureBase64 = null;
+
+// if ($employee && $showManagerSignature) {
+//     $manager = $this->resolveManager($employee);
+
+//     if ($manager) {
+//         $managerName  = $manager->employee_name;
+//         $positionName = optional(
+//                             optional($manager->structuresnew?->submissionposition)
+//                             ->positionRelation
+//                         )->name ?? null;
+
+//         if ($manager->signature) {
+//             $managerSignatureBase64 = $toBase64(
+//                 public_path('storage/' . $manager->signature)
+//             );
+
+//             if (!$managerSignatureBase64) {
+//                 Log::warning('Manager signature tidak ditemukan di disk', [
+//                     'signature' => $manager->signature,
+//                     'path'      => public_path('storage/' . $manager->signature),
+//                 ]);
+//             }
+//         }
+//     }
+// }
+
+//     // Signature employee (local disk, memoized)
+//     $signatureBase64 = $employee?->signature
+//         ? $toBase64(public_path('storage/' . $employee->signature))
+//         : null;
+
+//     // Approver2
+//     $approver2   = $request->approval?->approver2User?->employee;
+//     $signatories = [
+//         'approver2' => [
+//             'name'      => $approver2?->employee_name,
+//             'position'  => $approver2?->position?->name,
+//             'signature' => $approver2?->signature
+//                 ? $toBase64(public_path('storage/' . $approver2->signature))
+//                 : null,
+//         ],
+//     ];
+
+//     $viewData = [
+//         'request'                => $request,
+//         'logoBase64'             => $logoBase64,
+//         'signatureBase64'        => $signatureBase64,
+//         'managerSignatureBase64' => $managerSignatureBase64,
+//         'managerName'            => $managerName,
+//         'positionName'           => $positionName,
+//         'signatories'            => $signatories,
+//         'total'                  => $request->items->sum('total_price'),
+//         'Deadline'               => $Deadline,
+//         'requestDate'            => $requestDate,
+//         'itemCount'              => $request->items->count(),
+//         'showSignature'          => $showManagerSignature,
+//     ];
+
+//     return Pdf::loadView('pages.request.pdf', $viewData)
+//         ->setPaper('A4')
+//         ->setOptions([
+//             'isRemoteEnabled'      => false,
+//             'isHtml5ParserEnabled' => true,
+//             'isPhpEnabled'         => false,
+//             'defaultFont'          => 'sans-serif',
+//         ])
+//         ->download('request-' . $request->document_number . '.pdf');
+// }

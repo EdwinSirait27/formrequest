@@ -44,6 +44,9 @@ class Employee extends Model
     {
         return $this->hasOne(User::class, 'employee_id');
     }
- 
+  public function structuresnew()
+    {
+        return $this->belongsTo(Structuresnew::class, 'structure_id', 'id');
+    }
 
 }

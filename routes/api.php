@@ -6,3 +6,4 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ApiController;
 
 Route::get('/finance/{id}', [ApiController::class, 'show']);
+Route::get('/manager/{employeeId}', [ApiController::class, 'getManagerByEmployee']);

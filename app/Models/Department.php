@@ -12,6 +12,6 @@ class Department extends Model
     public $incrementing = false; // kalau kamu pakai UUID
     protected $keyType = 'string';
     protected $fillable = [
-        'department_name',
+        'id','department_name',
     ];
 }
