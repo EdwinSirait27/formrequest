@@ -21,6 +21,8 @@ use App\Models\Vendor;
 use App\Models\Company;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Client\Response;
+
 
 class RequestController extends Controller
 {
@@ -854,7 +856,6 @@ public function pdfview($id)
     ])->findOrFail($id);
 
     $employee  = $request->user?->employee;
-    // $companyId = $employee?->company?->id;
     $companyId = $request->company?->id;
 
     $requestDate = $request->request_date
@@ -864,7 +865,6 @@ public function pdfview($id)
         ->timezone('Asia/Makassar')
         ->translatedFormat('d F Y');
 
-    // ── Helper closure: baca file lokal → base64 ──
     $toBase64 = function (string $localPath): ?string {
         if (!file_exists($localPath)) return null;
         $image = file_get_contents($localPath);
@@ -875,16 +875,13 @@ public function pdfview($id)
         return 'data:' . $mime . ';base64,' . base64_encode($image);
     };
 
-    // ── 1. Signature karyawan (lokal, tidak perlu HTTP) ──
     $signatureBase64 = $employee?->signature
         ? $toBase64(public_path('storage/' . $employee->signature))
         : null;
 
-    // ── 2. Status flags ──
     $showManagerSignature = in_array($request->status, ['Approved Manager', 'Approved Director']);
     $showSignature        = $showManagerSignature;
 
-    // ── 3. Kirim HTTP request secara PARALEL pakai pool ──
     $logoBase64             = null;
     $managerName            = null;
     $positionName           = null;
@@ -898,17 +895,14 @@ public function pdfview($id)
             ->get("https://hrx.asianbay.co.id/api/company/{$companyId}");
     }
 
-    // if ($employee && $showManagerSignature) {
-    //     $promises['manager'] = Http::withoutVerifying()
-    //         ->async()
-    //         ->get("http://127.0.0.1:8001/api/manager/{$employee->id}");
-    // }
     $baseUrl = config('services.manager_api.url');
 
-$promises['manager'] = Http::async()
-    ->retry(3, 1000)
-    ->timeout(5)
-    ->get("{$baseUrl}/api/manager/{$employee->id}");
+if ($employee && $showManagerSignature) {
+    $promises['manager'] = Http::async()
+        ->retry(3, 1000)
+        ->timeout(5)
+        ->get("{$baseUrl}/api/manager/{$employee->id}");
+}
 
     // Tunggu semua sekaligus
     $responses = [];
@@ -916,12 +910,15 @@ $promises['manager'] = Http::async()
         try {
             $responses[$key] = $promise->wait();
         } catch (\Exception $e) {
-            Log::error(ucfirst($key) . ' fetch error: ' . $e->getMessage());
-        }
+    Log::error(ucfirst($key) . ' fetch error: ' . $e->getMessage());
+
+    $responses[$key] = null; // 🔥 WAJIB
+}
     }
 
-    // ── 4. Proses logo ──
-    if (isset($responses['logo']) && $responses['logo']->successful()) {
+    $logoResponse = $responses['logo'] ?? null;
+
+if ($logoResponse instanceof Response && $logoResponse->successful()) {
         try {
             $logoUrl = $responses['logo']->json('logo_url');
             if ($logoUrl) {
@@ -938,19 +935,26 @@ $promises['manager'] = Http::async()
         }
     }
 
-    // ── 5. Proses manager ──
-    if (isset($responses['manager']) && $responses['manager']->successful()) {
-        $managerData  = $responses['manager']->json('manager');
-        $managerName  = $managerData['employee_name'] ?? null;
-        $positionName = $managerData['position'] ?? null;
-        $signatureUrl = $managerData['signature'] ?? null;
+   
+    $managerResponse = $responses['manager'] ?? null;
 
-        if ($signatureUrl) {
-            $relativePath = ltrim(parse_url($signatureUrl, PHP_URL_PATH), '/');
-            $relativePath = str_replace('storage/', '', $relativePath);
-            $managerSignatureBase64 = $toBase64(public_path('storage/' . $relativePath));
-        }
+if ($managerResponse instanceof Response && $managerResponse->successful()) {
+
+    $managerData  = $managerResponse->json('manager');
+    $managerName  = $managerData['employee_name'] ?? null;
+    $positionName = $managerData['position'] ?? null;
+    $signatureUrl = $managerData['signature'] ?? null;
+
+    if ($signatureUrl) {
+        $relativePath = ltrim(parse_url($signatureUrl, PHP_URL_PATH), '/');
+        $relativePath = str_replace('storage/', '', $relativePath);
+
+        $managerSignatureBase64 = $toBase64(public_path('storage/' . $relativePath));
     }
+
+} else {
+    Log::warning('Manager API tidak valid / gagal');
+}
 
     // // ── 6. Signatories (query DB lokal, tidak perlu HTTP) ──
     // $signaturePositions = [
@@ -1004,8 +1008,7 @@ $signatories = [
         'Deadline'               => $Deadline,
         'requestDate'            => $requestDate,
         'itemCount'              => $request->items->count(),
-        // 'totalPages'             => 1, // Dompdf tidak support pre-count tanpa 2x render
-    ];
+      ];
 
     return Pdf::loadView('pages.request.pdf', $viewData)
         ->setPaper('A4')
@@ -1016,6 +1019,7 @@ $signatories = [
         ])
         ->download('request-' . $request->document_number . '.pdf');
 }
+
  // $headfatName            = null;
     // $positionheadfatName    = null;
     // $headfatSignatureBase64 = null;
