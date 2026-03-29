@@ -898,11 +898,17 @@ public function pdfview($id)
             ->get("https://hrx.asianbay.co.id/api/company/{$companyId}");
     }
 
-    if ($employee && $showManagerSignature) {
-        $promises['manager'] = Http::withoutVerifying()
-            ->async()
-            ->get("http://127.0.0.1:8001/api/manager/{$employee->id}");
-    }
+    // if ($employee && $showManagerSignature) {
+    //     $promises['manager'] = Http::withoutVerifying()
+    //         ->async()
+    //         ->get("http://127.0.0.1:8001/api/manager/{$employee->id}");
+    // }
+    $baseUrl = config('services.manager_api.url');
+
+if ($employee && $showManagerSignature) {
+    $promises['manager'] = Http::async()
+        ->get("{$baseUrl}/api/manager/{$employee->id}");
+}
 
     // Tunggu semua sekaligus
     $responses = [];
@@ -1718,27 +1724,50 @@ if ($validated['status'] === 'Approved Director' && $previousStatus !== 'Approve
         | SEND EMAIL SAAT SUBMITTED
         |--------------------------------------------------------------------------
         */
+        // if ($validated['status'] === 'Submitted' && $previousStatus !== 'Submitted') {
+        //     try {
+        //         $employee = auth()->user()->employee;
+
+        //         if ($employee) {
+        //             $managerResponse = Http::get("http://127.0.0.1:8001/api/manager/" . $employee->id);
+
+        //             if ($managerResponse->successful()) {
+        //                 $managerEmail = data_get($managerResponse->json(), 'manager.company_email');
+
+        //                 if ($managerEmail) {
+        //                     Mail::to($managerEmail)->send(new RequestMail($formrequest));
+        //                 }
+        //             }
+        //         }
+        //     } catch (\Throwable $mailException) {
+        //         Log::error('MAIL ERROR', [
+        //             'message' => $mailException->getMessage()
+        //         ]);
+        //     }
+        // }
         if ($validated['status'] === 'Submitted' && $previousStatus !== 'Submitted') {
-            try {
-                $employee = auth()->user()->employee;
+    try {
+        $employee = auth()->user()->employee;
 
-                if ($employee) {
-                    $managerResponse = Http::get("http://127.0.0.1:8001/api/manager/" . $employee->id);
+        if ($employee) {
+            $baseUrl = config('services.manager_api.url');
 
-                    if ($managerResponse->successful()) {
-                        $managerEmail = data_get($managerResponse->json(), 'manager.company_email');
+            $managerResponse = Http::get("{$baseUrl}/api/manager/{$employee->id}");
 
-                        if ($managerEmail) {
-                            Mail::to($managerEmail)->send(new RequestMail($formrequest));
-                        }
-                    }
+            if ($managerResponse->successful()) {
+                $managerEmail = data_get($managerResponse->json(), 'manager.company_email');
+
+                if ($managerEmail) {
+                    Mail::to($managerEmail)->send(new RequestMail($formrequest));
                 }
-            } catch (\Throwable $mailException) {
-                Log::error('MAIL ERROR', [
-                    'message' => $mailException->getMessage()
-                ]);
             }
         }
+    } catch (\Throwable $mailException) {
+        Log::error('MAIL ERROR', [
+            'message' => $mailException->getMessage()
+        ]);
+    }
+}
         // if ($validated['status'] === 'Submitted' && $previousStatus !== 'Submitted') {
         //     try {
         //         $employee = auth()->user()->employee;

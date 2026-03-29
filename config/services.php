@@ -34,5 +34,8 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'manager_api' => [
+    'url' => env('HRX_API_URL'),
+],
 
 ];
