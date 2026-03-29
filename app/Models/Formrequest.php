@@ -69,9 +69,11 @@ class Formrequest extends Model
         'user_id',
         'total_amount',
         'title',
+        'ca_number',
         'addressed_to',
         'notes',
         'notes_fa',
+        'notes_dir',
         'vendor_id',
         'destination',
         'revision_number',
@@ -81,7 +83,9 @@ class Formrequest extends Model
     protected $casts = [
         'request_date' => 'date',
         'deadline' => 'date',
+                'total_amount' => 'decimal:2',
 
+        
     ];
     public function vendor()
     {
@@ -95,6 +99,14 @@ class Formrequest extends Model
     {
         return $this->hasMany(Requestitem::class, 'request_id');
     }
+    // public function approvals()
+    // {
+    //     return $this->hasMany(Requestapproval::class, 'request_id');
+    // }
+    public function approval()
+{
+    return $this->hasOne(Requestapproval::class, 'request_id');
+}
     public function requesttype()
     {
         return $this->belongsTo(Requesttype::class, 'request_type_id');

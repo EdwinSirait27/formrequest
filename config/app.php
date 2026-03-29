@@ -66,7 +66,9 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    // 'timezone' => 'UTC',
+    'timezone' => 'Asia/Makassar',
+
 
     /*
     |--------------------------------------------------------------------------
@@ -123,5 +125,7 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
+
+    'main_company_id' => '0199eb83-7351-729f-9def-c33ae7450447',
 
 ];

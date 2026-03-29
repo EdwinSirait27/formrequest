@@ -1,6 +1,6 @@
 @extends('layouts.app')
-@section('title', 'Edit Request Form' . $request->user->employee->employee_name)
-@section('header', 'Edit Request Form' . $request->title)
+@section('title', 'Edit Request Form - ' . $request->user->employee->employee_name)
+@section('header', 'Edit Request Form - ' . $request->title)
 @section('subtitle', 'Edit Request Form')
 @section('content')
     <style>
@@ -10,37 +10,30 @@
             height: 50px;
             border-radius: 12px;
         }
-
         .select2-selection__rendered {
             color: #1e293b !important;
             line-height: 50px !important;
         }
-
         .select2-selection__arrow {
             height: 50px !important;
         }
-
         .select2-dropdown {
             background-color: #ffffff;
             border: 1px solid #cbd5e1;
             color: #1e293b;
         }
-
         .dark .select2-container--default .select2-selection--single {
             background-color: #1e293b;
             border: 1px solid #334155;
         }
-
         .dark .select2-selection__rendered {
             color: #ffffff !important;
         }
-
         .dark .select2-dropdown {
             background-color: #1e293b;
             border: 1px solid #334155;
             color: #ffffff;
         }
-
         .form-input {
             background-color: var(--bg-card);
             border: 1px solid var(--border-color);
@@ -70,6 +63,22 @@
             @method('PUT')
             <div class="space-y-4">
                 <div>
+                    <label for="user_id" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
+                        <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        Applicant
+                    </label>
+
+
+                     <input type="text" id="user_id" name="user_id" class="form-input w-full px-4 py-3 rounded-xl"
+                        value="{{ old('user_id', $request->user->employee->employee_name) }}" placeholder="butuh segera untuk bla bla bla" disabled>
+                </div>
+            </div>
+            <div class="space-y-4">
+                <div>
                     <label for="company_id" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
                         <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
                             viewBox="0 0 24 24">
@@ -80,8 +89,8 @@
                     </label>
 
 
-                    <select name="company_id" class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
-                        <option value="">Choose Companies</option>
+                    <option value="">Choose Companies</option>
+                    <select name="company_id" id="company_id"class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
                         @foreach ($companies as $id => $name)
                             <option value="{{ $id }}"
                                 {{ old('company_id', $request->company_id) == $id ? 'selected' : '' }}>
@@ -254,12 +263,12 @@
                     <table class="w-full text-sm text-left border border-slate-700 rounded-xl overflow-hidden">
                         <thead class="bg-slate-800 text-slate-300">
                             <tr>
-                                <th class="p-2">Item Name</th>
-                                <th class="p-2">Specification</th>
-                                <th class="p-2">Qty</th>
-                                <th class="p-2">UOM</th>
-                                <th class="p-2">Price</th>
-                                <th class="p-2">Total</th>
+                                <th class="p-2 text-center">Item Name</th>
+                            <th class="p-2 text-center">Specification</th>
+                            <th class="p-2 text-center">Qty</th>
+                            <th class="p-2 text-center">UOM</th>
+                            <th class="p-2 text-center">Price</th>
+                            <th class="p-2 text-center">Total</th>
                                 <th class="p-2 text-center">Action</th>
                             </tr>
                         </thead>
@@ -282,7 +291,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                     </svg>
-                    Notes
+                    Applicant Notes
                 </label>
                 <textarea id="notes" name="notes" class="form-input w-full px-4 py-3 rounded-xl"
                     placeholder="butuh segera untuk bla bla bla" rows="4" required>{{ old('notes', $request->notes) }}</textarea>
@@ -330,7 +339,35 @@
                     </p>
                 @enderror
             </div>
+            @if(auth()->user()->hasRole('finance'))
+            <div>
+                <label for="ca_number" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
+                    <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                    </svg>
+                    CA Number
+                </label>
 
+              <input type="text"
+    id="ca_number"
+    name="ca_number"
+    class="form-input w-full px-4 py-3 rounded-xl"
+    value="{{ old('ca_number', optional($request)->ca_number) }}"
+     required>
+                @error('ca_number')
+                    <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        {{ $message }}
+                    </p>
+                @enderror
+            </div>
+@endif
             <div class="flex gap-3 pt-2">
                 <a href="{{ route('request') }}"
                     class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-semibold rounded-xl
@@ -362,7 +399,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script>
+    {{-- <script>
         document.addEventListener('DOMContentLoaded', function() {
             flatpickr("#request_date", {
                 dateFormat: "Y-m-d",
@@ -375,7 +412,6 @@
         });
     </script>
     <script>
-        // let index = {{ $request->items->count() }};
         let index = {{ $request->items->count() }};
 
         function getUomOptions(selectedUom = '') {
@@ -538,8 +574,249 @@
         @if (session('error'))
             toastr.error(@json(session('error')));
         @endif
-    </script>
+    </script> --}}
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    flatpickr("#request_date", {
+        dateFormat: "Y-m-d",
+        allowInput: true
+    });
+    flatpickr("#deadline", {
+        dateFormat: "Y-m-d",
+        allowInput: true
+    });
+});
+</script>
 
+<script>
+let index = 0; // ✅ FIX: mulai dari 0, nanti disesuaikan
+
+function getUomOptions(selectedUom = '') {
+    let uoms = @json($uoms);
+    return uoms.map(u => 
+        `<option value="${u}" ${u === selectedUom ? 'selected' : ''}>${u}</option>`
+    ).join('');
+}
+
+function createRow() {
+    let row = `
+    <tr>
+        <td class="p-2">
+            <input type="text" name="items[${index}][item_name]"
+                class="w-full form-input rounded-lg px-2 py-1" required>
+        </td>
+        <td class="p-2">
+            <input type="text" name="items[${index}][specification]"
+                class="w-full form-input rounded-lg px-2 py-1">
+        </td>
+        <td class="p-2">
+            <input type="text" name="items[${index}][qty]"
+                class="qty w-full form-input rounded-lg px-2 py-1" required>
+        </td>
+        <td class="p-2">
+            <select name="items[${index}][uom]" class="select2 w-full">
+                ${getUomOptions()}
+            </select>
+        </td>
+        <td class="p-2">
+            <input type="text" name="items[${index}][price]"
+                class="price w-full form-input rounded-lg px-2 py-1" required>
+        </td>
+        <td class="p-2">
+            <input type="text" name="items[${index}][total_price]"
+                class="total w-full form-input rounded-lg px-2 py-1" readonly>
+        </td>
+        <td class="p-2 text-center">
+            <button type="button" class="remove-row text-red-500">X</button>
+        </td>
+    </tr>`;
+
+    index++;
+    return row;
+}
+
+// ✅ ADD ROW
+$('#add-row').click(function() {
+    let newRow = $(createRow());
+    $('#items-table').append(newRow);
+
+    // ✅ FIX: init select2 hanya untuk elemen baru
+    newRow.find('.select2').select2({
+        placeholder: "Choose",
+        allowClear: true,
+        width: '100%'
+    });
+});
+
+// ✅ REMOVE ROW
+$(document).on('click', '.remove-row', function() {
+    $(this).closest('tr').remove();
+});
+
+// =======================
+// 🔥 FORMAT ANGKA FIX
+// =======================
+
+// parse aman (ID format)
+function parseAngka(str) {
+    if (!str) return 0;
+
+    str = str.toString()
+        .replace(/\./g, '')   // hapus ribuan
+        .replace(',', '.');   // ubah desimal
+
+    return parseFloat(str) || 0;
+}
+
+// format ribuan
+function formatRibuan(angka) {
+    return new Intl.NumberFormat('id-ID', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(angka);
+}
+
+// =======================
+// 🔥 FORMAT INPUT QTY & PRICE
+// =======================
+
+// PRICE
+$(document).on('blur', '.price', function() {
+    let angka = parseAngka($(this).val());
+    if (angka > 0) $(this).val(formatRibuan(angka));
+});
+
+$(document).on('focus', '.price', function() {
+    let angka = parseAngka($(this).val());
+    if (angka > 0) $(this).val(angka);
+});
+
+// QTY (FIX TAMBAHAN)
+$(document).on('blur', '.qty', function() {
+    let angka = parseAngka($(this).val());
+    if (angka > 0) $(this).val(formatRibuan(angka));
+});
+
+$(document).on('focus', '.qty', function() {
+    let angka = parseAngka($(this).val());
+    if (angka > 0) $(this).val(angka);
+});
+
+// =======================
+// 🔥 AUTO HITUNG TOTAL
+// =======================
+$(document).on('input', '.qty, .price', function() {
+    let row = $(this).closest('tr');
+
+    let qty   = parseAngka(row.find('.qty').val());
+    let price = parseAngka(row.find('.price').val());
+
+    let total = qty * price;
+
+    row.find('.total').val(
+        (!isNaN(total) && total > 0) ? formatRibuan(total) : ''
+    );
+});
+
+// =======================
+// 🔥 INIT SELECT2 + EXISTING DATA
+// =======================
+$(document).ready(function() {
+
+    $('#request_type_id').select2({
+        placeholder: "Choose request Types...",
+        allowClear: true,
+        width: '100%'
+    });
+    $('#company_id').select2({
+        placeholder: "Choose Companies...",
+        allowClear: true,
+        width: '100%'
+    });
+    $('#status').select2({
+        placeholder: "Choose Statuses...",
+        allowClear: true,
+        width: '100%'
+    });
+
+    $('#vendor_id').select2({
+        placeholder: "Choose Vendors...",
+        allowClear: true,
+        width: '100%'
+    });
+
+    let existingItems = @json($request->items);
+
+    existingItems.forEach(function(item) {
+
+        let row = `
+        <tr>
+            <td class="p-2">
+                <input type="text" name="items[${index}][item_name]"
+                    value="${item.item_name ?? ''}"
+                    class="w-full form-input rounded-lg px-2 py-1" required>
+            </td>
+            <td class="p-2">
+                <input type="text" name="items[${index}][specification]"
+                    value="${item.specification ?? ''}"
+                    class="w-full form-input rounded-lg px-2 py-1">
+            </td>
+            <td class="p-2">
+                <input type="text" name="items[${index}][qty]"
+                    value="${formatRibuan(item.qty ?? 0)}"
+                    class="qty w-full form-input rounded-lg px-2 py-1" required>
+            </td>
+            <td class="p-2">
+                <select name="items[${index}][uom]" class="select2 w-full">
+                    ${getUomOptions(item.uom)}
+                </select>
+            </td>
+            <td class="p-2">
+                <input type="text" name="items[${index}][price]"
+                    value="${formatRibuan(item.price ?? 0)}"
+                    class="price w-full form-input rounded-lg px-2 py-1" required>
+            </td>
+            <td class="p-2">
+                <input type="text" name="items[${index}][total_price]"
+                    value="${formatRibuan(item.total_price ?? 0)}"
+                    class="total w-full form-input rounded-lg px-2 py-1" readonly>
+            </td>
+            <td class="p-2 text-center">
+                <button type="button" class="remove-row text-red-500">X</button>
+            </td>
+        </tr>`;
+
+        let newRow = $(row);
+        $('#items-table').append(newRow);
+
+        newRow.find('.select2').select2({
+            placeholder: "Choose",
+            allowClear: true,
+            width: '100%'
+        });
+
+        index++; // ✅ FIX: index naik aman
+    });
+});
+</script>
+
+<script>
+toastr.options = {
+    closeButton: true,
+    progressBar: true,
+    positionClass: "toast-top-right",
+    timeOut: "3000"
+};
+
+@if (session('success'))
+    toastr.success(@json(session('success')));
+@endif
+
+@if (session('error'))
+    toastr.error(@json(session('error')));
+@endif
+</script>
+ 
 @endsection
 
 {{-- @extends('layouts.app')

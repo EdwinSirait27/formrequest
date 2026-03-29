@@ -2,6 +2,7 @@
 namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Ramsey\Uuid\Uuid;
+
 class Vendor extends Model
 {
     protected $table = 'vendor';

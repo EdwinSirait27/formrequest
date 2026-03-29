@@ -71,7 +71,7 @@
                         Company Name<span class="text-red-400">*</span>
                     </label>
 
-                    <select id="company_id" name="company_id"
+                    {{-- <select id="company_id" name="company_id"
                         class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
                         <option value="">Choose Companies</option>
                         @foreach ($companies as $id => $name)
@@ -79,7 +79,27 @@
                                 {{ $name }}
                             </option>
                         @endforeach
-                    </select>
+                    </select> --}}
+                    @if ($isMainCompany)
+    <select id="company_id" name="company_id"
+        class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
+        <option value="">Choose Companies</option>
+        @foreach ($companies as $id => $name)
+            <option value="{{ $id }}" {{ $id == old('company_id', $userCompanyId) ? 'selected' : '' }}>
+                {{ $name }}
+            </option>
+        @endforeach
+    </select>
+@else
+    {{-- <input type="text"
+        class="w-full sm:w-40 px-3 py-2 border rounded-lg text-sm bg-gray-100"
+        value="{{ $companies[$userCompanyId] ?? '-' }}"
+        readonly> --}}
+        <input type="text" class="form-input w-full px-4 py-3 rounded-xl"
+                         value="{{ $companies[$userCompanyId] ?? '-' }}" readonly>
+
+    <input type="hidden" name="company_id" value="{{ $userCompanyId }}">
+@endif
                     @error('company_id')
                         <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
                             <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -231,12 +251,12 @@
                     <table class="w-full text-sm text-left border border-slate-700 rounded-xl overflow-hidden">
                         <thead class="bg-slate-800 text-slate-300">
                             <tr>
-                                <th class="p-2">Item Name</th>
-                                <th class="p-2">Specification</th>
-                                <th class="p-2">Qty</th>
-                                <th class="p-2">UOM</th>
-                                <th class="p-2">Price</th>
-                                <th class="p-2">Total</th>
+                               <th class="p-2 text-center">Item Name</th>
+                            <th class="p-2 text-center">Specification</th>
+                            <th class="p-2 text-center">Qty</th>
+                            <th class="p-2 text-center">UOM</th>
+                            <th class="p-2 text-center">Price</th>
+                            <th class="p-2 text-center">Total</th>
                                 <th class="p-2 text-center">Action</th>
                             </tr>
                         </thead>
@@ -258,7 +278,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                     </svg>
-                    Notes
+                    Applicant Notes
                 </label>
                 <textarea id="notes" name="notes" class="form-input w-full px-4 py-3 rounded-xl"
                     placeholder="butuh segera untuk bla bla bla" rows="4" required>{{ old('notes') }}</textarea>
