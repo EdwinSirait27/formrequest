@@ -145,8 +145,16 @@ class RequestController extends Controller
             }
         } elseif ($user->hasRole('finance')) {
             $query->where('status', 'Approved Director');
-        } elseif ($user->hasRole('director')) {
-            $query->where('status', ['Approved Manager', 'Approved Director', 'Rejected Director']);
+        } 
+        // elseif ($user->hasRole('director')) {
+        //     $query->where('status', ['Approved Manager', 'Approved Director', 'Rejected Director']);
+        elseif ($user->hasRole('director')) {
+    $query->whereIn('status', [
+        'Approved Manager',
+        'Approved Director',
+        'Rejected Director'
+    ]);
+
         } elseif ($user->hasRole('user')) {
             $query->where('user_id', $user->id);
         }
