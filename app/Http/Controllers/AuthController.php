@@ -97,22 +97,50 @@ class AuthController extends Controller
         Auth::logout();
         return redirect()->route('login');
     }
-   public function save(Request $request)
+//    public function save(Request $request)
+// {
+//     $request->validate([
+//         'signature' => 'required'
+//     ]);
+//     $data = $request->signature;
+//     $image = str_replace('data:image/png;base64,', '', $data);
+//     $image = str_replace(' ', '+', $image);
+//     $fileName = 'signatures/' . uniqid() . '.png';
+//     $employee = auth()->user()->employee;
+//     if ($employee->signature) {
+//         Storage::disk('public')->delete($employee->signature);
+//     }
+//     Storage::disk('public')->put($fileName, base64_decode($image));
+//     $employee->signature = $fileName;
+//     $employee->save();
+//     return back()->with('success', 'Signature updated!');
+// }
+public function save(Request $request)
 {
     $request->validate([
         'signature' => 'required'
     ]);
+    $user = auth()->user();
+    $employee = $user->employee;
+    // ❌ Jika bukan admin dan sudah punya signature → blok
+    if (!$user->hasRole('admin') && $employee->signature) {
+       return back()->with('error', 'Anda sudah mempunyai signature, silakan hubungi administrator untuk mengupdate.');
+    }
+    // proses image
     $data = $request->signature;
     $image = str_replace('data:image/png;base64,', '', $data);
     $image = str_replace(' ', '+', $image);
     $fileName = 'signatures/' . uniqid() . '.png';
-    $employee = auth()->user()->employee;
+
     if ($employee->signature) {
         Storage::disk('public')->delete($employee->signature);
     }
+
     Storage::disk('public')->put($fileName, base64_decode($image));
+
     $employee->signature = $fileName;
     $employee->save();
+
     return back()->with('success', 'Signature updated!');
 }
 }

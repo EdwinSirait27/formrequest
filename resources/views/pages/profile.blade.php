@@ -347,6 +347,9 @@ function saveSignature() {
             @if (session('success'))
                 toastr.success(@json(session('success')));
             @endif
+            @if (session('error'))
+                toastr.error(@json(session('error')));
+            @endif
         </script>
 @endpush
 @endsection

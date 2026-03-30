@@ -204,12 +204,10 @@ class RequestController extends Controller
                 $isLocked =
                     ($row->status === 'Submitted'        && $user->hasRole('user'))    ||
                     ($row->status === 'Approved Manager' && $user->hasRole('manager')) ||
-                    ($row->status === 'Approved Finance' && $user->hasRole('director'));
+                    ($row->status === 'Approved Director' && $user->hasRole('director'));
                 $idHashed = substr(hash('sha256', $row->id . config('app.key')), 0, 8);
                 $id = $row->id;
-
                 if ($isLocked) {
-                    // ❌ tombol disabled
                     $editBtn = '
 <span class="inline-flex items-center justify-center p-2
              text-gray-400  rounded-full cursor-not-allowed"
@@ -350,7 +348,6 @@ class RequestController extends Controller
         }
         // 🔥 Admin bebas edit semua
         if (!$user->hasRole('admin')) {
-
             $lockRules = [
                 'Draft'             => ['finance', 'manager', 'director'], // selain ini boleh edit
                 'Submitted'         => ['user', 'finance', 'director'],
@@ -360,9 +357,7 @@ class RequestController extends Controller
                 'Rejected Director' => ['finance', 'user'],
                 'Done'              => ['user', 'manager', 'director'],
             ];
-
             $lockedRoles = $lockRules[$request->status] ?? [];
-
             $isLocked = collect($lockedRoles)
                 ->contains(fn($role) => $user->hasRole($role));
 

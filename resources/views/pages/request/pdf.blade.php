@@ -1338,17 +1338,17 @@
                         <td class="col-no center">{{ $i + 1 }}</td>
                         <td class="center">{{ $item->item_name }}</td>
                         <td class="center">{{ $item->specification }}</td>
-                        <td class="center">{{ number_format($item->qty, 2, '.', ',') }}</td>
+                        <td class="center">{{ number_format($item->qty, 2, ',', '.') }}</td>
                         <td class="center">{{ $item->uom }}</td>
-                        <td class="center">Rp {{ number_format($item->price, 2, '.', ',') }}</td>
-                        <td class="center">Rp {{ number_format($item->total_price, 2, '.', ',') }}</td>
+                        <td class="center">Rp {{ number_format($item->price, 2, ',', '.') }}</td>
+                        <td class="center">Rp {{ number_format($item->total_price, 2, ',', '.') }}</td>
                     </tr>
                 @endforeach
             </tbody>
             <tfoot>
                 <tr>
                     <td colspan="6" class="center" style="letter-spacing:1px;">GRAND TOTAL</td>
-                    <td class="right">Rp {{ number_format($total, 2, '.', ',') }}</td>
+                    <td class="right">Rp {{ number_format($total, 2, ',', '.') }}</td>
                 </tr>
             </tfoot>
         </table>
