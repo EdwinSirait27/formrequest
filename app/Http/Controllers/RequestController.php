@@ -673,6 +673,11 @@ $showManagerSignature = in_array($request->status, ['Approved Manager', 'Approve
 
 $internalBase = rtrim(env('HRX_INTERNAL_URL', 'https://hrx.asianbay.co.id'), '/');
 
+Log::info('=== LOGO DEBUG ===', [
+    'companyId'    => $companyId,
+    'internalBase' => $internalBase,
+]);
+
 $responses = Http::pool(function ($pool) use ($companyId, $internalBase) {
     if (!$companyId) return [];
 
@@ -687,6 +692,11 @@ $responses = Http::pool(function ($pool) use ($companyId, $internalBase) {
 $logoBase64   = null;
 $logoResponse = $responses['logo'] ?? null;
 
+Log::info('=== LOGO RESPONSE ===', [
+    'status'   => $logoResponse?->status(),
+    'logoUrl'  => $logoResponse?->json('logo_url'),
+]);
+
 if ($logoResponse instanceof \Illuminate\Http\Client\Response && $logoResponse->successful()) {
     $logoUrl = $logoResponse->json('logo_url');
 
@@ -698,7 +708,14 @@ if ($logoResponse instanceof \Illuminate\Http\Client\Response && $logoResponse->
                 $logoUrl
             );
 
+            Log::info('=== LOGO URL INTERNAL ===', ['url' => $logoUrlInternal]);
+
             $imgResponse = Http::withoutVerifying()->timeout(5)->get($logoUrlInternal);
+
+            Log::info('=== IMG RESPONSE ===', [
+                'status' => $imgResponse->status(),
+                'size'   => strlen($imgResponse->body()),
+            ]);
 
             if ($imgResponse->successful()) {
                 $body       = $imgResponse->body();
@@ -706,6 +723,8 @@ if ($logoResponse instanceof \Illuminate\Http\Client\Response && $logoResponse->
                 $mime       = finfo_buffer($finfo, $body);
                 finfo_close($finfo);
                 $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($body);
+
+                Log::info('=== LOGO BASE64 OK ===', ['mime' => $mime, 'length' => strlen($logoBase64)]);
             }
         } catch (\Exception $e) {
             Log::error('Logo fetch error: ' . $e->getMessage());
