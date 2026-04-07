@@ -586,36 +586,71 @@ class RequestController extends Controller
         $showManagerSignature = in_array($request->status, ['Approved Manager', 'Approved Director']);
 
         // HTTP — hanya untuk logo
+        // $responses = Http::pool(function ($pool) use ($companyId) {
+        //     if (!$companyId) return [];
+        //     return [
+        //         $pool->as('logo')
+        //             ->withoutVerifying()
+        //             ->timeout(8)
+        //             ->get("https://hrx.asianbay.co.id/api/company/{$companyId}"),
+        //     ];
+        // });
         $responses = Http::pool(function ($pool) use ($companyId) {
-            if (!$companyId) return [];
-            return [
-                $pool->as('logo')
-                    ->withoutVerifying()
-                    ->timeout(8)
-                    ->get("https://hrx.asianbay.co.id/api/company/{$companyId}"),
-            ];
-        });
+    if (!$companyId) return [];
+
+    $baseUrl = rtrim(env('HRX_INTERNAL_URL', 'https://hrx.asianbay.co.id'), '/');
+
+    return [
+        $pool->as('logo')
+            ->withoutVerifying()
+            ->timeout(8)
+            ->get("{$baseUrl}/api/company/{$companyId}"),
+    ];
+});
         $logoBase64   = null;
         $logoResponse = $responses['logo'] ?? null;
 
         if ($logoResponse instanceof \Illuminate\Http\Client\Response && $logoResponse->successful()) {
             $logoUrl = $logoResponse->json('logo_url');
 
-            if ($logoUrl) {
-                try {
-                    $imgResponse = Http::withoutVerifying()->timeout(5)->get($logoUrl);
+            // if ($logoUrl) {
+            //     try {
+            //         $imgResponse = Http::withoutVerifying()->timeout(5)->get($logoUrl);
 
-                    if ($imgResponse->successful()) {
-                        $body       = $imgResponse->body();
-                        $finfo      = finfo_open(FILEINFO_MIME_TYPE);
-                        $mime       = finfo_buffer($finfo, $body);
-                        finfo_close($finfo);
-                        $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($body);
-                    }
-                } catch (\Exception $e) {
-                    Log::error('Logo fetch error: ' . $e->getMessage());
-                }
-            }
+            //         if ($imgResponse->successful()) {
+            //             $body       = $imgResponse->body();
+            //             $finfo      = finfo_open(FILEINFO_MIME_TYPE);
+            //             $mime       = finfo_buffer($finfo, $body);
+            //             finfo_close($finfo);
+            //             $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($body);
+            //         }
+            //     } catch (\Exception $e) {
+            //         Log::error('Logo fetch error: ' . $e->getMessage());
+            //     }
+            // }
+            if ($logoUrl) {
+    try {
+        // Ganti domain publik ke internal
+        $internalBase = rtrim(env('HRX_INTERNAL_URL', 'https://hrx.asianbay.co.id'), '/');
+        $logoUrlInternal = preg_replace(
+            '#^https?://hrx\.asianbay\.co\.id#',
+            $internalBase,
+            $logoUrl
+        );
+
+        $imgResponse = Http::withoutVerifying()->timeout(5)->get($logoUrlInternal);
+
+        if ($imgResponse->successful()) {
+            $body  = $imgResponse->body();
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime  = finfo_buffer($finfo, $body);
+            finfo_close($finfo);
+            $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($body);
+        }
+    } catch (\Exception $e) {
+        Log::error('Logo fetch error: ' . $e->getMessage());
+    }
+}
         }
         $managerName            = null;
         $positionName           = null;
