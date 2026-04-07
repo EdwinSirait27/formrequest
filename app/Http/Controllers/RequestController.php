@@ -531,271 +531,408 @@ class RequestController extends Controller
             'structuresnew.submissionposition.positionRelation',
         ])->where('structure_id', $managerStructure->id)->first();
     }
-    public function pdfview($id)
-    {
-        set_time_limit(120);
-        ini_set('memory_limit', '512M');
+//     public function pdfview($id)
+//     {
+//         set_time_limit(120);
+//         ini_set('memory_limit', '512M');
 
-        $request = Formrequest::with([
-            'vendor',
-            'requesttype',
-            'items',
-            'links',
-            'items.vendors',
-            'company:id',
-            'user.employee',
-            'items.vendors.vendor',
-            'user.employee.company',
-            'user.employee.position:id,name',
-            'user.employee.department:id,department_name',
-            'approval.approver2User.employee',
-            'approval.approver2User.employee.position:id,name',
+//         $request = Formrequest::with([
+//             'vendor',
+//             'requesttype',
+//             'items',
+//             'links',
+//             'items.vendors',
+//             'company:id',
+//             'user.employee',
+//             'items.vendors.vendor',
+//             'user.employee.company',
+//             'user.employee.position:id,name',
+//             'user.employee.department:id,department_name',
+//             'approval.approver2User.employee',
+//             'approval.approver2User.employee.position:id,name',
             
-        ])->findOrFail($id);
-        $capexVendors = $request->items->mapWithKeys(function ($item) {
-    return [
-        $item->id => $item->vendors->values()->map(fn($v) => [
-            'vendor_name' => $v->vendor?->vendor_name ?? '-',
-            'price'       => $v->price ?? 0,
-        ])
-    ];
-});
-        $employee  = $request->user?->employee;
-        $requestDate = $request->request_date
-        ->timezone('Asia/Makassar')
-        ->translatedFormat('d F Y');
-        $Deadline = $request->deadline
-        ->timezone('Asia/Makassar')
-        ->translatedFormat('d F Y');
-//         $cache    = [];
-//         $companyId = $request->company?->id;
-//         $toBase64 = static function (string $localPath) use (&$cache): ?string {
-//             if (isset($cache[$localPath])) return $cache[$localPath];
-//             if (!is_file($localPath))      return $cache[$localPath] = null;
+//         ])->findOrFail($id);
+//         $capexVendors = $request->items->mapWithKeys(function ($item) {
+//     return [
+//         $item->id => $item->vendors->values()->map(fn($v) => [
+//             'vendor_name' => $v->vendor?->vendor_name ?? '-',
+//             'price'       => $v->price ?? 0,
+//         ])
+//     ];
+// });
+//         $employee  = $request->user?->employee;
+//         $requestDate = $request->request_date
+//         ->timezone('Asia/Makassar')
+//         ->translatedFormat('d F Y');
+//         $Deadline = $request->deadline
+//         ->timezone('Asia/Makassar')
+//         ->translatedFormat('d F Y');
+// //         $cache    = [];
+// //         $companyId = $request->company?->id;
+// //         $toBase64 = static function (string $localPath) use (&$cache): ?string {
+// //             if (isset($cache[$localPath])) return $cache[$localPath];
+// //             if (!is_file($localPath))      return $cache[$localPath] = null;
 
-//             $image = @file_get_contents($localPath);
-//             if ($image === false)          return $cache[$localPath] = null;
+// //             $image = @file_get_contents($localPath);
+// //             if ($image === false)          return $cache[$localPath] = null;
 
-//             $finfo = finfo_open(FILEINFO_MIME_TYPE);
-//             $mime  = finfo_buffer($finfo, $image);
-//             finfo_close($finfo);
+// //             $finfo = finfo_open(FILEINFO_MIME_TYPE);
+// //             $mime  = finfo_buffer($finfo, $image);
+// //             finfo_close($finfo);
 
-//             return $cache[$localPath] = 'data:' . $mime . ';base64,' . base64_encode($image);
-//         };
+// //             return $cache[$localPath] = 'data:' . $mime . ';base64,' . base64_encode($image);
+// //         };
 
-//         $showManagerSignature = in_array($request->status, ['Approved Manager', 'Approved Director']);
+// //         $showManagerSignature = in_array($request->status, ['Approved Manager', 'Approved Director']);
 
-//         // HTTP — hanya untuk logo
-//         // $responses = Http::pool(function ($pool) use ($companyId) {
-//         //     if (!$companyId) return [];
-//         //     return [
-//         //         $pool->as('logo')
-//         //             ->withoutVerifying()
-//         //             ->timeout(8)
-//         //             ->get("https://hrx.asianbay.co.id/api/company/{$companyId}"),
-//         //     ];
-//         // });
-//         $responses = Http::pool(function ($pool) use ($companyId) {
+// //         // HTTP — hanya untuk logo
+// //         // $responses = Http::pool(function ($pool) use ($companyId) {
+// //         //     if (!$companyId) return [];
+// //         //     return [
+// //         //         $pool->as('logo')
+// //         //             ->withoutVerifying()
+// //         //             ->timeout(8)
+// //         //             ->get("https://hrx.asianbay.co.id/api/company/{$companyId}"),
+// //         //     ];
+// //         // });
+// //         $responses = Http::pool(function ($pool) use ($companyId) {
+// //     if (!$companyId) return [];
+
+// //     $baseUrl = rtrim(env('HRX_INTERNAL_URL', 'https://hrx.asianbay.co.id'), '/');
+
+// //     return [
+// //         $pool->as('logo')
+// //             ->withoutVerifying()
+// //             ->timeout(8)
+// //             ->get("{$baseUrl}/api/company/{$companyId}"),
+// //     ];
+// // });
+// //         $logoBase64   = null;
+// //         $logoResponse = $responses['logo'] ?? null;
+
+// //         if ($logoResponse instanceof \Illuminate\Http\Client\Response && $logoResponse->successful()) {
+// //             $logoUrl = $logoResponse->json('logo_url');
+
+// //             // if ($logoUrl) {
+// //             //     try {
+// //             //         $imgResponse = Http::withoutVerifying()->timeout(5)->get($logoUrl);
+
+// //             //         if ($imgResponse->successful()) {
+// //             //             $body       = $imgResponse->body();
+// //             //             $finfo      = finfo_open(FILEINFO_MIME_TYPE);
+// //             //             $mime       = finfo_buffer($finfo, $body);
+// //             //             finfo_close($finfo);
+// //             //             $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($body);
+// //             //         }
+// //             //     } catch (\Exception $e) {
+// //             //         Log::error('Logo fetch error: ' . $e->getMessage());
+// //             //     }
+// //             // }
+// //             if ($logoUrl) {
+// //     try {
+// //         // Ganti domain publik ke internal
+// //         $internalBase = rtrim(env('HRX_INTERNAL_URL', 'https://hrx.asianbay.co.id'), '/');
+// //         $logoUrlInternal = preg_replace(
+// //             '#^https?://hrx\.asianbay\.co\.id#',
+// //             $internalBase,
+// //             $logoUrl
+// //         );
+
+// //         $imgResponse = Http::withoutVerifying()->timeout(5)->get($logoUrlInternal);
+
+// //         if ($imgResponse->successful()) {
+// //             $body  = $imgResponse->body();
+// //             $finfo = finfo_open(FILEINFO_MIME_TYPE);
+// //             $mime  = finfo_buffer($finfo, $body);
+// //             finfo_close($finfo);
+// //             $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($body);
+// //         }
+// //     } catch (\Exception $e) {
+// //         Log::error('Logo fetch error: ' . $e->getMessage());
+// //     }
+// // }
+// //         }
+// $cache     = [];
+// $companyId = $request->company?->id;
+
+// $toBase64 = static function (string $localPath) use (&$cache): ?string {
+//     if (isset($cache[$localPath])) return $cache[$localPath];
+//     if (!is_file($localPath))      return $cache[$localPath] = null;
+
+//     $image = @file_get_contents($localPath);
+//     if ($image === false)          return $cache[$localPath] = null;
+
+//     $finfo = finfo_open(FILEINFO_MIME_TYPE);
+//     $mime  = finfo_buffer($finfo, $image);
+//     finfo_close($finfo);
+
+//     return $cache[$localPath] = 'data:' . $mime . ';base64,' . base64_encode($image);
+// };
+
+// $showManagerSignature = in_array($request->status, ['Approved Manager', 'Approved Director']);
+
+// $internalBase = rtrim(env('HRX_INTERNAL_URL', 'https://hrx.asianbay.co.id'), '/');
+
+// $responses = Http::pool(function ($pool) use ($companyId, $internalBase) {
 //     if (!$companyId) return [];
-
-//     $baseUrl = rtrim(env('HRX_INTERNAL_URL', 'https://hrx.asianbay.co.id'), '/');
 
 //     return [
 //         $pool->as('logo')
 //             ->withoutVerifying()
 //             ->timeout(8)
-//             ->get("{$baseUrl}/api/company/{$companyId}"),
+//             ->get("{$internalBase}/api/company/{$companyId}"),
 //     ];
 // });
-//         $logoBase64   = null;
-//         $logoResponse = $responses['logo'] ?? null;
 
-//         if ($logoResponse instanceof \Illuminate\Http\Client\Response && $logoResponse->successful()) {
-//             $logoUrl = $logoResponse->json('logo_url');
+// $logoBase64   = null;
+// $logoResponse = $responses['logo'] ?? null;
 
-//             // if ($logoUrl) {
-//             //     try {
-//             //         $imgResponse = Http::withoutVerifying()->timeout(5)->get($logoUrl);
+// if ($logoResponse instanceof \Illuminate\Http\Client\Response && $logoResponse->successful()) {
+//     $logoUrl = $logoResponse->json('logo_url');
 
-//             //         if ($imgResponse->successful()) {
-//             //             $body       = $imgResponse->body();
-//             //             $finfo      = finfo_open(FILEINFO_MIME_TYPE);
-//             //             $mime       = finfo_buffer($finfo, $body);
-//             //             finfo_close($finfo);
-//             //             $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($body);
-//             //         }
-//             //     } catch (\Exception $e) {
-//             //         Log::error('Logo fetch error: ' . $e->getMessage());
-//             //     }
-//             // }
-//             if ($logoUrl) {
-//     try {
-//         // Ganti domain publik ke internal
-//         $internalBase = rtrim(env('HRX_INTERNAL_URL', 'https://hrx.asianbay.co.id'), '/');
-//         $logoUrlInternal = preg_replace(
-//             '#^https?://hrx\.asianbay\.co\.id#',
-//             $internalBase,
-//             $logoUrl
-//         );
+//     if ($logoUrl) {
+//         try {
+//             $logoUrlInternal = preg_replace(
+//                 '#^https?://hrx\.asianbay\.co\.id#',
+//                 $internalBase,
+//                 $logoUrl
+//             );
 
-//         $imgResponse = Http::withoutVerifying()->timeout(5)->get($logoUrlInternal);
+//             $imgResponse = Http::withoutVerifying()->timeout(5)->get($logoUrlInternal);
 
-//         if ($imgResponse->successful()) {
-//             $body  = $imgResponse->body();
-//             $finfo = finfo_open(FILEINFO_MIME_TYPE);
-//             $mime  = finfo_buffer($finfo, $body);
-//             finfo_close($finfo);
-//             $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($body);
+//             if ($imgResponse->successful()) {
+//                 $body       = $imgResponse->body();
+//                 $finfo      = finfo_open(FILEINFO_MIME_TYPE);
+//                 $mime       = finfo_buffer($finfo, $body);
+//                 finfo_close($finfo);
+//                 $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($body);
+//             }
+//         } catch (\Exception $e) {
+//             Log::error('Logo fetch error: ' . $e->getMessage());
 //         }
-//     } catch (\Exception $e) {
-//         Log::error('Logo fetch error: ' . $e->getMessage());
 //     }
 // }
+//         $managerName            = null;
+//         $positionName           = null;
+//         $managerSignatureBase64 = null;
+
+//         if ($employee && $showManagerSignature) {
+//             $manager = $this->resolveManager($employee);
+
+//             if ($manager) {
+//                 $managerName  = $manager->employee_name;
+//                 $positionName = optional(
+//                     optional($manager->structuresnew?->submissionposition)
+//                         ->positionRelation
+//                 )->name ?? null;
+
+//                 if ($manager->signature) {
+//                     $managerSignatureBase64 = $toBase64(
+//                         public_path('storage/' . $manager->signature)
+//                     );
+
+//                     if (!$managerSignatureBase64) {
+//                         Log::warning('Manager signature tidak ditemukan di disk', [
+//                             'path' => public_path('storage/' . $manager->signature),
+//                         ]);
+//                     }
+//                 }
+//             }
 //         }
-$cache     = [];
-$companyId = $request->company?->id;
+//         $signatureBase64 = $employee?->signature
+//             ? $toBase64(public_path('storage/' . $employee->signature))
+//             : null;
+//         $approver2   = $request->approval?->approver2User?->employee;
+//         $signatories = [
+//             'approver2' => [
+//                 'name'      => $approver2?->employee_name,
+//                 'position'  => $approver2?->position?->name,
+//                 'signature' => $approver2?->signature
+//                     ? $toBase64(public_path('storage/' . $approver2->signature))
+//                     : null,
+//             ],
+//         ];
+//         $viewData = [
+//             'request'                => $request,
+//             'logoBase64'             => $logoBase64,
+//             'signatureBase64'        => $signatureBase64,
+//             'managerSignatureBase64' => $managerSignatureBase64,
+//             'managerName'            => $managerName,
+//             'positionName'           => $positionName,
+//             'signatories'            => $signatories,
+//             'total'                  => $request->items->sum('total_price'),
+//             'Deadline'               => $Deadline,
+//             'requestDate'            => $requestDate,
+//             'itemCount'              => $request->items->count(),
+//             'showSignature'          => $showManagerSignature,
+//              'capexVendors' => $capexVendors,
+//         ];
+//         return Pdf::loadView('pages.request.pdf', $viewData)
+//             ->setPaper('A4')
+//             ->setOptions([
+//                 'isRemoteEnabled'      => false,
+//                 'isHtml5ParserEnabled' => true,
+//                 'isPhpEnabled'         => false,
+//                 'defaultFont'          => 'sans-serif',
+//             ])
+//             ->download('request-' . $request->document_number . '.pdf');
+//     }
+public function pdfview($id)
+{
+    set_time_limit(120);
+    ini_set('memory_limit', '512M');
 
-$toBase64 = static function (string $localPath) use (&$cache): ?string {
-    if (isset($cache[$localPath])) return $cache[$localPath];
-    if (!is_file($localPath))      return $cache[$localPath] = null;
+    $request = Formrequest::with([
+        'vendor',
+        'requesttype',
+        'items',
+        'links',
+        'items.vendors',
+        'company:id',
+        'user.employee',
+        'items.vendors.vendor',
+        'user.employee.company',
+        'user.employee.position:id,name',
+        'user.employee.department:id,department_name',
+        'approval.approver2User.employee',
+        'approval.approver2User.employee.position:id,name',
+    ])->findOrFail($id);
 
-    $image = @file_get_contents($localPath);
-    if ($image === false)          return $cache[$localPath] = null;
+    $capexVendors = $request->items->mapWithKeys(function ($item) {
+        return [
+            $item->id => $item->vendors->values()->map(fn($v) => [
+                'vendor_name' => $v->vendor?->vendor_name ?? '-',
+                'price'       => $v->price ?? 0,
+            ])
+        ];
+    });
 
-    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    $mime  = finfo_buffer($finfo, $image);
-    finfo_close($finfo);
+    $employee    = $request->user?->employee;
+    $requestDate = $request->request_date
+        ->timezone('Asia/Makassar')
+        ->translatedFormat('d F Y');
+    $Deadline = $request->deadline
+        ->timezone('Asia/Makassar')
+        ->translatedFormat('d F Y');
 
-    return $cache[$localPath] = 'data:' . $mime . ';base64,' . base64_encode($image);
-};
+    // ── toBase64 helper ──────────────────────────────────────────
+    $cache    = [];
+    $toBase64 = static function (string $localPath) use (&$cache): ?string {
+        if (isset($cache[$localPath])) return $cache[$localPath];
+        if (!is_file($localPath))      return $cache[$localPath] = null;
 
-$showManagerSignature = in_array($request->status, ['Approved Manager', 'Approved Director']);
+        $image = @file_get_contents($localPath);
+        if ($image === false)          return $cache[$localPath] = null;
 
-$internalBase = rtrim(env('HRX_INTERNAL_URL', 'https://hrx.asianbay.co.id'), '/');
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime  = finfo_buffer($finfo, $image);
+        finfo_close($finfo);
 
-Log::info('=== LOGO DEBUG ===', [
-    'companyId'    => $companyId,
-    'internalBase' => $internalBase,
-]);
+        return $cache[$localPath] = 'data:' . $mime . ';base64,' . base64_encode($image);
+    };
 
-$responses = Http::pool(function ($pool) use ($companyId, $internalBase) {
-    if (!$companyId) return [];
+    $showManagerSignature = in_array($request->status, ['Approved Manager', 'Approved Director']);
 
-    return [
-        $pool->as('logo')
-            ->withoutVerifying()
-            ->timeout(8)
-            ->get("{$internalBase}/api/company/{$companyId}"),
-    ];
-});
+    // ── Logo ─────────────────────────────────────────────────────
+    $logoBase64   = null;
+    $companyId    = $request->company?->id;
+    $internalBase = rtrim(config('services.hrx.internal_url', env('HRX_INTERNAL_URL', 'http://127.0.0.1:8001')), '/');
 
-$logoBase64   = null;
-$logoResponse = $responses['logo'] ?? null;
-
-Log::info('=== LOGO RESPONSE ===', [
-    'status'   => $logoResponse?->status(),
-    'logoUrl'  => $logoResponse?->json('logo_url'),
-]);
-
-if ($logoResponse instanceof \Illuminate\Http\Client\Response && $logoResponse->successful()) {
-    $logoUrl = $logoResponse->json('logo_url');
-
-    if ($logoUrl) {
+    if ($companyId) {
         try {
-            $logoUrlInternal = preg_replace(
-                '#^https?://hrx\.asianbay\.co\.id#',
-                $internalBase,
-                $logoUrl
-            );
+            $apiResponse = Http::withoutVerifying()->timeout(8)->get("{$internalBase}/api/company/{$companyId}");
 
-            Log::info('=== LOGO URL INTERNAL ===', ['url' => $logoUrlInternal]);
+            if ($apiResponse->successful()) {
+                $logoUrl = $apiResponse->json('logo_url');
 
-            $imgResponse = Http::withoutVerifying()->timeout(5)->get($logoUrlInternal);
+                if ($logoUrl) {
+                    $logoUrlInternal = preg_replace(
+                        '#^https?://hrx\.asianbay\.co\.id#',
+                        $internalBase,
+                        $logoUrl
+                    );
 
-            Log::info('=== IMG RESPONSE ===', [
-                'status' => $imgResponse->status(),
-                'size'   => strlen($imgResponse->body()),
-            ]);
+                    $imgResponse = Http::withoutVerifying()->timeout(5)->get($logoUrlInternal);
 
-            if ($imgResponse->successful()) {
-                $body       = $imgResponse->body();
-                $finfo      = finfo_open(FILEINFO_MIME_TYPE);
-                $mime       = finfo_buffer($finfo, $body);
-                finfo_close($finfo);
-                $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($body);
-
-                Log::info('=== LOGO BASE64 OK ===', ['mime' => $mime, 'length' => strlen($logoBase64)]);
+                    if ($imgResponse->successful()) {
+                        $body       = $imgResponse->body();
+                        $finfo      = finfo_open(FILEINFO_MIME_TYPE);
+                        $mime       = finfo_buffer($finfo, $body);
+                        finfo_close($finfo);
+                        $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($body);
+                    }
+                }
             }
         } catch (\Exception $e) {
             Log::error('Logo fetch error: ' . $e->getMessage());
         }
     }
-}
-        $managerName            = null;
-        $positionName           = null;
-        $managerSignatureBase64 = null;
 
-        if ($employee && $showManagerSignature) {
-            $manager = $this->resolveManager($employee);
+    // ── Signatures ───────────────────────────────────────────────
+    $managerName            = null;
+    $positionName           = null;
+    $managerSignatureBase64 = null;
 
-            if ($manager) {
-                $managerName  = $manager->employee_name;
-                $positionName = optional(
-                    optional($manager->structuresnew?->submissionposition)
-                        ->positionRelation
-                )->name ?? null;
+    if ($employee && $showManagerSignature) {
+        $manager = $this->resolveManager($employee);
 
-                if ($manager->signature) {
-                    $managerSignatureBase64 = $toBase64(
-                        public_path('storage/' . $manager->signature)
-                    );
+        if ($manager) {
+            $managerName  = $manager->employee_name;
+            $positionName = optional(
+                optional($manager->structuresnew?->submissionposition)
+                    ->positionRelation
+            )->name ?? null;
 
-                    if (!$managerSignatureBase64) {
-                        Log::warning('Manager signature tidak ditemukan di disk', [
-                            'path' => public_path('storage/' . $manager->signature),
-                        ]);
-                    }
-                }
+            if ($manager->signature) {
+                $managerSignatureBase64 = $toBase64(
+                    public_path('storage/' . $manager->signature)
+                );
             }
         }
-        $signatureBase64 = $employee?->signature
-            ? $toBase64(public_path('storage/' . $employee->signature))
-            : null;
-        $approver2   = $request->approval?->approver2User?->employee;
-        $signatories = [
-            'approver2' => [
-                'name'      => $approver2?->employee_name,
-                'position'  => $approver2?->position?->name,
-                'signature' => $approver2?->signature
-                    ? $toBase64(public_path('storage/' . $approver2->signature))
-                    : null,
-            ],
-        ];
-        $viewData = [
-            'request'                => $request,
-            'logoBase64'             => $logoBase64,
-            'signatureBase64'        => $signatureBase64,
-            'managerSignatureBase64' => $managerSignatureBase64,
-            'managerName'            => $managerName,
-            'positionName'           => $positionName,
-            'signatories'            => $signatories,
-            'total'                  => $request->items->sum('total_price'),
-            'Deadline'               => $Deadline,
-            'requestDate'            => $requestDate,
-            'itemCount'              => $request->items->count(),
-            'showSignature'          => $showManagerSignature,
-             'capexVendors' => $capexVendors,
-        ];
-        return Pdf::loadView('pages.request.pdf', $viewData)
-            ->setPaper('A4')
-            ->setOptions([
-                'isRemoteEnabled'      => false,
-                'isHtml5ParserEnabled' => true,
-                'isPhpEnabled'         => false,
-                'defaultFont'          => 'sans-serif',
-            ])
-            ->download('request-' . $request->document_number . '.pdf');
     }
+
+    $signatureBase64 = $employee?->signature
+        ? $toBase64(public_path('storage/' . $employee->signature))
+        : null;
+
+    $approver2   = $request->approval?->approver2User?->employee;
+    $signatories = [
+        'approver2' => [
+            'name'      => $approver2?->employee_name,
+            'position'  => $approver2?->position?->name,
+            'signature' => $approver2?->signature
+                ? $toBase64(public_path('storage/' . $approver2->signature))
+                : null,
+        ],
+    ];
+
+    // ── Render PDF ───────────────────────────────────────────────
+    $viewData = [
+        'request'                => $request,
+        'logoBase64'             => $logoBase64,
+        'signatureBase64'        => $signatureBase64,
+        'managerSignatureBase64' => $managerSignatureBase64,
+        'managerName'            => $managerName,
+        'positionName'           => $positionName,
+        'signatories'            => $signatories,
+        'total'                  => $request->items->sum('total_price'),
+        'Deadline'               => $Deadline,
+        'requestDate'            => $requestDate,
+        'itemCount'              => $request->items->count(),
+        'showSignature'          => $showManagerSignature,
+        'capexVendors'           => $capexVendors,
+    ];
+
+    return Pdf::loadView('pages.request.pdf', $viewData)
+        ->setPaper('A4')
+        ->setOptions([
+            'isRemoteEnabled'      => false,
+            'isHtml5ParserEnabled' => true,
+            'isPhpEnabled'         => false,
+            'defaultFont'          => 'sans-serif',
+        ])
+        ->download('request-' . $request->document_number . '.pdf');
+}
     public function create()
     {
         $user = auth()->user();
