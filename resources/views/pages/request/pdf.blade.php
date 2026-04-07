@@ -531,14 +531,26 @@
                                 @endif
                             </td>
                         @endfor --}}
-                        @for ($v = 0; $v < 3; $v++)
+                        {{-- @for ($v = 0; $v < 3; $v++)
     <td class="center">
         @if (isset($vendors[$v]))
             @if ($vendors[$v]['is_selected'])
-                <strong style="color: #1a7f3c;">✓</strong>
+                <strong style="color: #1a7f3c;"></strong>
             @endif
             Rp {{ number_format($vendors[$v]['price'], 2, ',', '.') }}<br>
             <small>{{ $vendors[$v]['vendor_name'] }}</small>
+        @else
+            -
+        @endif
+    </td>
+@endfor --}}
+@for ($v = 0; $v < 3; $v++)
+    <td class="center">
+        @if (isset($vendors[$v]))
+            Rp {{ number_format($vendors[$v]['price'], 2, ',', '.') }}<br>
+            <small @if($vendors[$v]['is_selected']) style="color: #1a7f3c; font-weight: bold;" @endif>
+                {{ $vendors[$v]['vendor_name'] }}
+            </small>
         @else
             -
         @endif
