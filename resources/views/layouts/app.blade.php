@@ -239,7 +239,15 @@ if (localStorage.getItem('theme') === 'light') {
         class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
         <div
             class="sidebar-inner flex grow flex-col gap-y-5 overflow-y-auto bg-slate-900 border-r border-slate-800 px-6 pb-4">
-            <div class="flex items-center gap-3 h-24 border-b border-slate-800">
+           <div class="flex items-center gap-3 h-24 border-b border-slate-800">
+    <img id="logo" src="{{ asset('img/AsianBaylogo.png') }}" class="h-16 w-auto">
+
+    <div>
+        <h2 class="text-base font-bold text-slate-700 dark:text-slate-400">Form Request</h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Information System</p>
+    </div>
+</div>
+            {{-- <div class="flex items-center gap-3 h-24 border-b border-slate-800">
                 <img src="{{ asset('img/AsianBaylogo.png') }}" class="block dark:hidden h-16 w-auto">
 
                 <img src="{{ asset('img/AsianBay.png') }}" class="hidden dark:block h-16 w-auto">
@@ -249,7 +257,7 @@ if (localStorage.getItem('theme') === 'light') {
                     <p class="text-xs text-slate-500 dark:text-slate-400">Information System</p>
                 </div>
 
-            </div>
+            </div> --}}
             <nav class="flex flex-1 flex-col">
                 <ul role="list" class="flex flex-1 flex-col gap-y-7">
                     <li>
@@ -295,7 +303,7 @@ if (localStorage.getItem('theme') === 'light') {
                                 </a>
                             @endrole
                     </li>
-                    @role('admin|executor')
+                    @role('admin')
                         <a href="{{ route('requesttype') }}"
                             class="group flex gap-x-3 rounded-lg p-3 text-sm leading-6 font-semibold transition-all
                                           {{ request()->routeIs('requesttype')
@@ -546,6 +554,26 @@ if (localStorage.getItem('theme') === 'light') {
             }
         }
     </script>
+    <script>
+    function updateLogo() {
+        const isDark = document.documentElement.classList.contains('dark');
+        const logo = document.getElementById('logo');
+
+        logo.src = isDark
+            ? "{{ asset('img/AsianBay.png') }}"      // dark logo
+            : "{{ asset('img/AsianBaylogo.png') }}"; // light logo
+    }
+
+    // run saat load
+    updateLogo();
+
+    // optional: kalau kamu punya toggle button
+    const observer = new MutationObserver(updateLogo);
+    observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class']
+    });
+</script>
     @stack('scripts')
 </body>
 

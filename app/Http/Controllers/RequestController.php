@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 use App\Models\Requesttype;
@@ -14,6 +15,8 @@ use App\Models\Requestapproval;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\RequestMail;
 use App\Models\User;
+use App\Models\ItemVendorQuotation;
+use App\Models\Requestlink;
 use Illuminate\Validation\Rule;
 use App\Models\Structuresnew;
 use App\Models\Vendor;
@@ -21,7 +24,6 @@ use App\Models\Company;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Client\Response;
-
 
 class RequestController extends Controller
 {
@@ -115,8 +117,10 @@ class RequestController extends Controller
         // untuk manager
         $user = auth()->user();
         if ($user->hasRole('admin')) {
-            // 🔥 admin lihat semua, tidak perlu filter apa pun
-        } elseif ($user->hasRole('manager')) {
+        }
+        
+        elseif ($user->hasRole('manager')) {
+
             $employee = $user->employee;
 
             if ($employee && $employee->structure_id) {
@@ -131,30 +135,42 @@ class RequestController extends Controller
                     // ambil employee dari HRX
                     $employeeIds = Employee::whereIn('structure_id', $structureIds)
                         ->pluck('id');
-
-                    // ambil user_id dari DB utama (form)
+                    // ambil user_id dari DB utama
                     $userIds = User::whereIn('employee_id', $employeeIds)
                         ->pluck('id');
-
-                    // ✅ filter pakai user_id (AMAN)
-                    $query->whereIn('user_id', $userIds);
-
+                    // filter dasar
                     $query->whereIn('user_id', $userIds)
                         ->whereIn('status', ['Submitted', 'Approved Manager']);
+                    // ✅ tambahan kondisi CAPEX
+                    $query->where(function ($q) use ($employee) {
+                        $q->whereHas('requestType', function ($rt) {
+                            $rt->where('code', '!=', 'CAPEX');
+                        })
+                            ->orWhere(function ($q2) use ($employee) {
+                                $q2->whereHas('requestType', function ($rt) {
+                                    $rt->where('code', 'CAPEX');
+                                })
+                                    ->whereHas('user.employee', function ($emp) use ($employee) {
+                                        $emp->whereIn('position_id', [
+                                            '019a0af3-ae1c-735f-9971-fad5fb356223',
+                                            '01992266-5627-717a-8d36-1e0479f22815'
+                                        ]);
+                                    });
+                            });
+                    });
                 }
             }
         } elseif ($user->hasRole('finance')) {
             $query->where('status', 'Approved Director');
-        } 
+        }
         // elseif ($user->hasRole('director')) {
         //     $query->where('status', ['Approved Manager', 'Approved Director', 'Rejected Director']);
         elseif ($user->hasRole('director')) {
-    $query->whereIn('status', [
-        'Approved Manager',
-        'Approved Director',
-        'Rejected Director'
-    ]);
-
+            $query->whereIn('status', [
+                'Approved Manager',
+                'Approved Director',
+                'Rejected Director'
+            ]);
         } elseif ($user->hasRole('user')) {
             $query->where('user_id', $user->id);
         }
@@ -263,23 +279,6 @@ class RequestController extends Controller
                         <circle cx="12" cy="12" r="3.25" />
                     </svg>
                 </a>';
-                //         $pdfBtn = '
-                // <a href="' . route('request.pdf', $id) . '"
-                //    class="inline-flex items-center justify-center p-2
-                //           text-slate-500 hover:text-red-600
-                //           hover:bg-red-50 rounded-full transition"
-                //    title="Download PDF: ' . e(optional($row->requesttype)->request_type_name) . ' - ' . e($row->title) . '"
-                //    target="_blank">
-                //     <svg xmlns="http://www.w3.org/2000/svg"
-                //          class="w-5 h-5"
-                //          fill="none"
-                //          viewBox="0 0 24 24"
-                //          stroke="currentColor"
-                //          stroke-width="1.8">
-                //         <path stroke-linecap="round" stroke-linejoin="round"
-                //               d="M12 16v-8m0 8l-3-3m3 3l3-3M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
-                //     </svg>
-                // </a>';
                 $status = $row->status ?? null;
 
                 if ($status === 'Approved Director') {
@@ -336,17 +335,15 @@ class RequestController extends Controller
 
     public function edit($hash)
     {
-        $request = Formrequest::with('items')->get()->first(function ($u) use ($hash) {
+        $request = Formrequest::with('items', 'items.vendors')->get()->first(function ($u) use ($hash) {
             return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
         });
         abort_if(!$request, 404);
         $user = auth()->user();
         if ($user->hasRole('user') && $request->user_id !== $user->id) {
-            // abort(403, 'Kamu tidak punya akses untuk mengedit request ini.');
             return redirect()->route('request')
                 ->with('error', 'you account doesnt have access to edit this request anjay.');
         }
-        // 🔥 Admin bebas edit semua
         if (!$user->hasRole('admin')) {
             $lockRules = [
                 'Draft'             => ['finance', 'manager', 'director'], // selain ini boleh edit
@@ -367,7 +364,8 @@ class RequestController extends Controller
             }
         }
         $vendors = Vendor::where('status', 'Active')->pluck('vendor_name', 'id');
-        $requesttypes = Requesttype::pluck('request_type_name', 'id');
+        $requesttypes = Requesttype::select('id', 'request_type_name', 'code')->get();
+
 
         $user = auth()->user();
 
@@ -432,6 +430,7 @@ class RequestController extends Controller
         }
 
         $uoms = Requestitem::getUomOptions();
+        $assets = Formrequest::getAssetOptions();
 
         if ($user->hasRole('manager')) {
             $employee = $user->employee;
@@ -465,6 +464,7 @@ class RequestController extends Controller
                 }
             }
         }
+        $isDirector = $user->hasRole('director');
         return view('pages.request.editrequest', compact(
             'request',
             'companies',
@@ -472,6 +472,8 @@ class RequestController extends Controller
             'requesttypes',
             'statuses',
             'uoms',
+            'assets',
+            'isDirector',
             'userCompanyId',
             'userCompanyName'
         ));
@@ -484,17 +486,11 @@ class RequestController extends Controller
             ->first(function ($u) use ($hash) {
                 return substr(hash('sha256', $u->id . config('app.key')), 0, 8) === $hash;
             });
-
         abort_if(!$request, 404);
-
-        // load employee
         $request->load('approval.approver1User.employee');
-        // dd($request->approval->approver1User->employee->employee_name);
-
         $vendors = Vendor::where('status', 'Active')->pluck('vendor_name', 'id');
         $requesttypes = Requesttype::pluck('request_type_name', 'id');
         $companies = Company::pluck('name', 'id');
-
         $statuses = [
             'Draft' => 'Draft',
             'Submitted' => 'Submitted',
@@ -506,9 +502,7 @@ class RequestController extends Controller
             'Approved Director' => 'Approved Director',
             'Done' => 'Done',
         ];
-
         $uoms = Requestitem::getUomOptions();
-
         return view('pages.request.showrequest', compact(
             'companies',
             'request',
@@ -521,12 +515,9 @@ class RequestController extends Controller
     private function resolveManager(Employee $employee): ?Employee
     {
         $employee->loadMissing('structuresnew.parent');
-
         if (!$employee->structuresnew) return null;
-
         $current          = $employee->structuresnew->parent;
         $managerStructure = null;
-
         while ($current) {
             if ($current->is_manager) {
                 $managerStructure = $current;
@@ -535,14 +526,11 @@ class RequestController extends Controller
             $current->load('parent');
             $current = $current->parent;
         }
-
         if (!$managerStructure) return null;
-
         return Employee::with([
             'structuresnew.submissionposition.positionRelation',
         ])->where('structure_id', $managerStructure->id)->first();
     }
-
     public function pdfview($id)
     {
         set_time_limit(120);
@@ -552,26 +540,34 @@ class RequestController extends Controller
             'vendor',
             'requesttype',
             'items',
+            'links',
+            'items.vendors',
             'company:id',
             'user.employee',
+            'items.vendors.vendor',
             'user.employee.company',
             'user.employee.position:id,name',
             'user.employee.department:id,department_name',
             'approval.approver2User.employee',
             'approval.approver2User.employee.position:id,name',
+            
         ])->findOrFail($id);
-
+        $capexVendors = $request->items->mapWithKeys(function ($item) {
+    return [
+        $item->id => $item->vendors->values()->map(fn($v) => [
+            'vendor_name' => $v->vendor?->vendor_name ?? '-',
+            'price'       => $v->price ?? 0,
+        ])
+    ];
+});
         $employee  = $request->user?->employee;
         $companyId = $request->company?->id;
-
         $requestDate = $request->request_date
             ->timezone('Asia/Makassar')
             ->translatedFormat('d F Y');
-
         $Deadline = $request->deadline
             ->timezone('Asia/Makassar')
             ->translatedFormat('d F Y');
-
         $cache    = [];
         $toBase64 = static function (string $localPath) use (&$cache): ?string {
             if (isset($cache[$localPath])) return $cache[$localPath];
@@ -592,7 +588,6 @@ class RequestController extends Controller
         // HTTP — hanya untuk logo
         $responses = Http::pool(function ($pool) use ($companyId) {
             if (!$companyId) return [];
-
             return [
                 $pool->as('logo')
                     ->withoutVerifying()
@@ -600,7 +595,6 @@ class RequestController extends Controller
                     ->get("https://hrx.asianbay.co.id/api/company/{$companyId}"),
             ];
         });
-
         $logoBase64   = null;
         $logoResponse = $responses['logo'] ?? null;
 
@@ -623,8 +617,6 @@ class RequestController extends Controller
                 }
             }
         }
-
-        // Manager — dari DB langsung, tanpa HTTP
         $managerName            = null;
         $positionName           = null;
         $managerSignatureBase64 = null;
@@ -652,13 +644,9 @@ class RequestController extends Controller
                 }
             }
         }
-
-        // Signature employee
         $signatureBase64 = $employee?->signature
             ? $toBase64(public_path('storage/' . $employee->signature))
             : null;
-
-        // Approver2
         $approver2   = $request->approval?->approver2User?->employee;
         $signatories = [
             'approver2' => [
@@ -669,7 +657,6 @@ class RequestController extends Controller
                     : null,
             ],
         ];
-
         $viewData = [
             'request'                => $request,
             'logoBase64'             => $logoBase64,
@@ -683,8 +670,8 @@ class RequestController extends Controller
             'requestDate'            => $requestDate,
             'itemCount'              => $request->items->count(),
             'showSignature'          => $showManagerSignature,
+             'capexVendors' => $capexVendors,
         ];
-
         return Pdf::loadView('pages.request.pdf', $viewData)
             ->setPaper('A4')
             ->setOptions([
@@ -695,18 +682,14 @@ class RequestController extends Controller
             ])
             ->download('request-' . $request->document_number . '.pdf');
     }
-
     public function create()
     {
         $user = auth()->user();
-
-        // Hanya role user & admin
         if (!$user->hasRole(['user', 'admin'])) {
             abort(403, 'Tidak memiliki akses');
         }
-
         $vendors = Vendor::where('status', 'Active')->pluck('vendor_name', 'id');
-        $requesttypes = Requesttype::pluck('request_type_name', 'id');
+        $requesttypes = Requesttype::select('id', 'request_type_name', 'code')->get();
         $userCompanyName = optional($user->employee->company)->name;
         $userCompanyId   = optional($user->employee)->company_id;
 
@@ -737,19 +720,135 @@ class RequestController extends Controller
             'Approved Director' => 'Approved Director',
             'Done' => 'Done',
         ];
-
         $uoms = Requestitem::getUomOptions();
-
+        $assets = Formrequest::getAssetOptions();
         return view('pages.request.createrequest', compact(
             'companies',
             'userCompanyId',
             'uoms',
+            'assets',
             'vendors',
             'isMainCompany',
             'requesttypes',
             'statuses'
         ));
     }
+    // public function store(Request $request)
+    // {
+    //     Log::info('STORE REQUEST START', [
+    //         'payload' => $request->all(),
+    //         'user_id' => Auth::id()
+    //     ]);
+    //     $typesNeedVendor = [
+    //         '019d3986-699d-7328-a43c-8e730fc4a691',
+    //         '019cd03f-b3ab-70a2-bee9-3e9ce248ca32',
+    //         '019d3987-0681-73c9-a8d1-2e47d82a59d7',
+    //     ];
+    //     $validated = $request->validate([
+    //         'request_type_id'       => ['required', 'exists:request_type,id'],
+    //         'company_id'            => ['nullable', 'exists:hrx.company_tables,id'],
+    //         'vendor_id' => [
+    //             'nullable',
+    //             'exists:vendor,id',
+    //             Rule::requiredIf(in_array($request->request_type_id, $typesNeedVendor)),
+    //         ],
+    //         'assets' => [
+    //             'nullable',
+    //             Rule::requiredIf(in_array($request->request_type_id, $typesNeedVendor)),
+    //         ],
+    //         'transfer'              => ['nullable', 'string'],
+    //         'request_date'          => ['required', 'date'],
+    //         'deadline'              => ['required', 'date', 'after_or_equal:request_date'],
+    //         'title'                 => ['required', 'string', 'max:255'],
+    //         'notes'                 => ['nullable', 'string'],
+    //         'status'                => ['required|in:Draft,Submitted,Approved Manager,Rejected Manager,Approved Finance,Rejected Finance,Approved Director,Rejected Director,Done'],
+    //         'addressed_to'          => ['nullable', 'string'],
+    //         'destination'           => ['nullable', 'string', 'max:255'],
+    //         'items'                 => ['required', 'array', 'min:1'],
+    //         'items.*.item_name'     => ['required', 'string', 'max:255'],
+    //         'items.*.specification' => ['nullable', 'string'],
+    //         'items.*.qty'           => ['required'],
+    //         'items.*.uom'           => ['required', Rule::in(Requestitem::getUomOptions())],
+    //         'items.*.price'         => ['required'],
+    //     ]);
+
+
+    //     Log::info('VALIDATION PASSED', ['validated' => $validated]);
+
+    //     $parsePrice = fn($v) => (float) str_replace(',', '.', str_replace('.', '', $v));
+    //     $parseQty   = fn($v) => (float) str_replace(',', '.', $v);
+    //     DB::beginTransaction();
+    //     try {
+    //         $companyName = null;
+    //         if (!empty($validated['company_id'])) {
+    //             $companyName = Company::on('hrx')
+    //                 ->where('id', $validated['company_id'])
+    //                 ->value('name');
+    //         }
+    //         $totalAmount = collect($validated['items'])->sum(
+    //             fn($item) => $parseQty($item['qty']) * $parsePrice($item['price'])
+    //         );
+    //         Log::info('TOTAL AMOUNT', ['total' => $totalAmount]);
+    //         $formrequest = Formrequest::create([
+    //             'request_type_id' => $validated['request_type_id'],
+    //             'vendor_id'       => $validated['vendor_id'] ?? null,
+    //             'assets'       => $validated['assets'] ?? null,
+    //             'user_id'         => Auth::id(),
+    //             'request_date'    => $validated['request_date'],
+    //             'company_id'      => $validated['company_id'] ?? null,
+    //             'addressed_to'    => $validated['addressed_to'] ?? null,
+    //             'transfer'        => $companyName,
+    //             'deadline'        => $validated['deadline'],
+    //             'title'           => $validated['title'],
+    //             'notes'           => $validated['notes'] ?? null,
+    //             'total_amount'    => round($totalAmount, 2)?? null,
+    //             'status'          => 'Draft',
+    //         ]);
+    //         Log::info('FORMREQUEST CREATED', ['id' => $formrequest->id]);
+    //         foreach ($validated['items'] as $item) {
+    //             $qty   = $parseQty($item['qty']);
+    //             $price = $parsePrice($item['price']);
+    //             $requestItem = Requestitem::create([
+    //                 'request_id'    => $formrequest->id,
+    //                 'item_name'     => $item['item_name'],
+    //                 'specification' => $item['specification'] ?? null,
+    //                 'qty'           => $qty,
+    //                 'uom'           => $item['uom'] ?? null,
+    //                 'price'         => $price ?? null,
+    //                 'total_price'   => round($qty * $price, 2),
+    //             ]);
+    //             if (!empty($item['vendors'])) {
+    //             foreach ($item['vendors'] as $vendorData) {
+    //                 if (empty($vendorData['vendor_id'])) continue;
+    //                 ItemVendorQuotation::create([
+    //                     'request_item_id' => $requestItem->id,
+    //                     'vendor_id'       => $vendorData['vendor_id'],
+    //                     'price'           => $parsePrice($vendorData['price'] ?? 0),
+    //                     'notes'           => $vendorData['notes'] ?? null,
+    //                 ]);
+    //                 Log::info('VENDOR QUOTATION CREATED', [
+    //                     'request_item_id' => $requestItem->id,
+    //                     'vendor_id'       => $vendorData['vendor_id'],
+    //                 ]);
+    //             }
+    //         }
+    //         }
+    //         DB::commit();
+    //         Log::info('STORE SUCCESS');
+    //         return redirect()
+    //             ->route('request')
+    //             ->with('success', 'Request berhasil dibuat.');
+    //     } catch (\Throwable $e) {
+    //         DB::rollBack();
+    //         Log::error('STORE ERROR', [
+    //             'message' => $e->getMessage(),
+    //             'trace'   => $e->getTraceAsString()
+    //         ]);
+    //         return back()
+    //             ->withInput()
+    //             ->with('error', 'Gagal membuat request: ' . $e->getMessage());
+    //     }
+    // }
     public function store(Request $request)
     {
         Log::info('STORE REQUEST START', [
@@ -757,53 +856,99 @@ class RequestController extends Controller
             'user_id' => Auth::id()
         ]);
 
+        $typesNeedVendor = [
+            '019d3986-699d-7328-a43c-8e730fc4a691',
+            '019cd03f-b3ab-70a2-bee9-3e9ce248ca32',
+            '019d3987-0681-73c9-a8d1-2e47d82a59d7',
+        ];
+
+        // ✅ Deteksi apakah CAPEX
+        $isCAPEX = in_array($request->request_type_id, $typesNeedVendor);
+
         $validated = $request->validate([
             'request_type_id'       => ['required', 'exists:request_type,id'],
             'company_id'            => ['nullable', 'exists:hrx.company_tables,id'],
-            'vendor_id'             => ['nullable', 'exists:vendor,id'],
+            'vendor_id' => [
+                'nullable',
+                'exists:vendor,id',
+            ],
+            'assets'                => ['nullable'],
             'transfer'              => ['nullable', 'string'],
             'request_date'          => ['required', 'date'],
             'deadline'              => ['required', 'date', 'after_or_equal:request_date'],
             'title'                 => ['required', 'string', 'max:255'],
             'notes'                 => ['nullable', 'string'],
-            'status'                 => ['required|in:Draft,Submitted,Approved Manager,Rejected Manager,Approved Finance,Rejected Finance,Approved Director,Rejected Director,Done'],
+            'status'                => ['nullable', 'string'],
             'addressed_to'          => ['nullable', 'string'],
             'destination'           => ['nullable', 'string', 'max:255'],
             'items'                 => ['required', 'array', 'min:1'],
             'items.*.item_name'     => ['required', 'string', 'max:255'],
             'items.*.specification' => ['nullable', 'string'],
             'items.*.qty'           => ['required'],
-            'items.*.uom'           => ['required', Rule::in(Requestitem::getUomOptions())],
-            'items.*.price'         => ['required'],
+            'items.*.uom'           => ['nullable', Rule::in(Requestitem::getUomOptions())],
+
+            // ✅ price wajib hanya jika BUKAN CAPEX
+            'items.*.price' => [
+                $isCAPEX ? 'nullable' : 'required',
+            ],
+
+            // ✅ vendors wajib ada jika CAPEX
+            'items.*.vendors'               => [$isCAPEX ? 'required' : 'nullable', 'array'],
+            'items.*.vendors.*.vendor_id'   => ['nullable', 'exists:vendor,id'],
+            'items.*.vendors.*.price'       => ['nullable'],
+            'items.*.vendors.*.notes'       => ['nullable', 'string'],
+            'links.*.link'           => ['nullable', 'max:255'],
         ]);
 
         Log::info('VALIDATION PASSED', ['validated' => $validated]);
 
-        // Helper: parse format angka Indonesia (e.g. "1.500,50" → 1500.50)
         $parsePrice = fn($v) => (float) str_replace(',', '.', str_replace('.', '', $v));
         $parseQty   = fn($v) => (float) str_replace(',', '.', $v);
 
         DB::beginTransaction();
 
         try {
-            // Ambil nama company jika ada
             $companyName = null;
             if (!empty($validated['company_id'])) {
                 $companyName = Company::on('hrx')
                     ->where('id', $validated['company_id'])
                     ->value('name');
             }
+            // ✅ Hitung total amount berbeda untuk CAPEX vs non-CAPEX
+            // if ($isCAPEX) {
+            //     $totalAmount = collect($validated['items'])->sum(function ($item) use ($parseQty, $parsePrice) {
+            //         $qty = $parseQty($item['qty'] ?? 0);
+            //         $firstPrice = $parsePrice($item['vendors'][0]['price'] ?? 0);
+            //         return $qty * $firstPrice;
+            //     });
+            // } else {
+            //     $totalAmount = collect($validated['items'])->sum(
+            //         fn($item) => $parseQty($item['qty']) * $parsePrice($item['price'])
+            //     );
+            // }
+            if ($isCAPEX) {
 
-            // Hitung total amount dengan parsing yang konsisten
-            $totalAmount = collect($validated['items'])->sum(
-                fn($item) => $parseQty($item['qty']) * $parsePrice($item['price'])
-            );
-
+                // jika belum di-approve Manager IT → jangan hitung
+                if (empty($formrequest->manager_it_approved_at)) {
+                    $totalAmount = 0;
+                } else {
+                    $totalAmount = collect($validated['items'])->sum(function ($item) use ($parseQty, $parsePrice) {
+                        $qty = $parseQty($item['qty'] ?? 0);
+                        $firstPrice = $parsePrice($item['vendors'][0]['price'] ?? 0);
+                        return $qty * $firstPrice;
+                    });
+                }
+            } else {
+                $totalAmount = collect($validated['items'])->sum(
+                    fn($item) => $parseQty($item['qty']) * $parsePrice($item['price'])
+                );
+            }
             Log::info('TOTAL AMOUNT', ['total' => $totalAmount]);
 
             $formrequest = Formrequest::create([
                 'request_type_id' => $validated['request_type_id'],
                 'vendor_id'       => $validated['vendor_id'] ?? null,
+                'assets'          => $validated['assets'] ?? null,
                 'user_id'         => Auth::id(),
                 'request_date'    => $validated['request_date'],
                 'company_id'      => $validated['company_id'] ?? null,
@@ -815,23 +960,71 @@ class RequestController extends Controller
                 'total_amount'    => round($totalAmount, 2),
                 'status'          => 'Draft',
             ]);
-            Log::info('FORMREQUEST CREATED', ['id' => $formrequest->id]);
-            foreach ($validated['items'] as $item) {
-                $qty   = $parseQty($item['qty']);
-                $price = $parsePrice($item['price']);
 
-                Requestitem::create([
-                    'request_id'    => $formrequest->id,
-                    'item_name'     => $item['item_name'],
-                    'specification' => $item['specification'] ?? null,
-                    'qty'           => $qty,
-                    'uom'           => $item['uom'],
-                    'price'         => $price,
-                    'total_price'   => round($qty * $price, 2),
-                ]);
+            Log::info('FORMREQUEST CREATED', ['id' => $formrequest->id]);
+
+            foreach ($validated['items'] as $item) {
+                $qty = $parseQty($item['qty'] ?? 0);
+
+                if ($isCAPEX) {
+                    // ✅ CAPEX: price = 0 dulu, nanti diupdate saat vendor dipilih
+                    $requestItem = Requestitem::create([
+                        'request_id'    => $formrequest->id,
+                        'item_name'     => $item['item_name'],
+                        'specification' => $item['specification'] ?? null,
+                        'qty'           => $qty,
+                        'uom'           => $item['uom'] ?? null,
+                        'price'         => null,
+                        'total_price'   => null,
+                    ]);
+
+                    // ✅ Simpan semua vendor quotation
+                    if (!empty($item['vendors'])) {
+                        foreach ($item['vendors'] as $vendorData) {
+                            if (empty($vendorData['vendor_id'])) continue;
+
+                            $vendorPrice = $parsePrice($vendorData['price'] ?? 0);
+
+                            ItemVendorQuotation::create([
+                                'request_item_id' => $requestItem->id,
+                                'vendor_id'       => $vendorData['vendor_id'],
+                                'price'           => $vendorPrice,
+                                'notes'           => $vendorData['notes'] ?? null,
+                                'is_selected'     => false,
+                            ]);
+
+                            Log::info('VENDOR QUOTATION CREATED', [
+                                'request_item_id' => $requestItem->id,
+                                'vendor_id'       => $vendorData['vendor_id'],
+                                'price'           => $vendorPrice,
+                            ]);
+                        }
+                    }
+                } else {
+                    // ✅ Non-CAPEX: price dari input langsung
+                    $price = $parsePrice($item['price'] ?? 0);
+
+                    Requestitem::create([
+                        'request_id'    => $formrequest->id,
+                        'item_name'     => $item['item_name'],
+                        'specification' => $item['specification'] ?? null,
+                        'qty'           => $qty,
+                        'uom'           => $item['uom'] ?? null,
+                        'price'         => $price,
+                        'total_price'   => round($qty * $price, 2),
+                    ]);
+                }
+            }
+            if (!empty($validated['links'])) {
+                foreach ($validated['links'] as $link) {
+                    if (empty($link['link'])) continue;
+
+                    $formrequest->links()->create([
+                        'link' => $link['link'],
+                    ]);
+                }
             }
             DB::commit();
-
             Log::info('STORE SUCCESS');
 
             return redirect()
@@ -850,7 +1043,6 @@ class RequestController extends Controller
                 ->with('error', 'Gagal membuat request: ' . $e->getMessage());
         }
     }
-
     public function update(Request $request, $hash)
     {
         Log::info('UPDATE REQUEST - START', [
@@ -858,14 +1050,17 @@ class RequestController extends Controller
             'user_id' => auth()->id(),
             'payload' => $request->all()
         ]);
-
+        // Detect request type code
+        $requestType = RequestType::find($request->input('request_type_id'));
+        $isCAPEX = $requestType?->code === 'CAPEX';
         $validated = $request->validate([
-            'request_type_id'       => ['required', 'exists:request_type,id'],
+            'request_type_id'       => ['nullable', 'exists:request_type,id'],
             'vendor_id'             => ['nullable', 'exists:vendor,id'],
             'request_date'          => ['required', 'date'],
             'deadline'              => ['required', 'date', 'after_or_equal:request_date'],
             'title'                 => ['required', 'string', 'max:255'],
-            // 'ca_number'                 => ['required', 'string', 'max:255'],
+            'assets'                => ['nullable'],
+
             'ca_number' => [
                 Rule::requiredIf(
                     auth()->user()->hasRole('finance') && $request->isMethod('put')
@@ -874,8 +1069,8 @@ class RequestController extends Controller
                 'max:255'
             ],
             'notes'                 => ['nullable', 'string'],
-            'notes_fa'                 => ['nullable', 'string'],
-            'notes_fir'                 => ['nullable', 'string'],
+            'notes_fa'              => ['nullable', 'string'],
+            'notes_fir'             => ['nullable', 'string'],
             'destination'           => ['nullable', 'string', 'max:255'],
             'status'                => ['required', Rule::in([
                 'Draft',
@@ -888,23 +1083,25 @@ class RequestController extends Controller
                 'Rejected Director',
                 'Done'
             ])],
-            'items'                 => ['required', 'array', 'min:1'],
-            'items.*.item_name'     => ['required', 'string', 'max:255'],
-            'items.*.specification' => ['nullable', 'string'],
-            'items.*.uom'           => ['required', Rule::in(Requestitem::getUomOptions())],
-            'items.*.qty'           => ['required'],
-            'items.*.price'         => ['required'],
+            'items'                     => ['required', 'array', 'min:1'],
+            'items.*.item_name'         => ['required', 'string', 'max:255'],
+            'items.*.specification'     => ['nullable', 'string'],
+            'items.*.uom'               => ['required', Rule::in(Requestitem::getUomOptions())],
+            'items.*.qty'               => ['required'],
+            'items.*.price'             => $isCAPEX ? ['nullable'] : ['required'],
+            'items.*.vendors'           => $isCAPEX ? ['nullable', 'array'] : [],
+            'items.*.vendors.*.vendor_id' => $isCAPEX ? ['nullable', 'exists:vendor,id'] : [],
+            'items.*.vendors.*.price'   => $isCAPEX ? ['nullable'] : [],
+            'items.*.selected_vendor' => $isCAPEX ? ['nullable', 'integer'] : [],
+            'links.*.link'           => ['nullable', 'max:255'],
+
         ]);
-
-        // ✅ parsing angka (WAJIB biar gak kelebihan 0 lagi)
-        $parsePrice = fn($v) => (float) str_replace(',', '.', str_replace('.', '', $v));
-        $parseQty   = fn($v) => (float) str_replace(',', '.', $v);
-
+        $parsePrice = fn($v) => (float) str_replace(',', '.', str_replace('.', '', $v ?? '0'));
+        $parseQty   = fn($v) => (float) str_replace(',', '.', $v ?? '0');
         DB::beginTransaction();
-
         try {
-            // ✅ lebih efisien (tidak get semua data)
-            $formrequest = Formrequest::all()->first(function ($u) use ($hash) {
+            // $formrequest = Formrequest::all()->first(function ($u) use ($hash) {
+            $formrequest = Formrequest::get()->first(function ($u) use ($hash) {
                 return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
             });
 
@@ -915,141 +1112,360 @@ class RequestController extends Controller
 
             $previousStatus = $formrequest->status;
 
-            // ✅ hitung total dengan parsing
-            $totalAmount = collect($validated['items'])->sum(function ($item) use ($parseQty, $parsePrice) {
-                return $parseQty($item['qty']) * $parsePrice($item['price']);
-            });
+            // Hitung total amount
+            // $totalAmount = collect($validated['items'])->sum(function ($item) use ($parseQty, $parsePrice, $isCAPEX) {
+            //     if ($isCAPEX) {
+            //         $vendors = $item['vendors'] ?? [];
+            //         $firstPrice = collect($vendors)->first(fn($v) => !empty($v['price']));
+            //         return $parseQty($item['qty']) * $parsePrice($firstPrice['price'] ?? '0');
+            //     }
+            //     return $parseQty($item['qty']) * $parsePrice($item['price']);
+            // });
+            // $totalAmount - sudah benar, hanya CAPEX yang pakai selected vendor
+$totalAmount = collect($validated['items'])->sum(function ($item) use ($parseQty, $parsePrice, $isCAPEX) {
+    if ($isCAPEX) {
+        $vendors = $item['vendors'] ?? [];
+        $selectedVendorIndex = isset($item['selected_vendor']) ? (int) $item['selected_vendor'] : null;
 
-            // ✅ update header
+        $selectedPrice = null;
+        if ($selectedVendorIndex !== null && isset($vendors[$selectedVendorIndex])) {
+            $selectedPrice = $vendors[$selectedVendorIndex]['price'] ?? '0';
+        }
+
+        return $parseQty($item['qty']) * $parsePrice($selectedPrice ?? '0');
+    }
+
+    // Non-CAPEX tetap pakai price langsung
+    return $parseQty($item['qty']) * $parsePrice($item['price']);
+});
             $formrequest->update([
-                'request_type_id' => $validated['request_type_id'],
                 'vendor_id'       => $validated['vendor_id'] ?? null,
                 'request_date'    => $validated['request_date'],
                 'deadline'        => $validated['deadline'],
                 'title'           => $validated['title'],
-                'ca_number'           => $validated['ca_number'] ?? null,
+                'ca_number'       => $validated['ca_number'] ?? null,
                 'notes'           => $validated['notes'] ?? null,
-                'notes_fa'           => $validated['notes_fa'] ?? null,
-                'notes_dir'           => $validated['notes_dir'] ?? null,
+                'notes_fa'        => $validated['notes_fa'] ?? null,
+                'notes_dir'       => $validated['notes_dir'] ?? null,
+                'assets'       => $validated['assets'] ?? null,
                 'total_amount'    => round($totalAmount, 2),
                 'status'          => $validated['status'],
             ]);
-
             /*
         |--------------------------------------------------------------------------
-        | APPROVAL LOGIC
+        | APPROVAL LOGIC (tidak diubah)
         |--------------------------------------------------------------------------
         */
-            $approval = Requestapproval::firstOrCreate([
-                'request_id' => $formrequest->id,
-            ]);
-
+            $approval = Requestapproval::firstOrCreate(['request_id' => $formrequest->id]);
             if ($validated['status'] === 'Approved Manager' && $previousStatus !== 'Approved Manager') {
-                $approval->update([
-                    'approver1'    => auth()->id(),
-                    'approver1_at' => now(),
-                ]);
-
-                Log::info('APPROVAL MANAGER SAVED', ['approval_id' => $approval->id]);
+                $approval->update(['approver1' => auth()->id(), 'approver1_at' => now()]);
             }
-
             if ($validated['status'] === 'Approved Director' && $previousStatus !== 'Approved Director') {
-                $approval->update([
-                    'approver2'    => auth()->id(),
-                    'approver2_at' => now(),
-                ]);
-
-                Log::info('APPROVAL DIRECTOR SAVED', ['approval_id' => $approval->id]);
+                $approval->update(['approver2' => auth()->id(), 'approver2_at' => now()]);
             }
             if ($validated['status'] === 'Submitted' && $previousStatus !== 'Submitted') {
                 try {
                     $employee = auth()->user()->employee;
-
                     if ($employee) {
                         $baseUrl = config('services.manager_api.url');
-
                         $managerResponse = Http::get("{$baseUrl}/api/manager/{$employee->id}");
-
                         if ($managerResponse->successful()) {
                             $managerEmail = data_get($managerResponse->json(), 'manager.company_email');
-
                             if ($managerEmail) {
                                 Mail::to($managerEmail)->send(new RequestMail($formrequest));
                             }
                         }
                     }
                 } catch (\Throwable $mailException) {
-                    Log::error('MAIL ERROR', [
-                        'message' => $mailException->getMessage()
-                    ]);
+                    Log::error('MAIL ERROR', ['message' => $mailException->getMessage()]);
                 }
             }
-
             if ($validated['status'] === 'Approved Manager' && $previousStatus !== 'Approved Manager') {
                 try {
-                    // Ambil employee dengan posisi tertentu
                     $employees = Employee::whereHas('position', function ($query) {
                         $query->whereIn('id', [
                             '01973a06-74e2-706d-97fe-097c12788c59',
                             '01992267-3466-724e-93b3-46350f7e9094'
                         ]);
                     })->get();
-
-                    // Loop kirim email ke masing-masing employee
                     foreach ($employees as $employee) {
                         if ($employee->company_email) {
-                            Mail::to($employee->company_email)
-                                ->send(new RequestMail($formrequest));
+                            Mail::to($employee->company_email)->send(new RequestMail($formrequest));
                         }
                     }
                 } catch (\Throwable $mailException) {
-                    Log::error('MAIL ERROR', [
-                        'message' => $mailException->getMessage()
-                    ]);
+                    Log::error('MAIL ERROR', ['message' => $mailException->getMessage()]);
                 }
             }
 
-            /*
-        |--------------------------------------------------------------------------
-        | ITEMS (DELETE + INSERT ULANG)
-        |--------------------------------------------------------------------------
-        */
-            Requestitem::where('request_id', $formrequest->id)->delete();
+            DB::transaction(function () use ($formrequest, $validated, $parseQty, $parsePrice, $isCAPEX) {
 
-            foreach ($validated['items'] as $item) {
-                $qty   = $parseQty($item['qty']);
-                $price = $parsePrice($item['price']);
+                $existingItemIds = Requestitem::where('request_id', $formrequest->id)->pluck('id');
 
-                Requestitem::create([
-                    'request_id'    => $formrequest->id,
-                    'item_name'     => $item['item_name'],
-                    'specification' => $item['specification'] ?? null,
-                    'qty'           => $qty,
-                    'uom'           => $item['uom'],
-                    'price'         => $price,
-                    'total_price'   => round($qty * $price, 2),
-                ]);
-            }
+                ItemVendorQuotation::whereIn('request_item_id', $existingItemIds)->delete();
+                Requestitem::where('request_id', $formrequest->id)->delete();
+                Requestlink::where('request_id', $formrequest->id)->delete();
+
+                foreach ($validated['items'] as $idx => $item) {
+                    $qty   = $parseQty($item['qty']);
+                    $price = $isCAPEX ? 0 : $parsePrice($item['price']);
+
+                    $newItem = Requestitem::create([
+                        'request_id'    => $formrequest->id,
+                        'item_name'     => $item['item_name'],
+                        'specification' => $item['specification'] ?? null,
+                        'qty'           => $qty,
+                        'uom'           => $item['uom'],
+                        'price'         => $price,
+                        'total_price'   => $isCAPEX ? 0 : round($qty * $price, 2),
+                    ]);
+
+                    // if ($isCAPEX && !empty($item['vendors'])) {
+                    //     $selectedVendorIndex = isset($item['selected_vendor'])
+                    //         ? (int) $item['selected_vendor']
+                    //         : null;
+
+                    //     foreach ($item['vendors'] as $vIdx => $vendorData) {
+                    //         if (empty($vendorData['vendor_id'])) continue;
+
+                    //         $isSelected = ($selectedVendorIndex !== null && $vIdx == $selectedVendorIndex);
+
+                    //         ItemVendorQuotation::create([
+                    //             'request_item_id' => $newItem->id,
+                    //             'vendor_id'       => $vendorData['vendor_id'],
+                    //             'price'           => $parsePrice($vendorData['price'] ?? '0'),
+                    //             'is_selected'     => $isSelected,
+                    //         ]);
+                    //     }
+                    // }
+                    // Di dalam DB::transaction - update total_price hanya untuk CAPEX
+if ($isCAPEX && !empty($item['vendors'])) {
+    $selectedVendorIndex = isset($item['selected_vendor'])
+        ? (int) $item['selected_vendor']
+        : null;
+
+    foreach ($item['vendors'] as $vIdx => $vendorData) {
+        if (empty($vendorData['vendor_id'])) continue;
+
+        $isSelected = ($selectedVendorIndex !== null && $vIdx == $selectedVendorIndex);
+
+        ItemVendorQuotation::create([
+            'request_item_id' => $newItem->id,
+            'vendor_id'       => $vendorData['vendor_id'],
+            'price'           => $parsePrice($vendorData['price'] ?? '0'),
+            'is_selected'     => $isSelected,
+        ]);
+    }
+
+    // Hanya CAPEX yang update price & total_price dari selected vendor
+    if ($selectedVendorIndex !== null && isset($item['vendors'][$selectedVendorIndex])) {
+        $selectedPrice = $parsePrice($item['vendors'][$selectedVendorIndex]['price'] ?? '0');
+        $newItem->update([
+            'price'       => $selectedPrice,
+            'total_price' => round($qty * $selectedPrice, 2),
+        ]);
+    }
+}
+                }
+
+                // 🔥 links
+                if (!empty($validated['links'])) {
+                    foreach ($validated['links'] as $link) {
+                        if (empty($link['link'])) continue;
+
+                        $formrequest->links()->create([
+                            'link' => $link['link'],
+                        ]);
+                    }
+                }
+            });
 
             DB::commit();
-
             Log::info('UPDATE SUCCESS', ['id' => $formrequest->id]);
 
-            return redirect()
-                ->route('request')
-                ->with('success', 'Request berhasil diupdate.');
+            return redirect()->route('request')->with('success', 'Request berhasil diupdate.');
         } catch (\Throwable $e) {
             DB::rollBack();
-
-            Log::error('UPDATE ERROR', [
-                'message' => $e->getMessage(),
-            ]);
-
-            return back()
-                ->withInput()
-                ->with('error', 'Gagal update request: ' . $e->getMessage());
+            Log::error('UPDATE ERROR', ['message' => $e->getMessage()]);
+            return back()->withInput()->with('error', 'Gagal update request: ' . $e->getMessage());
         }
     }
+
+
+
+
+    // public function update(Request $request, $hash)
+    // {
+    //     Log::info('UPDATE REQUEST - START', [
+    //         'hash' => $hash,
+    //         'user_id' => auth()->id(),
+    //         'payload' => $request->all()
+    //     ]);
+    //     $validated = $request->validate([
+    //         'request_type_id'       => ['required', 'exists:request_type,id'],
+    //         'vendor_id'             => ['nullable', 'exists:vendor,id'],
+    //         'request_date'          => ['required', 'date'],
+    //         'deadline'              => ['required', 'date', 'after_or_equal:request_date'],
+    //         'title'                 => ['required', 'string', 'max:255'],
+    //         'ca_number' => [
+    //             Rule::requiredIf(
+    //                 auth()->user()->hasRole('finance') && $request->isMethod('put')
+    //             ),
+    //             'string',
+    //             'max:255'
+    //         ],
+    //         'notes'                 => ['nullable', 'string'],
+    //         'notes_fa'                 => ['nullable', 'string'],
+    //         'notes_fir'                 => ['nullable', 'string'],
+    //         'destination'           => ['nullable', 'string', 'max:255'],
+    //         'status'                => ['required', Rule::in([
+    //             'Draft',
+    //             'Submitted',
+    //             'Approved Manager',
+    //             'Rejected Manager',
+    //             'Approved Finance',
+    //             'Rejected Finance',
+    //             'Approved Director',
+    //             'Rejected Director',
+    //             'Done'
+    //         ])],
+    //         'items'                 => ['required', 'array', 'min:1'],
+    //         'items.*.item_name'     => ['required', 'string', 'max:255'],
+    //         'items.*.specification' => ['nullable', 'string'],
+    //         'items.*.uom'           => ['required', Rule::in(Requestitem::getUomOptions())],
+    //         'items.*.qty'           => ['required'],
+    //         'items.*.price'         => ['required'],
+    //     ]);
+    //     $parsePrice = fn($v) => (float) str_replace(',', '.', str_replace('.', '', $v));
+    //     $parseQty   = fn($v) => (float) str_replace(',', '.', $v);
+    //     DB::beginTransaction();
+    //     try {
+    //         $formrequest = Formrequest::all()->first(function ($u) use ($hash) {
+    //             return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
+    //         });
+    //         if (!$formrequest) {
+    //             Log::warning('UPDATE REQUEST - NOT FOUND', ['hash' => $hash]);
+    //             return back()->with('error', 'Data tidak ditemukan.');
+    //         }
+    //         $previousStatus = $formrequest->status;
+    //         $totalAmount = collect($validated['items'])->sum(function ($item) use ($parseQty, $parsePrice) {
+    //             return $parseQty($item['qty']) * $parsePrice($item['price']);
+    //         });
+    //         $formrequest->update([
+    //             'request_type_id' => $validated['request_type_id'],
+    //             'vendor_id'       => $validated['vendor_id'] ?? null,
+    //             'request_date'    => $validated['request_date'],
+    //             'deadline'        => $validated['deadline'],
+    //             'title'           => $validated['title'],
+    //             'ca_number'           => $validated['ca_number'] ?? null,
+    //             'notes'           => $validated['notes'] ?? null,
+    //             'notes_fa'           => $validated['notes_fa'] ?? null,
+    //             'notes_dir'           => $validated['notes_dir'] ?? null,
+    //             'total_amount'    => round($totalAmount, 2),
+    //             'status'          => $validated['status'],
+    //         ]);
+    //         /*
+    //     |--------------------------------------------------------------------------
+    //     | APPROVAL LOGIC
+    //     |--------------------------------------------------------------------------
+    //     */
+    //         $approval = Requestapproval::firstOrCreate([
+    //             'request_id' => $formrequest->id,
+    //         ]);
+    //         if ($validated['status'] === 'Approved Manager' && $previousStatus !== 'Approved Manager') {
+    //             $approval->update([
+    //                 'approver1'    => auth()->id(),
+    //                 'approver1_at' => now(),
+    //             ]);
+    //             Log::info('APPROVAL MANAGER SAVED', ['approval_id' => $approval->id]);
+    //         }
+    //         if ($validated['status'] === 'Approved Director' && $previousStatus !== 'Approved Director') {
+    //             $approval->update([
+    //                 'approver2'    => auth()->id(),
+    //                 'approver2_at' => now(),
+    //             ]);
+    //             Log::info('APPROVAL DIRECTOR SAVED', ['approval_id' => $approval->id]);
+    //         }
+    //         if ($validated['status'] === 'Submitted' && $previousStatus !== 'Submitted') {
+    //             try {
+    //                 $employee = auth()->user()->employee;
+    //                 if ($employee) {
+    //                     $baseUrl = config('services.manager_api.url');
+    //                     $managerResponse = Http::get("{$baseUrl}/api/manager/{$employee->id}");
+    //                     if ($managerResponse->successful()) {
+    //                         $managerEmail = data_get($managerResponse->json(), 'manager.company_email');
+    //                         if ($managerEmail) {
+    //                             Mail::to($managerEmail)->send(new RequestMail($formrequest));
+    //                         }
+    //                     }
+    //                 }
+    //             } catch (\Throwable $mailException) {
+    //                 Log::error('MAIL ERROR', [
+    //                     'message' => $mailException->getMessage()
+    //                 ]);
+    //             }
+    //         }
+    //         if ($validated['status'] === 'Approved Manager' && $previousStatus !== 'Approved Manager') {
+    //             try {
+    //                 $employees = Employee::whereHas('position', function ($query) {
+    //                     $query->whereIn('id', [
+    //                         '01973a06-74e2-706d-97fe-097c12788c59',
+    //                         '01992267-3466-724e-93b3-46350f7e9094'
+    //                     ]);
+    //                 })->get();
+    //                 foreach ($employees as $employee) {
+    //                     if ($employee->company_email) {
+    //                         Mail::to($employee->company_email)
+    //                             ->send(new RequestMail($formrequest));
+    //                     }
+    //                 }
+    //             } catch (\Throwable $mailException) {
+    //                 Log::error('MAIL ERROR', [
+    //                     'message' => $mailException->getMessage()
+    //                 ]);
+    //             }
+    //         }
+    //         /*
+    //     |--------------------------------------------------------------------------
+    //     | ITEMS (DELETE + INSERT ULANG)
+    //     |--------------------------------------------------------------------------
+    //     */
+    //         Requestitem::where('request_id', $formrequest->id)->delete();
+
+    //         foreach ($validated['items'] as $item) {
+    //             $qty   = $parseQty($item['qty']);
+    //             $price = $parsePrice($item['price']);
+
+    //             Requestitem::create([
+    //                 'request_id'    => $formrequest->id,
+    //                 'item_name'     => $item['item_name'],
+    //                 'specification' => $item['specification'] ?? null,
+    //                 'qty'           => $qty,
+    //                 'uom'           => $item['uom'],
+    //                 'price'         => $price,
+    //                 'total_price'   => round($qty * $price, 2),
+    //             ]);
+    //         }
+
+    //         DB::commit();
+
+    //         Log::info('UPDATE SUCCESS', ['id' => $formrequest->id]);
+
+    //         return redirect()
+    //             ->route('request')
+    //             ->with('success', 'Request berhasil diupdate.');
+    //     } catch (\Throwable $e) {
+    //         DB::rollBack();
+
+    //         Log::error('UPDATE ERROR', [
+    //             'message' => $e->getMessage(),
+    //         ]);
+
+    //         return back()
+    //             ->withInput()
+    //             ->with('error', 'Gagal update request: ' . $e->getMessage());
+    //     }
+    // }
 }
 
    

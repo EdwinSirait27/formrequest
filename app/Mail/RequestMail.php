@@ -28,13 +28,30 @@ class RequestMail extends Mailable
 
     public function content(): Content
     {
+        $formrequest = $this->formrequest->load([
+        'items',
+        'user',
+        'links',
+        'requesttype',
+        'items.vendors',
+        'items.vendors.vendor',
+    ]);
+    $capexVendors = $formrequest->items->mapWithKeys(function ($item) {
+        return [
+            $item->id => $item->vendors->values()->map(fn($v) => [
+                'vendor_name' => $v->vendor?->vendor_name ?? '-',
+                'price'       => $v->price ?? 0,
+            ])
+        ];
+    });
         return new Content(
             view: 'emails.request',
             with: [
-                'formrequest' => $this->formrequest->load(['items', 'user']),
+                'formrequest' => $this->formrequest->load(['items', 'user','links','items.vendors']),
                 'requestDate' => Carbon::parse($this->formrequest->request_date)->format('d M Y'),
             'deadline' => Carbon::parse($this->formrequest->deadline)->format('d M Y'),
-                'detailUrl' => route('editrequest', [
+            'capexVendors' => $capexVendors,    
+            'detailUrl' => route('editrequest', [
                     'hash' => substr(hash('sha256', $this->formrequest->id . env('APP_KEY')), 0, 8)
                 ]),
             ]

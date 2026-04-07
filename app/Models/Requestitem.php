@@ -73,4 +73,8 @@ class Requestitem extends Model
             set: fn($value) => round($value, 2)
         );
     }
+    public function vendors()
+{
+    return $this->hasMany(ItemVendorQuotation::class, 'request_item_id');
+}
 }

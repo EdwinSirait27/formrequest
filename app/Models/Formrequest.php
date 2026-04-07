@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Ramsey\Uuid\Uuid;
@@ -42,18 +41,12 @@ class Formrequest extends Model
             }
         });
         static::updating(function ($model) {
-
-            // Ambil status lama dari database
             $originalStatus = $model->getOriginal('status');
             $newStatus = $model->status;
-
-            // List status rejected
             $rejectedStatuses = [
                 'Rejected Manager',
                 'Rejected Director'
             ];
-
-            // Jika status berubah DAN masuk kategori rejected
             if ($originalStatus !== $newStatus && in_array($newStatus, $rejectedStatuses)) {
                 $model->revision_number = ($model->revision_number ?? 0) + 1;
             }
@@ -76,6 +69,8 @@ class Formrequest extends Model
         'notes_dir',
         'vendor_id',
         'destination',
+        'assets',
+        'towards_to',
         'revision_number',
         'deadline',
         'status'
@@ -83,13 +78,23 @@ class Formrequest extends Model
     protected $casts = [
         'request_date' => 'date',
         'deadline' => 'date',
-                'total_amount' => 'decimal:2',
-
-        
+        'total_amount' => 'decimal:2',
     ];
+      public static function getAssetOptions()
+    {
+        return ['Bangunan',
+            'Peralatan & Inventaris',
+            'IT Hardware & Software',
+            'Kendaraan',
+            'Machine & Equipment'];
+    }
     public function vendor()
     {
         return $this->belongsTo(Vendor::class, 'vendor_id');
+    }
+    public function towards()
+    {
+        return $this->belongsTo(User::class, 'towards_to');
     }
     public function setTransferAttribute($value)
     {
@@ -99,14 +104,14 @@ class Formrequest extends Model
     {
         return $this->hasMany(Requestitem::class, 'request_id');
     }
-    // public function approvals()
-    // {
-    //     return $this->hasMany(Requestapproval::class, 'request_id');
-    // }
+    public function links()
+    {
+        return $this->hasMany(Requestlink::class, 'request_id');
+    }
     public function approval()
-{
-    return $this->hasOne(Requestapproval::class, 'request_id');
-}
+    {
+        return $this->hasOne(Requestapproval::class, 'request_id');
+    }
     public function requesttype()
     {
         return $this->belongsTo(Requesttype::class, 'request_type_id');
@@ -123,9 +128,4 @@ class Formrequest extends Model
     {
         return $this->belongsTo(Company::class, 'company_id');
     }
-
-
-
-
-    
 }

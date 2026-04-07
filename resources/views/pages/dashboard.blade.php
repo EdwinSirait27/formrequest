@@ -1220,7 +1220,7 @@
                     class="group bg-slate-800 border border-slate-700 hover:border-slate-500 rounded-xl p-4 flex flex-col gap-3 transition-all">
                     <div class="flex items-center justify-between gap-3">
                         <div class="min-w-0">
-                            <p class="text-sm font-semibold text-slate-100 truncate">{{ $type->request_type_name }}</p>
+                            <p class="text-sm font-semibold text-slate-500">{{ $type->request_type_name }}</p>
                             <p class="text-xs text-slate-500">Code: {{ $type->code }}</p>
                         </div>
                         <span class="shrink-0 text-xs font-medium bg-slate-700 text-slate-300 px-2.5 py-1 rounded-full">
@@ -1239,9 +1239,9 @@
             @forelse($recentRequests as $req)
                 <div class="flex items-center justify-between px-4 py-3 gap-3">
                     <div class="min-w-0">
-                        <p class="text-sm font-medium text-slate-200">{{ $req->request_number ?? 'N/A' }}</p>
+                        <p class="text-sm font-semibold text-slate-500">{{ $req->document_number ?? 'N/A' }}</p>
                         <p class="text-xs text-slate-500">
-                            {{ $req->employee->employee_name ?? '-' }} &middot;
+                            {{ $req->user->employee->employee_name ?? '-' }} &middot;
                             {{ $req->requestType->request_type_name ?? '-' }}
                         </p>
                     </div>

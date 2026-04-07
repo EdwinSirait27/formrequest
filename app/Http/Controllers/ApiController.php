@@ -17,7 +17,6 @@ class ApiController extends Controller
     if (!$employee || !$employee->structuresnew) {
         return response()->json(['manager' => null], 404);
     }
-
     $current = $employee->structuresnew->parent;
     $managerStructure = null;
 

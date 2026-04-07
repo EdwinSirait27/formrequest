@@ -39,12 +39,10 @@ class VendorController extends Controller
             'npwp',
             'bank_account_name',
             'bank_account_number',
-            // 'transfer',
             'type',
             'status',
         ]);
         $search = $request->input('search.value');
-
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('vendor_name', 'like', "%{$search}%")
@@ -53,7 +51,6 @@ class VendorController extends Controller
                     ->orWhere('npwp', 'like', "%{$search}%")
                     ->orWhere('bank_account_name', 'like', "%{$search}%")
                     ->orWhere('bank_account_number', 'like', "%{$search}%")
-                    // ->orWhere('transfer', 'like', "%{$search}%")
                     ->orWhere('type', 'like', "%{$search}%")
                     ->orWhere('status', 'like', "%{$search}%");
             });
@@ -66,10 +63,7 @@ class VendorController extends Controller
         }
         if ($request->filled('status')) {
             $query->where('status', $request->status);
-        }
-        // if ($request->filled('transfer')) {
-        //     $query->where('transfer', $request->transfer);
-        // }
+        }  
         return DataTables::eloquent($query)
             ->addIndexColumn()
             ->addColumn('action', function ($vendor) {
@@ -119,18 +113,31 @@ class VendorController extends Controller
             ->rawColumns(['action'])
             ->make(true);
     }
-
-
-    public function edit($hash)
-    {
-        $vendor = Vendor::all()->first(function ($u) use ($hash) {
-            return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
-        });
-        abort_if(!$vendor, 404);
-        // $transfer = ['ABD', 'MJM', 'TNJ', 'BIB'];
-
-        return view('pages.vendor.editvendor', compact('vendor'));
+//     public function edit($hash)
+//     {
+//        $vendor = Vendor::get()->first(function ($u) use ($hash) {
+//     return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
+// });
+//         abort_if(!$vendor, 404);     
+//         return view('pages.vendor.editvendor', compact('vendor'));
+//     }
+public function edit($hash)
+{
+    if (!auth()->check() || !in_array(auth()->user()->role, ['admin', 'finance'])) {
+    return redirect()
+        ->route('vendor')
+        ->with('error', 'Anda tidak boleh mengakses halaman ini!');
+}
+    $vendor = Vendor::get()->first(function ($u) use ($hash) {
+        return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
+    });
+    if (!$vendor) {
+        return redirect()
+            ->route('vendor')
+            ->with('error', 'Data vendor tidak ditemukan!');
     }
+    return view('pages.vendor.editvendor', compact('vendor'));
+}
     public function show($hash)
     {
         $vendor = Vendor::all()->first(function ($u) use ($hash) {
@@ -141,7 +148,6 @@ class VendorController extends Controller
     }
     public function create()
     {
-        // $transfer = ['ABD', 'MJM', 'TNJ', 'BIB'];
         $types = ['Vendor', 'Non Vendor'];
         return view('pages.vendor.createvendor', compact('types'));
     }
@@ -150,9 +156,7 @@ class VendorController extends Controller
         $vendor = Vendor::all()->first(function ($v) use ($hash) {
             return substr(hash('sha256', $v->id . config('app.key')), 0, 8) === $hash;
         });
-
         abort_if(!$vendor, 404);
-
         $validated = $request->validate([
             'vendor_name' => 'required|string|max:255|unique:vendor,vendor_name,' . $vendor->id,
             'email' => 'nullable|email',

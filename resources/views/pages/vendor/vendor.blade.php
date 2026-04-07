@@ -583,6 +583,8 @@
                         </div>
 
                         <!-- BUTTON -->
+                            @role('admin|finance')
+
                         <a href="{{ route('createvendor') }}"
                             class="inline-flex items-center justify-center gap-2 px-4 py-2
         bg-blue-600 hover:bg-blue-700
@@ -597,6 +599,7 @@
 
                             Create Vendor
                         </a>
+                        @endrole
 
                     </div>
                 </div>

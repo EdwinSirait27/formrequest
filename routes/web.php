@@ -6,13 +6,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RequestTypeController;
 use App\Http\Controllers\RequestController;
-use App\Http\Controllers\RequestControllerManager;
-use App\Http\Controllers\RequestControllerAdmin;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VendorController;
-// Route::get('/', function () {
-//     return view('welcome');
-// });
 Route::middleware('throttle:15,1')->group(function () {
     Route::get('/', [AuthController::class, 'loginPage'])->name('login')->middleware('guest');
     Route::post('/login', [AuthController::class, 'login'])->name('login.post');
@@ -47,13 +42,7 @@ Route::middleware(['auth', 'role:admin|finance'])->group(function () {
     Route::post('/storevendor', [VendorController::class, 'store'])->name('storevendor');
 
     // Request Type
-    Route::get('/requesttype', [RequestTypeController::class, 'index'])->name('requesttype');
-    Route::get('/createrequesttype', [RequestTypeController::class, 'create'])->name('createrequesttype');
-    Route::match(['GET', 'POST'], '/vendors/vendors', [RequestTypeController::class, 'getRequesttypes'])->name('requesttypes.requesttypes');
-    Route::get('/editrequesttype/{hash}', [RequestTypeController::class, 'edit'])->name('editrequesttype');
-    Route::get('/showrequesttype/{hash}', [RequestTypeController::class, 'show'])->name('showrequesttype');
-    Route::put('/updaterequesttype/{hash}', [RequestTypeController::class, 'update'])->name('updaterequesttype');
-    Route::post('/storerequesttype', [RequestTypeController::class, 'store'])->name('storerequesttype');
+    
 });
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
@@ -64,6 +53,13 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::put('/updateusers/{hash}/update', [UserController::class, 'update'])->name('updateusers');
     Route::post('/users/bulk-update-role', [UserController::class, 'bulkUpdateRole'])
         ->name('users.bulkUpdateRole');
+        Route::get('/requesttype', [RequestTypeController::class, 'index'])->name('requesttype');
+    Route::get('/createrequesttype', [RequestTypeController::class, 'create'])->name('createrequesttype');
+    Route::match(['GET', 'POST'], '/vendors/vendors', [RequestTypeController::class, 'getRequesttypes'])->name('requesttypes.requesttypes');
+    Route::get('/editrequesttype/{hash}', [RequestTypeController::class, 'edit'])->name('editrequesttype');
+    Route::get('/showrequesttype/{hash}', [RequestTypeController::class, 'show'])->name('showrequesttype');
+    Route::put('/updaterequesttype/{hash}', [RequestTypeController::class, 'update'])->name('updaterequesttype');
+    Route::post('/storerequesttype', [RequestTypeController::class, 'store'])->name('storerequesttype');
     // Vendor
 
     //request

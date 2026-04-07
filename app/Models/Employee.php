@@ -13,6 +13,7 @@ class Employee extends Model
         'employee_pengenal',
         'company_email',
         'signature',
+        'photos',
         'company_id',
         'store_id',
         'department_id',

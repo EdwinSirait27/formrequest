@@ -66,23 +66,24 @@
                 </div>
             </div>
         </div>
- <div class="space-y-4">
-                <div>
-                    <label for="user_id" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
-                        <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
-                        Applicant
-                    </label>
+        <div class="space-y-4">
+            <div>
+                <label for="user_id" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
+                    <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    Applicant
+                </label>
 
 
-                     <input type="text" id="user_id" name="user_id" class="form-input w-full px-4 py-3 rounded-xl"
-                        value="{{ old('user_id', $request->user->employee->employee_name) }}" placeholder="butuh segera untuk bla bla bla" disabled>
-                </div>
+                <input type="text" id="user_id" name="user_id" class="form-input w-full px-4 py-3 rounded-xl"
+                    value="{{ old('user_id', $request->user->employee->employee_name) }}"
+                    placeholder="butuh segera untuk bla bla bla" disabled>
             </div>
-            <br>
+        </div>
+        <br>
         <div class="space-y-4">
             <div>
                 <label for="company_id" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
@@ -105,16 +106,7 @@
                         </option>
                     @endforeach
                 </select>
-                @error('company_id')
-                    <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
-                        <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd"
-                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        {{ $message }}
-                    </p>
-                @enderror
+
             </div>
         </div>
         <br>
@@ -138,16 +130,7 @@
                         </option>
                     @endforeach
                 </select>
-                @error('request_type_id')
-                    <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
-                        <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd"
-                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        {{ $message }}
-                    </p>
-                @enderror
+
             </div>
         </div>
         <br>
@@ -164,16 +147,7 @@
                 </label>
                 <input type="text" id="title" name="title" class="form-input w-full px-4 py-3 rounded-xl"
                     value="{{ old('title', $request->title) }}" placeholder="butuh segera untuk bla bla bla" disabled>
-                @error('title')
-                    <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
-                        <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd"
-                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        {{ $message }}
-                    </p>
-                @enderror
+
             </div>
             <div>
                 <label for="vendor_id" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
@@ -194,16 +168,7 @@
                         </option>
                     @endforeach
                 </select>
-                @error('vendor_id')
-                    <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
-                        <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd"
-                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        {{ $message }}
-                    </p>
-                @enderror
+
             </div>
         </div>
         <br>
@@ -218,19 +183,9 @@
                     </svg>
                     Request Date
                 </label>
-                <input type="date" id="request_date" name="request_date"
-                    class="form-input w-full px-4 py-3 rounded-xl"
+                <input type="date" id="request_date" name="request_date" class="form-input w-full px-4 py-3 rounded-xl"
                     value="{{ old('request_date', optional($request->request_date)->format('Y-m-d')) }}" disabled>
-                @error('request_date')
-                    <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
-                        <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd"
-                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        {{ $message }}
-                    </p>
-                @enderror
+
             </div>
             <div>
                 <label for="deadline" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
@@ -243,19 +198,26 @@
                 </label>
                 <input type="date" id="deadline" name="deadline" class="form-input w-full px-4 py-3 rounded-xl"
                     value="{{ old('deadline', optional($request->deadline)->format('Y-m-d')) }}" disabled>
-                @error('deadline')
-                    <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
-                        <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd"
-                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        {{ $message }}
-                    </p>
-                @enderror
-            </div>
-        </div>
 
+            </div>
+
+        </div>
+        @if (($request->revision_number ?? 0) != 0)
+            <br>
+            <div>
+                <label for="revision_number" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
+                    <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    Revision Number
+                </label>
+                <input type="text" id="revision_number" name="revision_number"
+                    class="form-input w-full px-4 py-3 rounded-xl"
+                    value="{{ old('revision_number', $request->revision_number) }}" disabled>
+            </div>
+        @endif
         {{-- Request Items Table --}}
         <div class="mt-6">
             <h3 class="text-sm font-semibold text-slate-300 mb-3">Request Items</h3>
@@ -283,6 +245,34 @@
                     + Add Item
                 </button> --}}
         </div>
+        <div>
+            <label class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
+                Link Reference / Attachments
+            </label>
+
+            <div id="links-wrapper" class="space-y-2">
+                @if (old('links', $request->links)->count())
+
+                    @foreach (old('links', $request->links) as $i => $link)
+                        <div class="flex gap-2 link-row">
+                            <input type="url" name="links[{{ $i }}][link]"
+                                class="form-input w-full px-4 py-3 rounded-xl"
+                                value="{{ is_array($link) ? $link['link'] : $link->link }}" disabled>
+
+
+                        </div>
+                    @endforeach
+                @else
+                    {{-- fallback kalau kosong --}}
+                    <div class="flex gap-2 link-row">
+                        <input type="url" name="links[0][link]" class="form-input w-full px-4 py-3 rounded-xl"
+                            placeholder="empty" disabled>
+
+                    </div>
+                @endif
+            </div>
+        </div>
+        <br>
 
         <div>
             <label for="notes" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
@@ -291,80 +281,69 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
-                 Applicant Notes
+                Applicant Notes
             </label>
             <textarea id="notes" name="notes" class="form-input w-full px-4 py-3 rounded-xl"
                 placeholder="butuh segera untuk bla bla bla" rows="4" disabled>{{ old('notes', $request->notes) }}</textarea>
-            @error('notes')
-                <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
-                    <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                            clip-rule="evenodd" />
-                    </svg>
-                    {{ $message }}
-                </p>
-            @enderror
+
         </div>
         <br>
         @if ($request->approval?->approver1)
-
-        <div>
-            <label for="approver1" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
-                <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                </svg>
-                Approved by Manager
-            </label>
-            <input type="text"class="form-input w-full px-4 py-3 rounded-xl"
-                value="{{ data_get($request, 'approval.approver1User.employee.employee_name') }}" disabled>
-        </div>
-        <br>
-        <div>
-            <label for="approver1_at" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
-                <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                </svg>
-                Approved by Manager at
-            </label>
-            <input type="text"class="form-input w-full px-4 py-3 rounded-xl"
-                value="{{ data_get($request, 'approval.approver1_at') }}" disabled>
-        </div>
-        <br>
+            <div>
+                <label for="approver1" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
+                    <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                    </svg>
+                    Approved by Manager
+                </label>
+                <input type="text"class="form-input w-full px-4 py-3 rounded-xl"
+                    value="{{ data_get($request, 'approval.approver1User.employee.employee_name') }}" disabled>
+            </div>
+            <br>
+            <div>
+                <label for="approver1_at" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
+                    <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                    </svg>
+                    Approved by Manager at
+                </label>
+                <input type="text"class="form-input w-full px-4 py-3 rounded-xl"
+                    value="{{ data_get($request, 'approval.approver1_at') }}" disabled>
+            </div>
+            <br>
         @endif
- @if ($request->approval?->approver2)
+        @if ($request->approval?->approver2)
+            <div>
+                <label for="approver2" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
+                    <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                    </svg>
+                    Approved by Director
+                </label>
+                <input type="text"class="form-input w-full px-4 py-3 rounded-xl"
+                    value="{{ data_get($request, 'approval.approver2User.employee.employee_name') }}" disabled>
+            </div>
+            <br>
+            <div>
+                <label for="approver2_at" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
+                    <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                    </svg>
+                    Approved by Director at
+                </label>
+                <input type="text"class="form-input w-full px-4 py-3 rounded-xl"
+                    value="{{ data_get($request, 'approval.approver2_at') }}" disabled>
+            </div>
 
-        <div>
-            <label for="approver2" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
-                <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                </svg>
-                Approved by Director
-            </label>
-            <input type="text"class="form-input w-full px-4 py-3 rounded-xl"
-                value="{{ data_get($request, 'approval.approver2User.employee.employee_name') }}" disabled>
-        </div>
-        <br>
-        <div>
-            <label for="approver2_at" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
-                <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                </svg>
-                Approved by Director at
-            </label>
-            <input type="text"class="form-input w-full px-4 py-3 rounded-xl"
-                value="{{ data_get($request, 'approval.approver2_at') }}" disabled>
-        </div>
-        
-        <br>
+            <br>
         @endif
         <div>
             <label for="status" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
@@ -388,20 +367,11 @@
                 @endforeach
 
             </select>
-            @error('status')
-                <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
-                    <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                            clip-rule="evenodd" />
-                    </svg>
-                    {{ $message }}
-                </p>
-            @enderror
+
         </div>
 
         <br>
-       
+
 
         <div class="flex gap-3 pt-2">
             <a href="{{ route('request') }}"
@@ -413,7 +383,7 @@
                 </svg>
                 Back
             </a>
-            
+
         </div>
         {{-- </form> --}}
     </div>
@@ -627,38 +597,16 @@
                     value="${formatRibuan(item.total_price ?? 0)}"
                     class="total w-full form-input rounded-lg px-2 py-1" disabled>
             </td>
-           
         </tr>`;
-
                 let newRow = $(row);
                 $('#items-table').append(newRow);
-
                 newRow.find('.select2').select2({
                     placeholder: "Choose",
                     allowClear: true,
                     width: '100%'
                 });
-
                 index++; // ✅ FIX: index naik aman
             });
         });
     </script>
-
-    <script>
-        toastr.options = {
-            closeButton: true,
-            progressBar: true,
-            positionClass: "toast-top-right",
-            timeOut: "3000"
-        };
-
-        @if (session('success'))
-            toastr.success(@json(session('success')));
-        @endif
-
-        @if (session('error'))
-            toastr.error(@json(session('error')));
-        @endif
-    </script>
-
 @endsection
