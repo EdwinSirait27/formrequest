@@ -401,7 +401,7 @@
                         <tr>
                             <td class="lbl">Mail</td>
                             <td class="col">:</td>
-                            <td class="val">{{ $request->user->employee->company_mail ?? 0}}</td>
+                            <td class="val">{{ $companymail ?? 'Empty'}}</td>
                         </tr>
                         <tr>
                             <td class="lbl">From</td>

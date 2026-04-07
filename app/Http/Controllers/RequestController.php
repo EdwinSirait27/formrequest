@@ -807,6 +807,7 @@ class RequestController extends Controller
         });
 
         $employee    = $request->user?->employee;
+        $companymail = $employee->company_email;
         $requestDate = $request->request_date
             ->timezone('Asia/Makassar')
             ->translatedFormat('d F Y');
@@ -908,6 +909,7 @@ class RequestController extends Controller
         // ── Render PDF ───────────────────────────────────────────────
         $viewData = [
             'request'                => $request,
+            'companymail'                => $companymail,
             'logoBase64'             => $logoBase64,
             'signatureBase64'        => $signatureBase64,
             'managerSignatureBase64' => $managerSignatureBase64,
