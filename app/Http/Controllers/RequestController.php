@@ -561,97 +561,157 @@ class RequestController extends Controller
     ];
 });
         $employee  = $request->user?->employee;
-        $companyId = $request->company?->id;
         $requestDate = $request->request_date
-            ->timezone('Asia/Makassar')
-            ->translatedFormat('d F Y');
+        ->timezone('Asia/Makassar')
+        ->translatedFormat('d F Y');
         $Deadline = $request->deadline
-            ->timezone('Asia/Makassar')
-            ->translatedFormat('d F Y');
-        $cache    = [];
-        $toBase64 = static function (string $localPath) use (&$cache): ?string {
-            if (isset($cache[$localPath])) return $cache[$localPath];
-            if (!is_file($localPath))      return $cache[$localPath] = null;
+        ->timezone('Asia/Makassar')
+        ->translatedFormat('d F Y');
+//         $cache    = [];
+//         $companyId = $request->company?->id;
+//         $toBase64 = static function (string $localPath) use (&$cache): ?string {
+//             if (isset($cache[$localPath])) return $cache[$localPath];
+//             if (!is_file($localPath))      return $cache[$localPath] = null;
 
-            $image = @file_get_contents($localPath);
-            if ($image === false)          return $cache[$localPath] = null;
+//             $image = @file_get_contents($localPath);
+//             if ($image === false)          return $cache[$localPath] = null;
 
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $mime  = finfo_buffer($finfo, $image);
-            finfo_close($finfo);
+//             $finfo = finfo_open(FILEINFO_MIME_TYPE);
+//             $mime  = finfo_buffer($finfo, $image);
+//             finfo_close($finfo);
 
-            return $cache[$localPath] = 'data:' . $mime . ';base64,' . base64_encode($image);
-        };
+//             return $cache[$localPath] = 'data:' . $mime . ';base64,' . base64_encode($image);
+//         };
 
-        $showManagerSignature = in_array($request->status, ['Approved Manager', 'Approved Director']);
+//         $showManagerSignature = in_array($request->status, ['Approved Manager', 'Approved Director']);
 
-        // HTTP — hanya untuk logo
-        // $responses = Http::pool(function ($pool) use ($companyId) {
-        //     if (!$companyId) return [];
-        //     return [
-        //         $pool->as('logo')
-        //             ->withoutVerifying()
-        //             ->timeout(8)
-        //             ->get("https://hrx.asianbay.co.id/api/company/{$companyId}"),
-        //     ];
-        // });
-        $responses = Http::pool(function ($pool) use ($companyId) {
+//         // HTTP — hanya untuk logo
+//         // $responses = Http::pool(function ($pool) use ($companyId) {
+//         //     if (!$companyId) return [];
+//         //     return [
+//         //         $pool->as('logo')
+//         //             ->withoutVerifying()
+//         //             ->timeout(8)
+//         //             ->get("https://hrx.asianbay.co.id/api/company/{$companyId}"),
+//         //     ];
+//         // });
+//         $responses = Http::pool(function ($pool) use ($companyId) {
+//     if (!$companyId) return [];
+
+//     $baseUrl = rtrim(env('HRX_INTERNAL_URL', 'https://hrx.asianbay.co.id'), '/');
+
+//     return [
+//         $pool->as('logo')
+//             ->withoutVerifying()
+//             ->timeout(8)
+//             ->get("{$baseUrl}/api/company/{$companyId}"),
+//     ];
+// });
+//         $logoBase64   = null;
+//         $logoResponse = $responses['logo'] ?? null;
+
+//         if ($logoResponse instanceof \Illuminate\Http\Client\Response && $logoResponse->successful()) {
+//             $logoUrl = $logoResponse->json('logo_url');
+
+//             // if ($logoUrl) {
+//             //     try {
+//             //         $imgResponse = Http::withoutVerifying()->timeout(5)->get($logoUrl);
+
+//             //         if ($imgResponse->successful()) {
+//             //             $body       = $imgResponse->body();
+//             //             $finfo      = finfo_open(FILEINFO_MIME_TYPE);
+//             //             $mime       = finfo_buffer($finfo, $body);
+//             //             finfo_close($finfo);
+//             //             $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($body);
+//             //         }
+//             //     } catch (\Exception $e) {
+//             //         Log::error('Logo fetch error: ' . $e->getMessage());
+//             //     }
+//             // }
+//             if ($logoUrl) {
+//     try {
+//         // Ganti domain publik ke internal
+//         $internalBase = rtrim(env('HRX_INTERNAL_URL', 'https://hrx.asianbay.co.id'), '/');
+//         $logoUrlInternal = preg_replace(
+//             '#^https?://hrx\.asianbay\.co\.id#',
+//             $internalBase,
+//             $logoUrl
+//         );
+
+//         $imgResponse = Http::withoutVerifying()->timeout(5)->get($logoUrlInternal);
+
+//         if ($imgResponse->successful()) {
+//             $body  = $imgResponse->body();
+//             $finfo = finfo_open(FILEINFO_MIME_TYPE);
+//             $mime  = finfo_buffer($finfo, $body);
+//             finfo_close($finfo);
+//             $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($body);
+//         }
+//     } catch (\Exception $e) {
+//         Log::error('Logo fetch error: ' . $e->getMessage());
+//     }
+// }
+//         }
+$cache     = [];
+$companyId = $request->company?->id;
+
+$toBase64 = static function (string $localPath) use (&$cache): ?string {
+    if (isset($cache[$localPath])) return $cache[$localPath];
+    if (!is_file($localPath))      return $cache[$localPath] = null;
+
+    $image = @file_get_contents($localPath);
+    if ($image === false)          return $cache[$localPath] = null;
+
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mime  = finfo_buffer($finfo, $image);
+    finfo_close($finfo);
+
+    return $cache[$localPath] = 'data:' . $mime . ';base64,' . base64_encode($image);
+};
+
+$showManagerSignature = in_array($request->status, ['Approved Manager', 'Approved Director']);
+
+$internalBase = rtrim(env('HRX_INTERNAL_URL', 'https://hrx.asianbay.co.id'), '/');
+
+$responses = Http::pool(function ($pool) use ($companyId, $internalBase) {
     if (!$companyId) return [];
-
-    $baseUrl = rtrim(env('HRX_INTERNAL_URL', 'https://hrx.asianbay.co.id'), '/');
 
     return [
         $pool->as('logo')
             ->withoutVerifying()
             ->timeout(8)
-            ->get("{$baseUrl}/api/company/{$companyId}"),
+            ->get("{$internalBase}/api/company/{$companyId}"),
     ];
 });
-        $logoBase64   = null;
-        $logoResponse = $responses['logo'] ?? null;
 
-        if ($logoResponse instanceof \Illuminate\Http\Client\Response && $logoResponse->successful()) {
-            $logoUrl = $logoResponse->json('logo_url');
+$logoBase64   = null;
+$logoResponse = $responses['logo'] ?? null;
 
-            // if ($logoUrl) {
-            //     try {
-            //         $imgResponse = Http::withoutVerifying()->timeout(5)->get($logoUrl);
+if ($logoResponse instanceof \Illuminate\Http\Client\Response && $logoResponse->successful()) {
+    $logoUrl = $logoResponse->json('logo_url');
 
-            //         if ($imgResponse->successful()) {
-            //             $body       = $imgResponse->body();
-            //             $finfo      = finfo_open(FILEINFO_MIME_TYPE);
-            //             $mime       = finfo_buffer($finfo, $body);
-            //             finfo_close($finfo);
-            //             $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($body);
-            //         }
-            //     } catch (\Exception $e) {
-            //         Log::error('Logo fetch error: ' . $e->getMessage());
-            //     }
-            // }
-            if ($logoUrl) {
-    try {
-        // Ganti domain publik ke internal
-        $internalBase = rtrim(env('HRX_INTERNAL_URL', 'https://hrx.asianbay.co.id'), '/');
-        $logoUrlInternal = preg_replace(
-            '#^https?://hrx\.asianbay\.co\.id#',
-            $internalBase,
-            $logoUrl
-        );
+    if ($logoUrl) {
+        try {
+            $logoUrlInternal = preg_replace(
+                '#^https?://hrx\.asianbay\.co\.id#',
+                $internalBase,
+                $logoUrl
+            );
 
-        $imgResponse = Http::withoutVerifying()->timeout(5)->get($logoUrlInternal);
+            $imgResponse = Http::withoutVerifying()->timeout(5)->get($logoUrlInternal);
 
-        if ($imgResponse->successful()) {
-            $body  = $imgResponse->body();
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $mime  = finfo_buffer($finfo, $body);
-            finfo_close($finfo);
-            $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($body);
+            if ($imgResponse->successful()) {
+                $body       = $imgResponse->body();
+                $finfo      = finfo_open(FILEINFO_MIME_TYPE);
+                $mime       = finfo_buffer($finfo, $body);
+                finfo_close($finfo);
+                $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($body);
+            }
+        } catch (\Exception $e) {
+            Log::error('Logo fetch error: ' . $e->getMessage());
         }
-    } catch (\Exception $e) {
-        Log::error('Logo fetch error: ' . $e->getMessage());
     }
 }
-        }
         $managerName            = null;
         $positionName           = null;
         $managerSignatureBase64 = null;
