@@ -1803,9 +1803,9 @@
                             <td class="no-col">{{ $index + 1 }}</td>
                             <td>
                                 <div class="item-name">{{ $item->item_name }}</div>
-                                @if ($item->specification)
+                                {{-- @if ($item->specification)
                                     <div class="spec">{{ $item->specification }}</div>
-                                @endif
+                                @endif --}}
                             </td>
                             <td class="right" style="color:#555;">
                                 {{ number_format($item->qty, 2, ',', '.') }}
@@ -1847,7 +1847,7 @@
 
         <!-- CTA -->
         <div class="cta">
-            <a href="{{ $detailUrl }}" class="btn">Lihat Detail &amp; Proses Request</a>
+            <a href="{{ $detailUrl }}" class="btn">Details</a>
         </div>
 
         <!-- Note -->

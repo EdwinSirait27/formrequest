@@ -399,9 +399,9 @@
                         </tr>
                         
                         <tr>
-                            <td class="lbl">NPWP</td>
+                            <td class="lbl">Mail</td>
                             <td class="col">:</td>
-                            <td class="val">{{ $request->vendor->npwp ?? 0}}</td>
+                            <td class="val">{{ $request->user->employee->company_mail ?? 0}}</td>
                         </tr>
                         <tr>
                             <td class="lbl">From</td>
@@ -425,12 +425,12 @@
                         <tr>
                             <td class="lbl">Towards</td>
                             <td class="col">:</td>
-                            <td class="val">{{ $request->vendor->vendor_name ?? 0}}</td>
+                            <td class="val">{{ $request->vendor->vendor_name ?? 'Need Approval'}}</td>
                         </tr>
                         <tr>
                             <td class="lbl">Bank Name</td>
                             <td class="col">:</td>
-                            <td class="val">{{ $request->vendor->bank_name ?? 0}}</td>
+                            <td class="val">{{ $request->vendor->bank_name ?? 'Need Approval'}}</td>
                         </tr>
                         @isset($request->requesttype)
                             @if ($request->requesttype->code === 'CA')
@@ -494,7 +494,6 @@
             <colgroup>
                 <col style="width:25px;">
                 <col style="width:auto;">
-                {{-- <col style="width:auto;"> --}}
                 <col style="width:60px;">
                 <col style="width:50px;">
                 <col style="width:90px;">
@@ -506,7 +505,6 @@
                 <tr>
                     <th class="col-no">No.</th>
                     <th>Items</th>
-                    {{-- <th>Specification</th> --}}
                     <th>Qty</th>
                     <th>UOM</th>
                     <th>Vendor I</th>
@@ -521,10 +519,9 @@
                     <tr>
                         <td class="col-no center">{{ $i + 1 }}</td>
                         <td class="center">{{ $item->item_name }}</td>
-                        {{-- <td class="center">{{ $item->specification }}</td> --}}
                         <td class="center">{{ number_format($item->qty, 2, ',', '.') }}</td>
                         <td class="center">{{ $item->uom }}</td>
-                        @for ($v = 0; $v < 3; $v++)
+                        {{-- @for ($v = 0; $v < 3; $v++)
                             <td class="center">
                                 @if (isset($vendors[$v]))
                                     Rp {{ number_format($vendors[$v]['price'], 2, ',', '.') }}<br>
@@ -533,7 +530,20 @@
                                     -
                                 @endif
                             </td>
-                        @endfor
+                        @endfor --}}
+                        @for ($v = 0; $v < 3; $v++)
+    <td class="center">
+        @if (isset($vendors[$v]))
+            @if ($vendors[$v]['is_selected'])
+                <strong style="color: #1a7f3c;">✓</strong>
+            @endif
+            Rp {{ number_format($vendors[$v]['price'], 2, ',', '.') }}<br>
+            <small>{{ $vendors[$v]['vendor_name'] }}</small>
+        @else
+            -
+        @endif
+    </td>
+@endfor
                         <td class="center">Rp {{ number_format($item->total_price, 2, ',', '.') }}</td>
                     </tr>
                 @endforeach
