@@ -1736,14 +1736,14 @@
         </td>
     </tr>
 @endif --}}
-@if(!empty($approver1))
+@if(!empty($approver1) && $approver1 !== 'Not Approved yet' && $approver1 !== '-')
 <tr>
     <td class="ik">Approved by Manager</td>
     <td class="ic">:</td>
     <td class="iv">
         <span class="badge">
             {{ $approver1 }}
-            @if(!empty($approver1_at))
+            @if(!empty($approver1_at) && $approver1_at !== '-')
                 <br><small>{{ $approver1_at }}</small>
             @endif
         </span>

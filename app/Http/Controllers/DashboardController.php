@@ -6,19 +6,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Models\Requesttype;
+
 use App\Models\Requestitem;
 use App\Models\Formrequest;
 class DashboardController extends Controller
 {
-    // public function dashboardPage()
-    // {
-    //     $user = Auth::user();
-    //         $requestTypes = RequestType::all();
-    //         $uomOptions = Requestitem::getUomOptions();
-    //     return view('pages.dashboard', compact(
-    //         'user','requestTypes','uomOptions'
-    //     ));
-    // }
+   
     public function dashboardPage()
     {
         $requestTypes = Requesttype::withCount([
@@ -26,15 +19,32 @@ class DashboardController extends Controller
         ])->get();
 
         // Summary stats — adjust model/table names to your actual Request model
-        $stats = [
-            'total'    => Formrequest::count(),
-            'pending'  => Formrequest::where('status', 'pending')->count(),
-            'approved' => Formrequest::where('status', 'approved')->count(),
-            'rejected' => Formrequest::where('status', 'rejected')->count(),
-        ];
+        // $stats = [
+        //     'total'    => Formrequest::count(),
+        //     'pending'  => Formrequest::where('status', 'pending')->count(),
+        //     'approved' => Formrequest::where('status', 'approved')->count(),
+        //     'rejected' => Formrequest::where('status', 'rejected')->count(),
+        // ];
+        $user = auth()->user();
+
+if ($user->hasRole('user|admin')) {
+
+    $stats = [
+        'total'    => Formrequest::where('user_id', $user->id)->count(),
+        'Submitted'  => Formrequest::where('user_id', $user->id)->where('status', 'Submitted')->count(),
+        'approved' => Formrequest::where('user_id', $user->id)
+    ->whereIn('status', ['Approved Manager', 'Approved Director'])
+    ->count(),
+        'rejected' => Formrequest::where('user_id', $user->id)
+    ->whereIn('status', ['Rejected Manager', 'Rejected Director'])
+    ->count(),    
+    'Done' => Formrequest::where('user_id', $user->id)->where('status', 'Done')->count(),
+    ];
+}
+
 
         // Recent 10 requests, eager-load relations
-        $recentRequests = Formrequest::with(['user.employee', 'requestType'])
+        $recentRequests = Formrequest::where('user_id', $user->id)->with(['user.employee', 'requestType'])
             ->latest()
             ->take(10)
             ->get();

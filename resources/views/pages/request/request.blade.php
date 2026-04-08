@@ -540,20 +540,19 @@
             <div class="flex-1">
                 <h3 class="text-sm font-semibold text-amber-400 mb-1">Request Information</h3>
                 <p class="text-xs text-slate-400 leading-relaxed">
-                   - user request dengan memilih request type dan setelah membuat ganti status menjadi dari draft ke submitted agar manager bisa review request dari user.
+                   - user request by selecting the request type and after creating it, change the status from draft to submitted so that the manager can review the user's request.
                 </p>
                 <p class="text-xs text-slate-400 leading-relaxed">
-                   - alurnya yaitu mencari menu Form Request lalu + create request.
+                   - the flow is to look for the Request Form menu then create request.
                 </p>
                 <p class="text-xs text-slate-400 leading-relaxed">
-                   - untuk status Draft masih bisa diupdate oleh user, setelah mengganti ke submitted maka sudah tidak bisa diedit
+                  - The Draft status can still be updated by the user, after changing into Submitted, user can't edit request unless the status is rejected by the manager.
                 </p>
             </div>
         </div>
     </div>
     @endrole
                     @role('finance')
-
      <div class="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-2xl p-4 mb-6">
         <div class="flex items-start space-x-3">
             <div class="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
@@ -692,7 +691,6 @@
                         </div>
 
                         <!-- BUTTON -->
-                    @role('user|admin')
                         
                         <a href="{{ route('createrequest') }}"
                             class="inline-flex items-center justify-center gap-2 px-4 py-2
@@ -702,14 +700,10 @@
 
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor" stroke-width="2">
-
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                             </svg>
-
                             Create Request
                         </a>
-                        @endrole
-
                     </div>
                 </div>
             </div>
@@ -1095,8 +1089,8 @@
             <div class="user-card-header">
                 <div class="user-card-avatar">${initials}</div>
                 <div class="user-card-title">
-                    <div class="user-card-name">Name : ${request.employee_name || 'N/A'}</div>
-                    <div class="user-card-username">Document Number : ${request.document_number || '-'}</div>
+                    <div class="user-card-name">User : ${request.employee_name || 'N/A'}</div>
+                    <div class="user-card-username">Doc Num : ${request.document_number || '-'}</div>
                 </div>
             </div>
 
@@ -1130,14 +1124,10 @@
                     <div class="user-card-label">Deadline</div>
                     <div class="user-card-value">${request.deadline || 'N/A'}</div>
                 </div>
-
                 <div class="user-card-field">
-                    <div class="user-card-label">Transfer By</div>
-                    <div class="user-card-value">
-                        <span class="user-card-badge">${request.transfer || '-'}</span>
-                    </div>
+                    <div class="user-card-label">Transfer From</div>
+                    <div class="user-card-value">${request.transfer || 'N/A'}</div>
                 </div>
-
                 <div class="user-card-field">
                     <div class="user-card-label">Status</div>
                     <div class="user-card-value">

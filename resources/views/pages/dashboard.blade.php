@@ -1,3 +1,89 @@
+@extends('layouts.app')
+
+@section('title', 'Dashboard')
+@section('header', 'Dashboard')
+@section('subtitle', 'Overview of all form requests')
+
+@section('content')
+
+    {{-- Stats --}}
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
+        @foreach ([['label' => 'Total Requests', 'value' => $stats['total'], 'color' => 'text-slate-300'], ['label' => 'Submitted', 'value' => $stats['Submitted'], 'color' => 'text-yellow-400'], ['label' => 'Approved', 'value' => $stats['approved'], 'color' => 'text-emerald-400'], ['label' => 'Rejected', 'value' => $stats['rejected'], 'color' => 'text-red-400'],['label' => 'Done', 'value' => $stats['Done'], 'color' => 'text-slate-300']] as $stat)
+            <div class="bg-slate-800 rounded-xl p-4 border border-slate-700">
+                <p class="text-xs text-slate-400 mb-1">{{ $stat['label'] }}</p>
+                <p class="text-2xl font-semibold {{ $stat['color'] }}">{{ $stat['value'] }}</p>
+            </div>
+        @endforeach
+    </div>
+
+    {{-- Request Types --}}
+    <div class="mb-2">
+        <p class="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">Request Types</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            @foreach ($requestTypes as $type)
+                <a href="{{ route('request', ['type' => $type->code]) }}"
+                    class="group bg-slate-800 border border-slate-700 hover:border-slate-500 rounded-xl p-4 flex flex-col gap-3 transition-all">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-slate-500">{{ $type->request_type_name }}</p>
+                            <p class="text-xs text-slate-500">Code: {{ $type->code }}</p>
+                        </div>
+                        <span class="shrink-0 text-xs font-medium bg-slate-700 text-slate-300 px-2.5 py-1 rounded-full">
+                            {{ $type->requests_count ?? 0 }} active
+                        </span>
+                    </div>
+                </a>
+            @endforeach
+        </div>
+    </div>
+
+    {{-- Recent Activity --}}
+    <div class="mt-8">
+        <p class="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">Recent Activity</p>
+        <div class="bg-slate-800 border border-slate-700 rounded-xl divide-y divide-slate-700 overflow-hidden">
+            @forelse($recentRequests as $req)
+                <div class="flex items-center justify-between px-4 py-3 gap-3">
+                    <div class="min-w-0">
+                        <p class="text-sm font-semibold text-slate-500">{{ $req->document_number ?? 'N/A' }}</p>
+                        <p class="text-xs text-slate-500">
+                            {{ $req->user->employee->employee_name ?? '-' }} &middot;
+                            {{ $req->requestType->request_type_name ?? '-' }}
+                        </p>
+                    </div>
+                    @php
+                        $statusMap = [
+                            'pending' => 'bg-yellow-900/50 text-yellow-400',
+                            'approved' => 'bg-emerald-900/50 text-emerald-400',
+                            'rejected' => 'bg-red-900/50 text-red-400',
+                        ];
+                        $cls = $statusMap[$req->status] ?? 'bg-slate-700 text-slate-300';
+                    @endphp
+                    <span class="shrink-0 text-xs font-medium px-2.5 py-1 rounded-full {{ $cls }}">
+                        {{ ucfirst($req->status) }}
+                    </span>
+                </div>
+            @empty
+                <div class="px-4 py-6 text-center text-sm text-slate-500">No recent requests.</div>
+            @endforelse
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        toastr.options = {
+            closeButton: true,
+            progressBar: true,
+            positionClass: "toast-top-right",
+            timeOut: "3000"
+        };
+        @if (session('success'))
+            toastr.success(@json(session('success')));
+        @endif
+        @if (session('error'))
+            toastr.error(@json(session('error')));
+        @endif
+    </script>
+@endsection
 {{-- @extends('layouts.app')
 
 @section('title', 'Request Form Dashboard')
@@ -1193,89 +1279,3 @@
     </script>
 
 @endpush --}}
-@extends('layouts.app')
-
-@section('title', 'Dashboard')
-@section('header', 'Dashboard')
-@section('subtitle', 'Overview of all form requests')
-
-@section('content')
-
-    {{-- Stats --}}
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        @foreach ([['label' => 'Total Requests', 'value' => $stats['total'], 'color' => 'text-slate-300'], ['label' => 'Pending', 'value' => $stats['pending'], 'color' => 'text-yellow-400'], ['label' => 'Approved', 'value' => $stats['approved'], 'color' => 'text-emerald-400'], ['label' => 'Rejected', 'value' => $stats['rejected'], 'color' => 'text-red-400']] as $stat)
-            <div class="bg-slate-800 rounded-xl p-4 border border-slate-700">
-                <p class="text-xs text-slate-400 mb-1">{{ $stat['label'] }}</p>
-                <p class="text-2xl font-semibold {{ $stat['color'] }}">{{ $stat['value'] }}</p>
-            </div>
-        @endforeach
-    </div>
-
-    {{-- Request Types --}}
-    <div class="mb-2">
-        <p class="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">Request Types</p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            @foreach ($requestTypes as $type)
-                <a href="{{ route('request', ['type' => $type->id]) }}"
-                    class="group bg-slate-800 border border-slate-700 hover:border-slate-500 rounded-xl p-4 flex flex-col gap-3 transition-all">
-                    <div class="flex items-center justify-between gap-3">
-                        <div class="min-w-0">
-                            <p class="text-sm font-semibold text-slate-500">{{ $type->request_type_name }}</p>
-                            <p class="text-xs text-slate-500">Code: {{ $type->code }}</p>
-                        </div>
-                        <span class="shrink-0 text-xs font-medium bg-slate-700 text-slate-300 px-2.5 py-1 rounded-full">
-                            {{ $type->requests_count ?? 0 }} active
-                        </span>
-                    </div>
-                </a>
-            @endforeach
-        </div>
-    </div>
-
-    {{-- Recent Activity --}}
-    <div class="mt-8">
-        <p class="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">Recent Activity</p>
-        <div class="bg-slate-800 border border-slate-700 rounded-xl divide-y divide-slate-700 overflow-hidden">
-            @forelse($recentRequests as $req)
-                <div class="flex items-center justify-between px-4 py-3 gap-3">
-                    <div class="min-w-0">
-                        <p class="text-sm font-semibold text-slate-500">{{ $req->document_number ?? 'N/A' }}</p>
-                        <p class="text-xs text-slate-500">
-                            {{ $req->user->employee->employee_name ?? '-' }} &middot;
-                            {{ $req->requestType->request_type_name ?? '-' }}
-                        </p>
-                    </div>
-                    @php
-                        $statusMap = [
-                            'pending' => 'bg-yellow-900/50 text-yellow-400',
-                            'approved' => 'bg-emerald-900/50 text-emerald-400',
-                            'rejected' => 'bg-red-900/50 text-red-400',
-                        ];
-                        $cls = $statusMap[$req->status] ?? 'bg-slate-700 text-slate-300';
-                    @endphp
-                    <span class="shrink-0 text-xs font-medium px-2.5 py-1 rounded-full {{ $cls }}">
-                        {{ ucfirst($req->status) }}
-                    </span>
-                </div>
-            @empty
-                <div class="px-4 py-6 text-center text-sm text-slate-500">No recent requests.</div>
-            @endforelse
-        </div>
-    </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-    <script>
-        toastr.options = {
-            closeButton: true,
-            progressBar: true,
-            positionClass: "toast-top-right",
-            timeOut: "3000"
-        };
-        @if (session('success'))
-            toastr.success(@json(session('success')));
-        @endif
-        @if (session('error'))
-            toastr.error(@json(session('error')));
-        @endif
-    </script>
-@endsection

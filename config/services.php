@@ -32,4 +32,7 @@ return [
     'manager_api' => [
     'url' => env('HRX_API_URL'),
 ],
+    'manager_api_local' => [
+    'url' => env('HRX_API_Manager'),
+],
 ];

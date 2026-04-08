@@ -47,6 +47,7 @@ class RequestController extends Controller
     public function getRequests(Request $request)
     {
         $query = Formrequest::with([
+            'company',
             'vendor',
             'capextype',
             'requesttype',
@@ -910,7 +911,7 @@ class RequestController extends Controller
     public function create()
 {
     $user = auth()->user();
-    if (!$user->hasRole(['user', 'admin'])) {
+    if (!$user->hasRole(['user', 'admin','manager','finance','director'])) {
         abort(403, 'Tidak memiliki akses');
     }
     $vendors = Vendor::where('status', 'Active')->pluck('vendor_name', 'id');
@@ -1233,7 +1234,7 @@ class RequestController extends Controller
             Log::info('STORE SUCCESS');
             return redirect()
                 ->route('request')
-                ->with('success', 'Request berhasil dibuat.');
+                ->with('success', 'Request created successfully.');
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('STORE ERROR', [
@@ -1243,7 +1244,7 @@ class RequestController extends Controller
             return redirect()
             ->route('request')
                 ->withInput()
-                ->with('error', 'Gagal membuat request: ' . $e->getMessage());
+                ->with('error', 'Failed to created request: ' . $e->getMessage());
         }
     }
     public function update(Request $request, $hash)
@@ -1416,14 +1417,13 @@ class RequestController extends Controller
             // ✅ Fix 3: Kirim email SETELAH commit, gunakan queue (non-blocking)
             $this->dispatchEmails($validated['status'], $previousStatus, $formrequest);
 
-            return redirect()->route('request')->with('success', 'Request berhasil diupdate.');
+            return redirect()->route('request')->with('success', 'Request updated successfully.');
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('UPDATE ERROR', ['message' => $e->getMessage()]);
-            return back()->withInput()->with('error', 'Gagal update request: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'failed to update request: ' . $e->getMessage());
         }
     }
-
     // ✅ Pisahkan email logic ke method sendiri, pakai queue
     private function dispatchEmails(string $status, string $previousStatus, $formrequest): void
     {
@@ -1431,7 +1431,7 @@ class RequestController extends Controller
             if ($status === 'Submitted' && $previousStatus !== 'Submitted') {
                 $employee = auth()->user()->employee;
                 if ($employee) {
-                    $baseUrl = config('services.manager_api.url');
+                    $baseUrl = config('services.manager_api_local.url');
                     $managerResponse = Http::timeout(5)->get("{$baseUrl}/api/manager/{$employee->id}");
                     if ($managerResponse->successful()) {
                         $managerEmail = data_get($managerResponse->json(), 'manager.company_email');

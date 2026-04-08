@@ -73,7 +73,7 @@ use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 use Carbon\Carbon;
 
-class RequestMail extends Mailable implements ShouldQueue // ← implements ini
+class RequestMail extends Mailable implements ShouldQueue 
 {
     use Queueable, SerializesModels;
 
@@ -112,13 +112,21 @@ class RequestMail extends Mailable implements ShouldQueue // ← implements ini
                 ])
             ];
         });
-        $approver1 = $formrequest->approval->approver1User->employee->employee_name ?? 'empty';
-        $approver1_at = Carbon::parse($formrequest->approval->approver1_at)->format('d M Y H:i:s');
+        // $approver1 = $formrequest->approval->approver1User->employee->employee_name ?? 'empty';
+        // $approver1_at = Carbon::parse($formrequest->approval->approver1_at)->format('d M Y H:i:s');
+        // Aman dari null chain
+$approval = $formrequest->approval;
+
+$approver1 = $approval?->approver1User?->employee?->employee_name ?? 'nonono ya';
+
+$approver1_at = $approval?->approver1_at 
+    ? Carbon::parse($approval->approver1_at)->format('d M Y H:i:s') 
+    : '-';
         $assetsOptions = Formrequest::getAssetOptions();
         return new Content(
             view: 'emails.request',
             with: [
-                'formrequest' => $formrequest, // ← pakai yang sudah di-load, jangan load ulang
+                'formrequest' => $formrequest,
                 'requestDate' => Carbon::parse($this->formrequest->request_date)->format('d M Y'),
                 'assetsLabel' => $assetsOptions[$formrequest->assets] ?? '-',
                 'deadline'    => Carbon::parse($this->formrequest->deadline)->format('d M Y'),
