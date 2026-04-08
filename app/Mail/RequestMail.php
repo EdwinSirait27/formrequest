@@ -117,7 +117,7 @@ class RequestMail extends Mailable implements ShouldQueue
         // Aman dari null chain
 $approval = $formrequest->approval;
 
-$approver1 = $approval?->approver1User?->employee?->employee_name ?? 'nonono ya';
+$approver1 = $approval?->approver1User?->employee?->employee_name ?? 'Not Approved yet';
 
 $approver1_at = $approval?->approver1_at 
     ? Carbon::parse($approval->approver1_at)->format('d M Y H:i:s') 
