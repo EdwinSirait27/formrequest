@@ -1240,7 +1240,8 @@ class RequestController extends Controller
                 'message' => $e->getMessage(),
                 'trace'   => $e->getTraceAsString()
             ]);
-            return back()
+            return redirect()
+            ->route('request')
                 ->withInput()
                 ->with('error', 'Gagal membuat request: ' . $e->getMessage());
         }
@@ -1256,7 +1257,6 @@ class RequestController extends Controller
             'request_date'          => ['required', 'date'],
             'deadline'              => ['required', 'date', 'after_or_equal:request_date'],
             'title'                 => ['required', 'string', 'max:255'],
-            // 'assets'                => ['nullable', Rule::in(Formrequest::getAssetOptions())],
             'assets' => $isCAPEX
                 ? ['required', Rule::in(Formrequest::getAssetOptions())]
                 : ['nullable', Rule::in(Formrequest::getAssetOptions())],
@@ -1313,9 +1313,7 @@ class RequestController extends Controller
         if (!$formrequest) {
             return back()->with('error', 'Data tidak ditemukan.');
         }
-
         $previousStatus = $formrequest->status;
-
         $totalAmount = collect($validated['items'])->sum(function ($item) use ($parseQty, $parsePrice, $isCAPEX) {
             if ($isCAPEX) {
                 $vendors = $item['vendors'] ?? [];
@@ -1328,7 +1326,6 @@ class RequestController extends Controller
             return $parseQty($item['qty']) * $parsePrice($item['price']);
         });
 
-        // ✅ Fix 2: Satu transaction saja (hapus nested DB::transaction)
         DB::beginTransaction();
         try {
             $formrequest->update([
@@ -1401,14 +1398,12 @@ class RequestController extends Controller
                             'price'       => $selectedPrice,
                             'total_price' => round($qty * $selectedPrice, 2),
                         ]);
-
                         if ($selectedVendorId) {
                             $formrequest->update(['vendor_id' => $selectedVendorId]);
                         }
                     }
                 }
             }
-
             if (!empty($validated['links'])) {
                 foreach ($validated['links'] as $link) {
                     if (empty($link['link'])) continue;
