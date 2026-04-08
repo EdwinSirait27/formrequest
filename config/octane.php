@@ -317,7 +317,7 @@ return [
     'swoole' => [
         'options' => [
             'log_file' => storage_path('logs/swoole.log'),
-            'log_level' => SWOOLE_LOG_ERROR,
+            'log_level' => 4,           // SWOOLE_LOG_ERROR = 4
             'package_max_length' => 10 * 1024 * 1024, // 10MB
             'buffer_output_size' => 16 * 1024 * 1024, // 16MB
             'max_conn' => 1000,
@@ -325,7 +325,7 @@ return [
             'task_worker_num' => 4,
             'max_request' => 1000,
             'enable_coroutine' => true,
-            'hook_flags' => SWOOLE_HOOK_ALL,
+            'hook_flags' => 2147483647,
             'socket_buffer_size' => 8 * 1024 * 1024,
             'open_tcp_nodelay' => true,
         ],

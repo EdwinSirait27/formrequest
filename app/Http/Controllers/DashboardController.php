@@ -27,7 +27,6 @@ class DashboardController extends Controller
         // ];
         $user = auth()->user();
 
-if ($user->hasRole('user|admin')) {
 
     $stats = [
         'total'    => Formrequest::where('user_id', $user->id)->count(),
@@ -40,7 +39,6 @@ if ($user->hasRole('user|admin')) {
     ->count(),    
     'Done' => Formrequest::where('user_id', $user->id)->where('status', 'Done')->count(),
     ];
-}
 
 
         // Recent 10 requests, eager-load relations
