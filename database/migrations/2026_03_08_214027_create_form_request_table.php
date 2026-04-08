@@ -26,6 +26,8 @@ return new class extends Migration
             'draft',
             'submitted',
             'approved manager',
+            'approved it',
+            'approved bd',
             'rejected manager',
             'approved finance',
             'rejected finance'

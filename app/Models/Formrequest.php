@@ -54,6 +54,7 @@ class Formrequest extends Model
     }
     protected $fillable = [
         'request_type_id',
+        'capex_type_id',
         'document_number',
         'request_date',
         'user_id',
@@ -80,14 +81,24 @@ class Formrequest extends Model
         'deadline' => 'date',
         'total_amount' => 'decimal:2',
     ];
-      public static function getAssetOptions()
-    {
-        return ['Bangunan',
-            'Peralatan & Inventaris',
-            'IT Hardware & Software',
-            'Kendaraan',
-            'Machine & Equipment'];
-    }
+    //   public static function getAssetOptions()
+    // {
+    //     return ['Bangunan',
+    //         'Peralatan & Inventaris',
+    //         'IT Hardware & Software',
+    //         'Kendaraan',
+    //         'Machine & Equipment'];
+    // }
+    public static function getAssetOptions()
+{
+    return [
+        'Bangunan' => 'Bangunan',
+        'Peralatan & Inventaris' => 'Peralatan & Inventaris',
+        'IT Hardware & Software' => 'IT Hardware & Software',
+        'Kendaraan' => 'Kendaraan',
+        'Machine & Equipment' => 'Machine & Equipment'
+    ];
+}
     public function vendor()
     {
         return $this->belongsTo(Vendor::class, 'vendor_id');
@@ -115,6 +126,10 @@ class Formrequest extends Model
     public function requesttype()
     {
         return $this->belongsTo(Requesttype::class, 'request_type_id');
+    }
+    public function  capextype()
+    {
+        return $this->belongsTo(Capextype::class, 'capex_type_id');
     }
     public function user()
     {

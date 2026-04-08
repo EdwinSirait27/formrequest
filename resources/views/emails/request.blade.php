@@ -1664,9 +1664,18 @@
                     <td class="iv">{{ $formrequest->user->employee->employee_name ?? '-' }}</td>
                 </tr>
                 <tr>
+                    <td class="ik">Department</td>
+                    <td class="ic">:</td>
+                    <td class="iv">{{ $formrequest->user->employee->department->department_name ?? '-' }}</td>
+                </tr>
+                {{-- <tr>
+                    <td class="ik">Location</td>
+                    <td class="ic">:</td>
+                    <td class="iv">{{ $formrequest->user->employee->store->name ?? '-' }}</td>
+                </tr> --}}
+                <tr>
                     <td class="ik">Request Date</td>
                     <td class="ic">:</td>
-                    {{-- <td class="iv">{{ Carbon::parse($formrequest->request_date)->translatedFormat('d F Y') }}</td> --}}
                     <td class="iv">{{$requestDate}}</td>
                 </tr>
                 <tr>
@@ -1685,9 +1694,14 @@
                 @endif
                 @if ($formrequest->requesttype->code === 'CAPEX')
                 <tr>
+                    <td class="ik">Capex Type</td>
+                    <td class="ic">:</td>
+                    <td class="iv">{{ $formrequest->capextype->code }}</td>
+                </tr>
+                <tr>
                     <td class="ik">Assets</td>
                     <td class="ic">:</td>
-                    <td class="iv"><span class="badge">{{ $formrequest->assets }}</span></td>
+                    <td class="iv">{{ $assetsLabel }}</td>
                 </tr>
                 @endif
                 <tr>
@@ -1695,6 +1709,47 @@
                     <td class="ic">:</td>
                     <td class="iv"><span class="badge">{{ $formrequest->status }}</span></td>
                 </tr>
+                {{-- <tr>
+                    <td class="ik">Approved by Manager</td>
+                    <td class="ic">:</td>
+                    <td class="iv"><span class="badge">{{ $formrequest->approval->approver1}}</span></td>
+                </tr>
+                <tr>
+                    <td class="ik">Approved At</td>
+                    <td class="ic">:</td>
+                    <td class="iv"><span class="badge">{{ $approved1_at}}</span></td>
+                </tr> --}}
+                {{-- @if($approved1)
+
+                <tr>
+        <td class="ik">Approved by Manager</td>
+        <td class="ic">:</td>
+        <td class="iv">
+            <span class="badge">{{ $approved1}}</span>
+        </td>
+    </tr>
+    <tr>
+        <td class="ik">Approved At</td>
+        <td class="ic">:</td>
+        <td class="iv">
+            <span class="badge">{{ $approved1_at }}</span>
+        </td>
+    </tr>
+@endif --}}
+@if(!empty($approver1))
+<tr>
+    <td class="ik">Approved by Manager</td>
+    <td class="ic">:</td>
+    <td class="iv">
+        <span class="badge">
+            {{ $approver1 }}
+            @if(!empty($approver1_at))
+                <br><small>{{ $approver1_at }}</small>
+            @endif
+        </span>
+    </td>
+</tr>
+@endif
             </table>
         </div>
 
@@ -1793,7 +1848,7 @@
                             <th class="right">Vendor I</th>
                             <th class="right">Vendor II</th>
                             <th class="right">Vendor III</th>
-                            <th class="right">Total</th>
+                            {{-- <th class="right">Total</th> --}}
                         </tr>
                     </thead>
                     <tbody>
@@ -1823,13 +1878,13 @@
                                 @endif
                             </td>
                             @endfor
-                            <td class="right" style="font-weight:600; white-space:nowrap;">
+                            {{-- <td class="right" style="font-weight:600; white-space:nowrap;">
                                 Rp {{ number_format(optional($item)->total_price ?? 0, 2, ',', '.') }}
-                            </td>
+                            </td> --}}
                         </tr>
                         @endforeach
                     </tbody>
-                    <tfoot>
+                    {{-- <tfoot>
                         <tr>
                             <td colspan="7" class="right">
                                 <span class="total-label">Grand Total</span>
@@ -1838,7 +1893,7 @@
                                 Rp {{ number_format($formrequest->total_amount, 2, ',', '.') }}
                             </td>
                         </tr>
-                    </tfoot>
+                    </tfoot> --}}
                 </table>
                 @endif
 
@@ -1847,7 +1902,7 @@
 
         <!-- CTA -->
         <div class="cta">
-            <a href="{{ $detailUrl }}" class="btn">Details</a>
+            <a href="{{ $detailUrl }}" class="btn">Approve Now</a>
         </div>
 
         <!-- Note -->

@@ -7,6 +7,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RequestTypeController;
 use App\Http\Controllers\RequestController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\CapextypeController;
 use App\Http\Controllers\VendorController;
 Route::middleware('throttle:15,1')->group(function () {
     Route::get('/', [AuthController::class, 'loginPage'])->name('login')->middleware('guest');
@@ -60,6 +61,15 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/showrequesttype/{hash}', [RequestTypeController::class, 'show'])->name('showrequesttype');
     Route::put('/updaterequesttype/{hash}', [RequestTypeController::class, 'update'])->name('updaterequesttype');
     Route::post('/storerequesttype', [RequestTypeController::class, 'store'])->name('storerequesttype');
+    
+
+     Route::get('/capextype', [CapexTypeController::class, 'index'])->name('capextype');
+    Route::get('/createcapextype', [CapexTypeController::class, 'create'])->name('createcapextype');
+    Route::match(['GET', 'POST'], '/capextypes/capextypes', [CapexTypeController::class, 'getCapextypes'])->name('capextypes.capextypes');
+    Route::get('/editcapextype/{hash}', [CapexTypeController::class, 'edit'])->name('editcapextype');
+    Route::get('/showcapextype/{hash}', [CapexTypeController::class, 'show'])->name('showcapextype');
+    Route::put('/updatecapextype/{hash}', [CapexTypeController::class, 'update'])->name('updatecapextype');
+    Route::post('/storecapextype', [CapexTypeController::class, 'store'])->name('storecapextype');
     // Vendor
 
     //request

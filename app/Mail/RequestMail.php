@@ -1,14 +1,79 @@
 <?php
 
+// namespace App\Mail;
+// use App\Models\Formrequest;
+// use Illuminate\Bus\Queueable;
+// use Illuminate\Mail\Mailable;
+// use Illuminate\Mail\Mailables\Content;
+// use Illuminate\Mail\Mailables\Envelope;
+// use Illuminate\Queue\SerializesModels;
+// use Carbon\Carbon;
+// class RequestMail extends Mailable
+// {
+//     use Queueable, SerializesModels;
+
+//     public Formrequest $formrequest;
+
+//     public function __construct(Formrequest $formrequest)
+//     {
+//         $this->formrequest = $formrequest;
+//     }
+
+//     public function envelope(): Envelope
+//     {
+//         return new Envelope(
+//             subject: '[Approval Request] ' . $this->formrequest->title,
+//         );
+//     }
+
+//     public function content(): Content
+//     {
+//         $formrequest = $this->formrequest->load([
+//         'items',
+//         'user',
+//         'links',
+//         'requesttype',
+//         'items.vendors',
+//         'items.vendors.vendor',
+//     ]);
+//     $capexVendors = $formrequest->items->mapWithKeys(function ($item) {
+//         return [
+//             $item->id => $item->vendors->values()->map(fn($v) => [
+//                 'vendor_name' => $v->vendor?->vendor_name ?? '-',
+//                 'price'       => $v->price ?? 0,
+//             ])
+//         ];
+//     });
+//         return new Content(
+//             view: 'emails.request',
+//             with: [
+//                 'formrequest' => $this->formrequest->load(['items', 'user','links','items.vendors']),
+//                 'requestDate' => Carbon::parse($this->formrequest->request_date)->format('d M Y'),
+//             'deadline' => Carbon::parse($this->formrequest->deadline)->format('d M Y'),
+//             'capexVendors' => $capexVendors,    
+//             'detailUrl' => route('editrequest', [
+//                     'hash' => substr(hash('sha256', $this->formrequest->id . env('APP_KEY')), 0, 8)
+//                 ]),
+//             ]
+//         );
+//     }
+//     public function attachments(): array
+//     {
+//         return [];
+//     }
+// }
 namespace App\Mail;
 use App\Models\Formrequest;
+use App\Models\Capextype;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue; // ← tambah ini
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 use Carbon\Carbon;
-class RequestMail extends Mailable
+
+class RequestMail extends Mailable implements ShouldQueue // ← implements ini
 {
     use Queueable, SerializesModels;
 
@@ -29,29 +94,38 @@ class RequestMail extends Mailable
     public function content(): Content
     {
         $formrequest = $this->formrequest->load([
-        'items',
-        'user',
-        'links',
-        'requesttype',
-        'items.vendors',
-        'items.vendors.vendor',
-    ]);
-    $capexVendors = $formrequest->items->mapWithKeys(function ($item) {
-        return [
-            $item->id => $item->vendors->values()->map(fn($v) => [
-                'vendor_name' => $v->vendor?->vendor_name ?? '-',
-                'price'       => $v->price ?? 0,
-            ])
-        ];
-    });
+            'items',
+            'user',
+            'links',
+            'requesttype',
+            'items.vendors',
+            'items.vendors.vendor',
+            'approval',
+            'approval.approver1User.employee',
+        ]);
+
+        $capexVendors = $formrequest->items->mapWithKeys(function ($item) {
+            return [
+                $item->id => $item->vendors->values()->map(fn($v) => [
+                    'vendor_name' => $v->vendor?->vendor_name ?? '-',
+                    'price'       => $v->price ?? 0,
+                ])
+            ];
+        });
+        $approver1 = $formrequest->approval->approver1User->employee->employee_name ?? 'empty';
+        $approver1_at = Carbon::parse($formrequest->approval->approver1_at)->format('d M Y H:i:s');
+        $assetsOptions = Formrequest::getAssetOptions();
         return new Content(
             view: 'emails.request',
             with: [
-                'formrequest' => $this->formrequest->load(['items', 'user','links','items.vendors']),
+                'formrequest' => $formrequest, // ← pakai yang sudah di-load, jangan load ulang
                 'requestDate' => Carbon::parse($this->formrequest->request_date)->format('d M Y'),
-            'deadline' => Carbon::parse($this->formrequest->deadline)->format('d M Y'),
-            'capexVendors' => $capexVendors,    
-            'detailUrl' => route('editrequest', [
+                'assetsLabel' => $assetsOptions[$formrequest->assets] ?? '-',
+                'deadline'    => Carbon::parse($this->formrequest->deadline)->format('d M Y'),
+              'approver1' => $approver1,
+'approver1_at' => $approver1_at,
+                'capexVendors' => $capexVendors,
+                'detailUrl'   => route('editrequest', [
                     'hash' => substr(hash('sha256', $this->formrequest->id . env('APP_KEY')), 0, 8)
                 ]),
             ]

@@ -113,14 +113,7 @@ class VendorController extends Controller
             ->rawColumns(['action'])
             ->make(true);
     }
-//     public function edit($hash)
-//     {
-//        $vendor = Vendor::get()->first(function ($u) use ($hash) {
-//     return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
-// });
-//         abort_if(!$vendor, 404);     
-//         return view('pages.vendor.editvendor', compact('vendor'));
-//     }
+
 public function edit($hash)
 {
     if (!auth()->check() || !in_array(auth()->user()->role, ['admin', 'finance'])) {
@@ -165,10 +158,10 @@ public function edit($hash)
             'city' => 'nullable|string',
             'province' => 'nullable|string',
             'postal_code' => 'nullable|string',
-            'npwp' => 'required|number',
+            'npwp' => 'nullable|number',
             'bank_name' => 'required|string',
-            'bank_account_name' => 'required|string',
-            'bank_account_number' => 'required|string',
+            'bank_account_name' => 'nullable|string',
+            'bank_account_number' => 'nullable|string',
             // 'transfer' => 'required|in:ABD,MJM,TNJ,BIB',
             'type' => 'required|in:Vendor,Non Vendor',
             'status' => 'required|in:Active,Inactive',
@@ -189,7 +182,7 @@ public function edit($hash)
             'province' => 'nullable|string|max:100',
             'postal_code' => 'nullable|string|max:20',
             'npwp' => 'nullable|string|max:50',
-            'bank_name' => 'nullable|string|max:100',
+            'bank_name' => 'required|string|max:100',
             'bank_account_name' => 'nullable|string|max:100',
             'bank_account_number' => 'nullable|string|max:50',
             // 'transfer' => 'required|in:ABD,MJM,TNJ,BIB',

@@ -1106,9 +1106,9 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        NPWP <span class="text-red-400">*</span>
+                        NPWP 
                     </label>
-                    <input type="number" id="npwp" name="npwp" class="form-input w-full px-4 py-3 rounded-xl"value="{{ old('npwp') }}" required placeholder="8271....">
+                    <input type="number" id="npwp" name="npwp" class="form-input w-full px-4 py-3 rounded-xl"value="{{ old('npwp') }}" placeholder="8271....">
                     @error('npwp')
                         <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
                             <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -1159,9 +1159,9 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
-                        Bank Account Name <span class="text-red-400">*</span>
+                        Bank Account Name 
                     </label>
-                    <input type="text" id="bank_account_name" name="bank_account_name"class="form-input w-full px-4 py-3 rounded-xl"value="{{ old('bank_account_name') }}" required placeholder="Edwin Sirait">
+                    <input type="text" id="bank_account_name" name="bank_account_name"class="form-input w-full px-4 py-3 rounded-xl"value="{{ old('bank_account_name') }}"placeholder="Edwin Sirait">
 
                     @error('bank_account_name')
                         <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
@@ -1179,9 +1179,9 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                         </svg>
-                        Bank Account Number <span class="text-red-400">*</span>
+                        Bank Account Number 
                     </label>
-                    <input type="number" id="bank_account_number" name="bank_account_number"class="form-input w-full px-4 py-3 rounded-xl"value="{{ old('bank_account_number') }}" required placeholder="082834...">
+                    <input type="number" id="bank_account_number" name="bank_account_number"class="form-input w-full px-4 py-3 rounded-xl"value="{{ old('bank_account_number') }}"  placeholder="082834...">
 
                     @error('bank_account_number')
                         <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">

@@ -14,6 +14,7 @@ use App\Models\Employee;
 use App\Models\Requestapproval;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\RequestMail;
+use App\Models\Capextype;
 use App\Models\User;
 use App\Models\ItemVendorQuotation;
 use App\Models\Requestlink;
@@ -47,11 +48,13 @@ class RequestController extends Controller
     {
         $query = Formrequest::with([
             'vendor',
+            'capextype',
             'requesttype',
             'user.employee'
         ])->select([
             'id',
             'request_type_id',
+            'capex_type_id',
             'vendor_id',
             'transfer',
             'company_id',
@@ -65,7 +68,6 @@ class RequestController extends Controller
             'status',
         ]);
         $search = $request->input('search.value');
-
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $companyIds = Company::on('hrx')
@@ -102,7 +104,6 @@ class RequestController extends Controller
                 ->where('name', $request->name)
                 ->pluck('id')
                 ->toArray();
-
             $query->whereIn('company_id', $companyIds);
         }
         if ($request->filled('request_date')) {
@@ -114,55 +115,54 @@ class RequestController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-        // untuk manager
         $user = auth()->user();
         if ($user->hasRole('admin')) {
-        } elseif ($user->hasRole('manager')) {
-
+        } 
+        elseif ($user->hasRole('manager')) {
             $employee = $user->employee;
-
             if ($employee && $employee->structure_id) {
-
                 $structure = Structuresnew::with('allChildren')
                     ->find($employee->structure_id);
-
                 if ($structure) {
-
                     $structureIds = $structure->getAllIds();
-
-                    // ambil employee dari HRX
                     $employeeIds = Employee::whereIn('structure_id', $structureIds)
                         ->pluck('id');
-                    // ambil user_id dari DB utama
                     $userIds = User::whereIn('employee_id', $employeeIds)
                         ->pluck('id');
-                    // filter dasar
                     $query->whereIn('user_id', $userIds)
                         ->whereIn('status', ['Submitted', 'Approved Manager']);
-                    // ✅ tambahan kondisi CAPEX
-                    $query->where(function ($q) use ($employee) {
-                        $q->whereHas('requestType', function ($rt) {
-                            $rt->where('code', '!=', 'CAPEX');
-                        })
-                            ->orWhere(function ($q2) use ($employee) {
-                                $q2->whereHas('requestType', function ($rt) {
-                                    $rt->where('code', 'CAPEX');
-                                })
-                                    ->whereHas('user.employee', function ($emp) use ($employee) {
-                                        $emp->whereIn('position_id', [
-                                            '019a0af3-ae1c-735f-9971-fad5fb356223',
-                                            '01992266-5627-717a-8d36-1e0479f22815'
-                                        ]);
-                                    });
-                            });
-                    });
+                    $query->where(function ($q) use ($userIds) {
+    $q->where(function ($q1) use ($userIds) {
+        $q1->whereIn('user_id', $userIds)
+            ->whereIn('status', ['Submitted', 'Approved Manager'])
+            ->whereHas('requestType', function ($rt) {
+                $rt->where('code', '!=', 'CAPEX');
+            });
+    })
+     ->orWhere(function ($q2) use ($userIds) {
+        $q2->whereIn('user_id', $userIds)
+            ->where('status', 'Submitted')
+            ->whereHas('requestType', function ($rt) {
+                $rt->where('code', 'CAPEX');
+            });
+    })
+->orWhere(function ($q3) {
+        $q3->where('status', 'Approved Manager')
+            ->whereHas('requestType', function ($rt) {
+                $rt->where('code', 'CAPEX');
+            })
+            ->whereHas('capexType', function ($ct) {
+                $ct->where('user_id', auth()->id());
+            });
+    });
+
+});
                 }
             }
-        } elseif ($user->hasRole('finance')) {
+        } 
+        elseif ($user->hasRole('finance')) {
             $query->where('status', 'Approved Director');
         }
-        // elseif ($user->hasRole('director')) {
-        //     $query->where('status', ['Approved Manager', 'Approved Director', 'Rejected Director']);
         elseif ($user->hasRole('director')) {
             $query->whereIn('status', [
                 'Approved Manager',
@@ -172,14 +172,10 @@ class RequestController extends Controller
         } elseif ($user->hasRole('user')) {
             $query->where('user_id', $user->id);
         }
-        // =============================
-        // 📊 DATATABLES RESPONSE
-        // =============================
         return DataTables::eloquent($query)
             ->addIndexColumn()
-
             ->addColumn('vendor_name', function ($row) {
-                return optional($row->vendor)->vendor_name ?? '-';
+                return optional($row->vendor)->vendor_name ?? 'Empty';
             })
             ->filterColumn('vendor_name', function ($query, $keyword) {
                 $query->whereHas('vendor', fn($q) => $q->where('vendor_name', 'like', "%{$keyword}%"));
@@ -189,7 +185,6 @@ class RequestController extends Controller
                     ->where('id', $row->company_id)
                     ->value('name') ?? '-';
             })
-
             ->filterColumn('name', function ($query, $keyword) {
                 $companyIds = Company::on('hrx')
                     ->where('name', 'like', "%{$keyword}%")
@@ -198,14 +193,18 @@ class RequestController extends Controller
 
                 $query->whereIn('company_id', $companyIds);
             })
-
             ->addColumn('request_type_name', function ($row) {
                 return optional($row->requesttype)->request_type_name ?? '-';
             })
             ->filterColumn('request_type_name', function ($query, $keyword) {
                 $query->whereHas('requesttype', fn($q) => $q->where('request_type_name', 'like', "%{$keyword}%"));
             })
-
+            ->addColumn('code', function ($row) {
+                return optional($row->capextype)->code ?? 'Empty';
+            })
+            ->filterColumn('code', function ($query, $keyword) {
+                $query->whereHas('capextype', fn($q) => $q->where('code', 'like', "%{$keyword}%"));
+            })
             ->addColumn('employee_name', function ($row) {
                 return optional($row->user->employee ?? null)->employee_name ?? '-';
             })
@@ -214,7 +213,6 @@ class RequestController extends Controller
             })
             ->addColumn('action', function ($row) {
                 $user = auth()->user();
-
                 $isLocked =
                     ($row->status === 'Submitted'        && $user->hasRole('user'))    ||
                     ($row->status === 'Approved Manager' && $user->hasRole('manager')) ||
@@ -237,7 +235,6 @@ class RequestController extends Controller
     </svg>
 </span>';
                 } else {
-                    // ✅ tombol normal
                     $editBtn = '
     <a href="' . route('editrequest', $idHashed) . '"
        class="inline-flex items-center justify-center p-2
@@ -321,7 +318,6 @@ class RequestController extends Controller
                     ->timezone('Asia/Makassar')
                     ->translatedFormat('d F Y');
             })
-
             ->editColumn('deadline', function ($request) {
                 return optional($request->deadline)
                     ->timezone('Asia/Makassar')
@@ -330,10 +326,234 @@ class RequestController extends Controller
             ->rawColumns(['action'])
             ->make(true);
     }
-
     public function edit($hash)
     {
         $request = Formrequest::with('items', 'items.vendors')->get()->first(function ($u) use ($hash) {
+            return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
+        });
+        abort_if(!$request, 404);
+        $user = auth()->user();
+        if ($user->hasRole('user') && $request->user_id !== $user->id) {
+            return redirect()->route('request')
+                ->with('error', 'you account doesnt have access to edit this request.');
+        }
+        if (!$user->hasRole('admin')) {
+            $lockRules = [
+                'Draft'             => ['finance', 'manager', 'director'], // selain ini boleh edit
+                'Submitted'         => ['user', 'finance', 'director'],
+                'Approved Manager'  => ['user', 'manager', 'finance'],
+                'Rejected Manager'  => ['director', 'manager', 'finance'],
+                'Approved Director' => ['user', 'manager', 'director'],
+                'Rejected Director' => ['finance', 'user'],
+                'Done'              => ['user', 'manager', 'director'],
+            ];
+            $lockedRoles = $lockRules[$request->status] ?? [];
+            $isLocked = collect($lockedRoles)
+                ->contains(fn($role) => $user->hasRole($role));
+            if ($isLocked) {
+                return redirect()->route('request')
+                    ->with('error', "Request with status '{$request->status}' can't be edited.");
+            }
+        }
+        $vendors = Vendor::where('status', 'Active')->pluck('vendor_name', 'id');
+        $requesttypes = Requesttype::select('id', 'request_type_name', 'code')->get();
+        $capextypes = Capextype::with('user.employee')
+            ->select('id', 'user_id', 'code')
+            ->get();
+        $user = auth()->user();
+        $userCompanyName = optional($user->employee->company)->name;
+        $userCompanyId   = optional($user->employee)->company_id;
+        if (!$userCompanyId) {
+            return redirect()->route('request')
+                ->with('error', 'user doesnt have company .');
+        }
+        $mainCompany = config('app.main_company_id');
+        $isMainCompany = $userCompanyId === $mainCompany;
+        if ($isMainCompany) {
+            $companies = Company::on('hrx')->pluck('name', 'id');
+        } else {
+            $companies = Company::on('hrx')
+                ->where('id', $userCompanyId)
+                ->pluck('name', 'id');
+        }
+        $statuses = [];
+        if ($user->hasRole('admin')) {
+            $statuses = [
+                'Draft' => 'Draft',
+                'Submitted' => 'Submitted',
+                'Approved Manager' => 'Approved Manager',
+                'Rejected Manager' => 'Rejected Manager',
+                'Approved Finance' => 'Approved Finance',
+                'Rejected Finance' => 'Rejected Finance',
+                'Rejected Director' => 'Rejected Director',
+                'Approved Director' => 'Approved Director',
+                'Done' => 'Done',
+            ];
+        } 
+        // elseif ($user->hasRole('manager')) {
+        //     $statuses = [
+        //         'Approved Manager' => 'Approved Manager',
+        //         'Rejected Manager' => 'Rejected Manager',
+        //     ];
+        // }
+         elseif ($user->hasRole('manager')) {
+
+    $statuses = [
+        'Approved Manager' => 'Approved Manager',
+        'Rejected Manager' => 'Rejected Manager',
+    ];
+
+    $capexType = $formrequest->capextype ?? null;
+
+    // ✅ cek apakah CAPEX & milik user login
+    if (
+        $capexType &&
+        $capexType->user_id === $user->id
+    ) {
+        // ✅ cek code CAPEX
+        if ($capexType->code === 'IT') {
+            $statuses['Approved IT'] = 'Approved IT';
+            $statuses['Rejected IT'] = 'Rejected IT';
+        }
+
+        if ($capexType->code === 'BD') {
+            $statuses['Approved BD'] = 'Approved BD';
+            $statuses['Rejected BD'] = 'Rejected BD';
+        }
+
+        // kalau nanti ada FINANCE, tinggal tambah:
+        // if ($capexType->code === 'FIN') { ... }
+    }
+}
+        //         elseif ($user->hasRole('manager')) {
+
+        //     $statuses = [
+        //         'Approved Manager' => 'Approved Manager',
+        //         'Rejected Manager' => 'Rejected Manager',
+        //     ];
+
+        //     // ambil semua capexType milik user login
+        //     $capexTypes = CapexType::where('user_id', auth()->id())->get();
+        //     foreach ($capexTypes as $ct) {
+        //         if ($ct->code === 'IT') {
+        //             $statuses['Approved IT'] = 'Approved IT';
+        //         }
+
+        //         if ($ct->code === 'BD') {
+        //             $statuses['Approved BD'] = 'Approved BD';
+        //         }
+        //     }
+        // }
+        elseif ($user->hasRole('user')) {
+            $statuses = [
+                'Draft' => 'Draft',
+                'Submitted' => 'Submitted',
+            ];
+        } elseif ($user->hasRole('finance')) {
+            $statuses = [
+                'Draft' => 'Draft',
+                'Submitted' => 'Submitted',
+            ];
+        } elseif ($user->hasRole('director')) {
+            $statuses = [
+                'Approved Director' => 'Approved Director',
+                'Rejected Director' => 'Rejected Director',
+            ];
+        } else {
+            abort(403, 'Unauthorized');
+        }
+        $uoms = Requestitem::getUomOptions();
+        $assets = Formrequest::getAssetOptions();
+        if ($user->hasRole('manager')) {
+            $employee = $user->employee;
+            if ($employee && $employee->structure_id) {
+                $structure = Structuresnew::with('allChildren')
+                    ->find($employee->structure_id);
+                if ($structure) {
+                    $structureIds = $structure->getAllIds();
+                    $employeeIds = Employee::whereIn('structure_id', $structureIds)
+                        ->pluck('id');
+                    $userIds = User::whereIn('employee_id', $employeeIds)
+                        ->pluck('id')
+                        ->toArray();
+                    $userIds[] = $user->id;
+                    if (!in_array($request->user_id, $userIds)) {
+                        return redirect()->route('request')
+                            ->with('error', 'you can edit your own request only or your anak buah.');
+                    }
+                }
+            }
+        }
+        $isDirector = $user->hasRole('director');
+        return view('pages.request.editrequest', compact(
+            'request',
+            'companies',
+            'vendors',
+            'capextypes',
+            'requesttypes',
+            'statuses',
+            'uoms',
+            'assets',
+            'isDirector',
+            'userCompanyId',
+            'userCompanyName'
+        ));
+    }
+    public function show($hash)
+    // {
+
+    //     $request = Formrequest::with('items', 'approval.approver1User')
+    //         ->get()
+    //         ->first(function ($u) use ($hash) {
+    //             return substr(hash('sha256', $u->id . config('app.key')), 0, 8) === $hash;
+    //         });
+    //     abort_if(!$request, 404);
+    //     $request->load('approval.approver1User.employee');
+    //     $vendors = Vendor::where('status', 'Active')->pluck('vendor_name', 'id');
+    //     $requesttypes = Requesttype::pluck('request_type_name', 'id');
+    //     $companies = Company::pluck('name', 'id');
+    //     $statuses = [
+    //         'Draft' => 'Draft',
+    //         'Submitted' => 'Submitted',
+    //         'Approved Manager' => 'Approved Manager',
+    //         'Rejected Manager' => 'Rejected Manager',
+    //         'Approved Finance' => 'Approved Finance',
+    //         'Rejected Finance' => 'Rejected Finance',
+    //         'Rejected Director' => 'Rejected Director',
+    //         'Approved Director' => 'Approved Director',
+    //         'Done' => 'Done',
+    //     ];
+    //     $uoms = Requestitem::getUomOptions();
+    //     return view('pages.request.showrequest', compact(
+    //         'companies',
+    //         'request',
+    //         'vendors',
+    //         'requesttypes',
+    //         'statuses',
+    //         'uoms'
+    //     ));
+    // }
+    // private function resolveManager(Employee $employee): ?Employee
+    // {
+    //     $employee->loadMissing('structuresnew.parent');
+    //     if (!$employee->structuresnew) return null;
+    //     $current          = $employee->structuresnew->parent;
+    //     $managerStructure = null;
+    //     while ($current) {
+    //         if ($current->is_manager) {
+    //             $managerStructure = $current;
+    //             break;
+    //         }
+    //         $current->load('parent');
+    //         $current = $current->parent;
+    //     }
+    //     if (!$managerStructure) return null;
+    //     return Employee::with([
+    //         'structuresnew.submissionposition.positionRelation',
+    //     ])->where('structure_id', $managerStructure->id)->first();
+    // }
+    {
+        $request = Formrequest::with('items', 'items.vendors','approval.approver1User.employee','approval.approver2User.employee')->get()->first(function ($u) use ($hash) {
             return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
         });
         abort_if(!$request, 404);
@@ -420,6 +640,7 @@ class RequestController extends Controller
             ];
         } elseif ($user->hasRole('director')) {
             $statuses = [
+                'Approved Manager' => 'Approved Manager',
                 'Approved Director' => 'Approved Director',
                 'Rejected Director' => 'Rejected Director',
             ];
@@ -463,7 +684,7 @@ class RequestController extends Controller
             }
         }
         $isDirector = $user->hasRole('director');
-        return view('pages.request.editrequest', compact(
+        return view('pages.request.showrequest', compact(
             'request',
             'companies',
             'vendors',
@@ -476,305 +697,6 @@ class RequestController extends Controller
             'userCompanyName'
         ));
     }
-    public function show($hash)
-    {
-
-        $request = Formrequest::with('items', 'approval.approver1User')
-            ->get()
-            ->first(function ($u) use ($hash) {
-                return substr(hash('sha256', $u->id . config('app.key')), 0, 8) === $hash;
-            });
-        abort_if(!$request, 404);
-        $request->load('approval.approver1User.employee');
-        $vendors = Vendor::where('status', 'Active')->pluck('vendor_name', 'id');
-        $requesttypes = Requesttype::pluck('request_type_name', 'id');
-        $companies = Company::pluck('name', 'id');
-        $statuses = [
-            'Draft' => 'Draft',
-            'Submitted' => 'Submitted',
-            'Approved Manager' => 'Approved Manager',
-            'Rejected Manager' => 'Rejected Manager',
-            'Approved Finance' => 'Approved Finance',
-            'Rejected Finance' => 'Rejected Finance',
-            'Rejected Director' => 'Rejected Director',
-            'Approved Director' => 'Approved Director',
-            'Done' => 'Done',
-        ];
-        $uoms = Requestitem::getUomOptions();
-        return view('pages.request.showrequest', compact(
-            'companies',
-            'request',
-            'vendors',
-            'requesttypes',
-            'statuses',
-            'uoms'
-        ));
-    }
-    private function resolveManager(Employee $employee): ?Employee
-    {
-        $employee->loadMissing('structuresnew.parent');
-        if (!$employee->structuresnew) return null;
-        $current          = $employee->structuresnew->parent;
-        $managerStructure = null;
-        while ($current) {
-            if ($current->is_manager) {
-                $managerStructure = $current;
-                break;
-            }
-            $current->load('parent');
-            $current = $current->parent;
-        }
-        if (!$managerStructure) return null;
-        return Employee::with([
-            'structuresnew.submissionposition.positionRelation',
-        ])->where('structure_id', $managerStructure->id)->first();
-    }
-    //     public function pdfview($id)
-    //     {
-    //         set_time_limit(120);
-    //         ini_set('memory_limit', '512M');
-
-    //         $request = Formrequest::with([
-    //             'vendor',
-    //             'requesttype',
-    //             'items',
-    //             'links',
-    //             'items.vendors',
-    //             'company:id',
-    //             'user.employee',
-    //             'items.vendors.vendor',
-    //             'user.employee.company',
-    //             'user.employee.position:id,name',
-    //             'user.employee.department:id,department_name',
-    //             'approval.approver2User.employee',
-    //             'approval.approver2User.employee.position:id,name',
-
-    //         ])->findOrFail($id);
-    //         $capexVendors = $request->items->mapWithKeys(function ($item) {
-    //     return [
-    //         $item->id => $item->vendors->values()->map(fn($v) => [
-    //             'vendor_name' => $v->vendor?->vendor_name ?? '-',
-    //             'price'       => $v->price ?? 0,
-    //         ])
-    //     ];
-    // });
-    //         $employee  = $request->user?->employee;
-    //         $requestDate = $request->request_date
-    //         ->timezone('Asia/Makassar')
-    //         ->translatedFormat('d F Y');
-    //         $Deadline = $request->deadline
-    //         ->timezone('Asia/Makassar')
-    //         ->translatedFormat('d F Y');
-    // //         $cache    = [];
-    // //         $companyId = $request->company?->id;
-    // //         $toBase64 = static function (string $localPath) use (&$cache): ?string {
-    // //             if (isset($cache[$localPath])) return $cache[$localPath];
-    // //             if (!is_file($localPath))      return $cache[$localPath] = null;
-
-    // //             $image = @file_get_contents($localPath);
-    // //             if ($image === false)          return $cache[$localPath] = null;
-
-    // //             $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    // //             $mime  = finfo_buffer($finfo, $image);
-    // //             finfo_close($finfo);
-
-    // //             return $cache[$localPath] = 'data:' . $mime . ';base64,' . base64_encode($image);
-    // //         };
-
-    // //         $showManagerSignature = in_array($request->status, ['Approved Manager', 'Approved Director']);
-
-    // //         // HTTP — hanya untuk logo
-    // //         // $responses = Http::pool(function ($pool) use ($companyId) {
-    // //         //     if (!$companyId) return [];
-    // //         //     return [
-    // //         //         $pool->as('logo')
-    // //         //             ->withoutVerifying()
-    // //         //             ->timeout(8)
-    // //         //             ->get("https://hrx.asianbay.co.id/api/company/{$companyId}"),
-    // //         //     ];
-    // //         // });
-    // //         $responses = Http::pool(function ($pool) use ($companyId) {
-    // //     if (!$companyId) return [];
-
-    // //     $baseUrl = rtrim(env('HRX_INTERNAL_URL', 'https://hrx.asianbay.co.id'), '/');
-
-    // //     return [
-    // //         $pool->as('logo')
-    // //             ->withoutVerifying()
-    // //             ->timeout(8)
-    // //             ->get("{$baseUrl}/api/company/{$companyId}"),
-    // //     ];
-    // // });
-    // //         $logoBase64   = null;
-    // //         $logoResponse = $responses['logo'] ?? null;
-
-    // //         if ($logoResponse instanceof \Illuminate\Http\Client\Response && $logoResponse->successful()) {
-    // //             $logoUrl = $logoResponse->json('logo_url');
-
-    // //             // if ($logoUrl) {
-    // //             //     try {
-    // //             //         $imgResponse = Http::withoutVerifying()->timeout(5)->get($logoUrl);
-
-    // //             //         if ($imgResponse->successful()) {
-    // //             //             $body       = $imgResponse->body();
-    // //             //             $finfo      = finfo_open(FILEINFO_MIME_TYPE);
-    // //             //             $mime       = finfo_buffer($finfo, $body);
-    // //             //             finfo_close($finfo);
-    // //             //             $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($body);
-    // //             //         }
-    // //             //     } catch (\Exception $e) {
-    // //             //         Log::error('Logo fetch error: ' . $e->getMessage());
-    // //             //     }
-    // //             // }
-    // //             if ($logoUrl) {
-    // //     try {
-    // //         // Ganti domain publik ke internal
-    // //         $internalBase = rtrim(env('HRX_INTERNAL_URL', 'https://hrx.asianbay.co.id'), '/');
-    // //         $logoUrlInternal = preg_replace(
-    // //             '#^https?://hrx\.asianbay\.co\.id#',
-    // //             $internalBase,
-    // //             $logoUrl
-    // //         );
-
-    // //         $imgResponse = Http::withoutVerifying()->timeout(5)->get($logoUrlInternal);
-
-    // //         if ($imgResponse->successful()) {
-    // //             $body  = $imgResponse->body();
-    // //             $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    // //             $mime  = finfo_buffer($finfo, $body);
-    // //             finfo_close($finfo);
-    // //             $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($body);
-    // //         }
-    // //     } catch (\Exception $e) {
-    // //         Log::error('Logo fetch error: ' . $e->getMessage());
-    // //     }
-    // // }
-    // //         }
-    // $cache     = [];
-    // $companyId = $request->company?->id;
-
-    // $toBase64 = static function (string $localPath) use (&$cache): ?string {
-    //     if (isset($cache[$localPath])) return $cache[$localPath];
-    //     if (!is_file($localPath))      return $cache[$localPath] = null;
-
-    //     $image = @file_get_contents($localPath);
-    //     if ($image === false)          return $cache[$localPath] = null;
-
-    //     $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    //     $mime  = finfo_buffer($finfo, $image);
-    //     finfo_close($finfo);
-
-    //     return $cache[$localPath] = 'data:' . $mime . ';base64,' . base64_encode($image);
-    // };
-
-    // $showManagerSignature = in_array($request->status, ['Approved Manager', 'Approved Director']);
-
-    // $internalBase = rtrim(env('HRX_INTERNAL_URL', 'https://hrx.asianbay.co.id'), '/');
-
-    // $responses = Http::pool(function ($pool) use ($companyId, $internalBase) {
-    //     if (!$companyId) return [];
-
-    //     return [
-    //         $pool->as('logo')
-    //             ->withoutVerifying()
-    //             ->timeout(8)
-    //             ->get("{$internalBase}/api/company/{$companyId}"),
-    //     ];
-    // });
-
-    // $logoBase64   = null;
-    // $logoResponse = $responses['logo'] ?? null;
-
-    // if ($logoResponse instanceof \Illuminate\Http\Client\Response && $logoResponse->successful()) {
-    //     $logoUrl = $logoResponse->json('logo_url');
-
-    //     if ($logoUrl) {
-    //         try {
-    //             $logoUrlInternal = preg_replace(
-    //                 '#^https?://hrx\.asianbay\.co\.id#',
-    //                 $internalBase,
-    //                 $logoUrl
-    //             );
-
-    //             $imgResponse = Http::withoutVerifying()->timeout(5)->get($logoUrlInternal);
-
-    //             if ($imgResponse->successful()) {
-    //                 $body       = $imgResponse->body();
-    //                 $finfo      = finfo_open(FILEINFO_MIME_TYPE);
-    //                 $mime       = finfo_buffer($finfo, $body);
-    //                 finfo_close($finfo);
-    //                 $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($body);
-    //             }
-    //         } catch (\Exception $e) {
-    //             Log::error('Logo fetch error: ' . $e->getMessage());
-    //         }
-    //     }
-    // }
-    //         $managerName            = null;
-    //         $positionName           = null;
-    //         $managerSignatureBase64 = null;
-
-    //         if ($employee && $showManagerSignature) {
-    //             $manager = $this->resolveManager($employee);
-
-    //             if ($manager) {
-    //                 $managerName  = $manager->employee_name;
-    //                 $positionName = optional(
-    //                     optional($manager->structuresnew?->submissionposition)
-    //                         ->positionRelation
-    //                 )->name ?? null;
-
-    //                 if ($manager->signature) {
-    //                     $managerSignatureBase64 = $toBase64(
-    //                         public_path('storage/' . $manager->signature)
-    //                     );
-
-    //                     if (!$managerSignatureBase64) {
-    //                         Log::warning('Manager signature tidak ditemukan di disk', [
-    //                             'path' => public_path('storage/' . $manager->signature),
-    //                         ]);
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //         $signatureBase64 = $employee?->signature
-    //             ? $toBase64(public_path('storage/' . $employee->signature))
-    //             : null;
-    //         $approver2   = $request->approval?->approver2User?->employee;
-    //         $signatories = [
-    //             'approver2' => [
-    //                 'name'      => $approver2?->employee_name,
-    //                 'position'  => $approver2?->position?->name,
-    //                 'signature' => $approver2?->signature
-    //                     ? $toBase64(public_path('storage/' . $approver2->signature))
-    //                     : null,
-    //             ],
-    //         ];
-    //         $viewData = [
-    //             'request'                => $request,
-    //             'logoBase64'             => $logoBase64,
-    //             'signatureBase64'        => $signatureBase64,
-    //             'managerSignatureBase64' => $managerSignatureBase64,
-    //             'managerName'            => $managerName,
-    //             'positionName'           => $positionName,
-    //             'signatories'            => $signatories,
-    //             'total'                  => $request->items->sum('total_price'),
-    //             'Deadline'               => $Deadline,
-    //             'requestDate'            => $requestDate,
-    //             'itemCount'              => $request->items->count(),
-    //             'showSignature'          => $showManagerSignature,
-    //              'capexVendors' => $capexVendors,
-    //         ];
-    //         return Pdf::loadView('pages.request.pdf', $viewData)
-    //             ->setPaper('A4')
-    //             ->setOptions([
-    //                 'isRemoteEnabled'      => false,
-    //                 'isHtml5ParserEnabled' => true,
-    //                 'isPhpEnabled'         => false,
-    //                 'defaultFont'          => 'sans-serif',
-    //             ])
-    //             ->download('request-' . $request->document_number . '.pdf');
-    //     }
     public function pdfview($id)
     {
         set_time_limit(120);
@@ -783,6 +705,8 @@ class RequestController extends Controller
         $request = Formrequest::with([
             'vendor',
             'requesttype',
+            'capextype',
+            'capextype.user.employee',
             'items',
             'links',
             'items.vendors',
@@ -799,7 +723,7 @@ class RequestController extends Controller
         $capexVendors = $request->items->mapWithKeys(function ($item) {
             return [
                 $item->id => $item->vendors->values()->map(fn($v) => [
-                    'vendor_name' => $v->vendor?->vendor_name ?? '-',
+                    'vendor_name' => $v->vendor?->vendor_name ?? 'Empty',
                     'price'       => $v->price ?? 0,
                     'is_selected' => (bool) $v->is_selected,
                 ])
@@ -905,7 +829,6 @@ class RequestController extends Controller
                     : null,
             ],
         ];
-
         // ── Render PDF ───────────────────────────────────────────────
         $viewData = [
             'request'                => $request,
@@ -934,57 +857,122 @@ class RequestController extends Controller
             ])
             ->download('request-' . $request->document_number . '.pdf');
     }
+    // public function create()
+    // {
+    //     $user = auth()->user();
+    //     if (!$user->hasRole(['user', 'admin'])) {
+    //         abort(403, 'Tidak memiliki akses');
+    //     }
+    //     $vendors = Vendor::where('status', 'Active')->pluck('vendor_name', 'id');
+    //     $requesttypes = Requesttype::select('id', 'request_type_name', 'code')->get();
+    //     $capextypes = Capextype::with('user.employee')
+    //         ->select('id', 'user_id', 'code')
+    //         ->get();
+    //     $userCompanyName = optional($user->employee->company)->name;
+    //     $userCompanyId   = optional($user->employee)->company_id;
+    //     if (!$userCompanyId) {
+    //         abort(403, 'User tidak memiliki company');
+    //     }
+    //     $mainCompany = config('app.main_company_id');
+    //     $isMainCompany = $userCompanyId === $mainCompany;
+    //     if ($isMainCompany) {
+    //         $companies = Company::on('hrx')->pluck('name', 'id');
+    //     } else {
+    //         $companies = Company::on('hrx')
+    //             ->where('id', $userCompanyId)
+    //             ->pluck('name', 'id');
+    //     }
+    //     $statuses = [
+    //         'Draft' => 'Draft',
+    //         'Submitted' => 'Submitted',
+    //         'Approved Manager' => 'Approved Manager',
+    //         'Rejected Manager' => 'Rejected Manager',
+    //         'Approved Finance' => 'Approved Finance',
+    //         'Rejected Finance' => 'Rejected Finance',
+    //         'Rejected Director' => 'Rejected Director',
+    //         'Approved Director' => 'Approved Director',
+    //         'Done' => 'Done',
+    //     ];
+    //     $uoms = Requestitem::getUomOptions();
+    //     $assets = Formrequest::getAssetOptions();
+    //     return view('pages.request.createrequest', compact(
+    //         'companies',
+    //         'userCompanyId',
+    //         'uoms',
+    //         'assets',
+    //         'vendors',
+    //         'capextypes',
+    //         'isMainCompany',
+    //         'requesttypes',
+    //         'statuses'
+    //     ));
+    // }
     public function create()
-    {
-        $user = auth()->user();
-        if (!$user->hasRole(['user', 'admin'])) {
-            abort(403, 'Tidak memiliki akses');
-        }
-        $vendors = Vendor::where('status', 'Active')->pluck('vendor_name', 'id');
-        $requesttypes = Requesttype::select('id', 'request_type_name', 'code')->get();
-        $userCompanyName = optional($user->employee->company)->name;
-        $userCompanyId   = optional($user->employee)->company_id;
-
-        // Guard (wajib)
-        if (!$userCompanyId) {
-            abort(403, 'User tidak memiliki company');
-        }
-
-        $mainCompany = config('app.main_company_id');
-        $isMainCompany = $userCompanyId === $mainCompany;
-
-        if ($isMainCompany) {
-            $companies = Company::on('hrx')->pluck('name', 'id');
-        } else {
-            $companies = Company::on('hrx')
-                ->where('id', $userCompanyId)
-                ->pluck('name', 'id');
-        }
-
-        $statuses = [
-            'Draft' => 'Draft',
-            'Submitted' => 'Submitted',
-            'Approved Manager' => 'Approved Manager',
-            'Rejected Manager' => 'Rejected Manager',
-            'Approved Finance' => 'Approved Finance',
-            'Rejected Finance' => 'Rejected Finance',
-            'Rejected Director' => 'Rejected Director',
-            'Approved Director' => 'Approved Director',
-            'Done' => 'Done',
-        ];
-        $uoms = Requestitem::getUomOptions();
-        $assets = Formrequest::getAssetOptions();
-        return view('pages.request.createrequest', compact(
-            'companies',
-            'userCompanyId',
-            'uoms',
-            'assets',
-            'vendors',
-            'isMainCompany',
-            'requesttypes',
-            'statuses'
-        ));
+{
+    $user = auth()->user();
+    if (!$user->hasRole(['user', 'admin'])) {
+        abort(403, 'Tidak memiliki akses');
     }
+    $vendors = Vendor::where('status', 'Active')->pluck('vendor_name', 'id');
+    
+    // Ambil departemen user
+    $userDepartment = optional($user->employee->department)->department_name;
+    
+    // Departemen yang diizinkan melihat CAPEX
+    $capexAllowedDepartments = ['Information Technology', 'Business Development'];
+    
+    $requesttypes = Requesttype::select('id', 'request_type_name', 'code')
+        ->get()
+        ->filter(function ($type) use ($userDepartment, $capexAllowedDepartments) {
+            if (strtoupper($type->code) === 'CAPEX') {
+                return in_array($userDepartment, $capexAllowedDepartments);
+            }
+            return true;
+        })
+        ->values();
+    
+    $capextypes = Capextype::with('user.employee')
+        ->select('id', 'user_id', 'code')
+        ->get();
+    $userCompanyName = optional($user->employee->company)->name;
+    $userCompanyId   = optional($user->employee)->company_id;
+    if (!$userCompanyId) {
+        abort(403, 'User tidak memiliki company');
+    }
+    $mainCompany = config('app.main_company_id');
+    $isMainCompany = $userCompanyId === $mainCompany;
+    if ($isMainCompany) {
+        $companies = Company::on('hrx')->pluck('name', 'id');
+    } else {
+        $companies = Company::on('hrx')
+            ->where('id', $userCompanyId)
+            ->pluck('name', 'id');
+    }
+    $statuses = [
+        'Draft' => 'Draft',
+        'Submitted' => 'Submitted',
+        'Approved Manager' => 'Approved Manager',
+        'Rejected Manager' => 'Rejected Manager',
+        'Approved Finance' => 'Approved Finance',
+        'Rejected Finance' => 'Rejected Finance',
+        'Rejected Director' => 'Rejected Director',
+        'Approved Director' => 'Approved Director',
+        'Done' => 'Done',
+    ];
+    $uoms = Requestitem::getUomOptions();
+    $assets = Formrequest::getAssetOptions();
+    return view('pages.request.createrequest', compact(
+        'companies',
+        'userCompanyId',
+        'uoms',
+        'assets',
+        'vendors',
+        'capextypes',
+        'isMainCompany',
+        'requesttypes',
+        'statuses'
+    ));
+}
     // public function store(Request $request)
     // {
     //     Log::info('STORE REQUEST START', [
@@ -1107,16 +1095,12 @@ class RequestController extends Controller
             'payload' => $request->all(),
             'user_id' => Auth::id()
         ]);
-
         $typesNeedVendor = [
             '019d3986-699d-7328-a43c-8e730fc4a691',
             '019cd03f-b3ab-70a2-bee9-3e9ce248ca32',
             '019d3987-0681-73c9-a8d1-2e47d82a59d7',
         ];
-
-        // ✅ Deteksi apakah CAPEX
         $isCAPEX = in_array($request->request_type_id, $typesNeedVendor);
-
         $validated = $request->validate([
             'request_type_id'       => ['required', 'exists:request_type,id'],
             'company_id'            => ['nullable', 'exists:hrx.company_tables,id'],
@@ -1124,13 +1108,16 @@ class RequestController extends Controller
                 'nullable',
                 'exists:vendor,id',
             ],
-            'assets'                => ['nullable'],
+            'assets'                => ['nullable', Rule::in(Formrequest::getAssetOptions())],
             'transfer'              => ['nullable', 'string'],
             'request_date'          => ['required', 'date'],
             'deadline'              => ['required', 'date', 'after_or_equal:request_date'],
             'title'                 => ['required', 'string', 'max:255'],
             'notes'                 => ['nullable', 'string'],
             'status'                => ['nullable', 'string'],
+            'capex_type_id' => [
+                $isCAPEX ? 'nullable' : 'required',
+            ],
             'addressed_to'          => ['nullable', 'string'],
             'destination'           => ['nullable', 'string', 'max:255'],
             'items'                 => ['required', 'array', 'min:1'],
@@ -1138,27 +1125,19 @@ class RequestController extends Controller
             'items.*.specification' => ['nullable', 'string'],
             'items.*.qty'           => ['required'],
             'items.*.uom'           => ['nullable', Rule::in(Requestitem::getUomOptions())],
-
-            // ✅ price wajib hanya jika BUKAN CAPEX
             'items.*.price' => [
                 $isCAPEX ? 'nullable' : 'required',
             ],
-
-            // ✅ vendors wajib ada jika CAPEX
             'items.*.vendors'               => [$isCAPEX ? 'required' : 'nullable', 'array'],
             'items.*.vendors.*.vendor_id'   => ['nullable', 'exists:vendor,id'],
             'items.*.vendors.*.price'       => ['nullable'],
             'items.*.vendors.*.notes'       => ['nullable', 'string'],
             'links.*.link'           => ['nullable', 'max:255'],
         ]);
-
         Log::info('VALIDATION PASSED', ['validated' => $validated]);
-
         $parsePrice = fn($v) => (float) str_replace(',', '.', str_replace('.', '', $v));
         $parseQty   = fn($v) => (float) str_replace(',', '.', $v);
-
         DB::beginTransaction();
-
         try {
             $companyName = null;
             if (!empty($validated['company_id'])) {
@@ -1166,21 +1145,7 @@ class RequestController extends Controller
                     ->where('id', $validated['company_id'])
                     ->value('name');
             }
-            // ✅ Hitung total amount berbeda untuk CAPEX vs non-CAPEX
-            // if ($isCAPEX) {
-            //     $totalAmount = collect($validated['items'])->sum(function ($item) use ($parseQty, $parsePrice) {
-            //         $qty = $parseQty($item['qty'] ?? 0);
-            //         $firstPrice = $parsePrice($item['vendors'][0]['price'] ?? 0);
-            //         return $qty * $firstPrice;
-            //     });
-            // } else {
-            //     $totalAmount = collect($validated['items'])->sum(
-            //         fn($item) => $parseQty($item['qty']) * $parsePrice($item['price'])
-            //     );
-            // }
             if ($isCAPEX) {
-
-                // jika belum di-approve Manager IT → jangan hitung
                 if (empty($formrequest->manager_it_approved_at)) {
                     $totalAmount = 0;
                 } else {
@@ -1196,10 +1161,10 @@ class RequestController extends Controller
                 );
             }
             Log::info('TOTAL AMOUNT', ['total' => $totalAmount]);
-
             $formrequest = Formrequest::create([
                 'request_type_id' => $validated['request_type_id'],
                 'vendor_id'       => $validated['vendor_id'] ?? null,
+                'capex_type_id'       => $validated['capex_type_id'] ?? null,
                 'assets'          => $validated['assets'] ?? null,
                 'user_id'         => Auth::id(),
                 'request_date'    => $validated['request_date'],
@@ -1212,14 +1177,10 @@ class RequestController extends Controller
                 'total_amount'    => round($totalAmount, 2),
                 'status'          => 'Draft',
             ]);
-
             Log::info('FORMREQUEST CREATED', ['id' => $formrequest->id]);
-
             foreach ($validated['items'] as $item) {
                 $qty = $parseQty($item['qty'] ?? 0);
-
                 if ($isCAPEX) {
-                    // ✅ CAPEX: price = 0 dulu, nanti diupdate saat vendor dipilih
                     $requestItem = Requestitem::create([
                         'request_id'    => $formrequest->id,
                         'item_name'     => $item['item_name'],
@@ -1229,14 +1190,10 @@ class RequestController extends Controller
                         'price'         => null,
                         'total_price'   => null,
                     ]);
-
-                    // ✅ Simpan semua vendor quotation
                     if (!empty($item['vendors'])) {
                         foreach ($item['vendors'] as $vendorData) {
                             if (empty($vendorData['vendor_id'])) continue;
-
                             $vendorPrice = $parsePrice($vendorData['price'] ?? 0);
-
                             ItemVendorQuotation::create([
                                 'request_item_id' => $requestItem->id,
                                 'vendor_id'       => $vendorData['vendor_id'],
@@ -1244,7 +1201,6 @@ class RequestController extends Controller
                                 'notes'           => $vendorData['notes'] ?? null,
                                 'is_selected'     => false,
                             ]);
-
                             Log::info('VENDOR QUOTATION CREATED', [
                                 'request_item_id' => $requestItem->id,
                                 'vendor_id'       => $vendorData['vendor_id'],
@@ -1253,9 +1209,7 @@ class RequestController extends Controller
                         }
                     }
                 } else {
-                    // ✅ Non-CAPEX: price dari input langsung
                     $price = $parsePrice($item['price'] ?? 0);
-
                     Requestitem::create([
                         'request_id'    => $formrequest->id,
                         'item_name'     => $item['item_name'],
@@ -1270,7 +1224,6 @@ class RequestController extends Controller
             if (!empty($validated['links'])) {
                 foreach ($validated['links'] as $link) {
                     if (empty($link['link'])) continue;
-
                     $formrequest->links()->create([
                         'link' => $link['link'],
                     ]);
@@ -1278,18 +1231,15 @@ class RequestController extends Controller
             }
             DB::commit();
             Log::info('STORE SUCCESS');
-
             return redirect()
                 ->route('request')
                 ->with('success', 'Request berhasil dibuat.');
         } catch (\Throwable $e) {
             DB::rollBack();
-
             Log::error('STORE ERROR', [
                 'message' => $e->getMessage(),
                 'trace'   => $e->getTraceAsString()
             ]);
-
             return back()
                 ->withInput()
                 ->with('error', 'Gagal membuat request: ' . $e->getMessage());
@@ -1297,21 +1247,22 @@ class RequestController extends Controller
     }
     public function update(Request $request, $hash)
     {
-        Log::info('UPDATE REQUEST - START', [
-            'hash' => $hash,
-            'user_id' => auth()->id(),
-            'payload' => $request->all()
-        ]);
         $requestType = RequestType::find($request->input('request_type_id'));
         $isCAPEX = $requestType?->code === 'CAPEX';
+
         $validated = $request->validate([
             'request_type_id'       => ['nullable', 'exists:request_type,id'],
             'vendor_id'             => ['nullable', 'exists:vendor,id'],
             'request_date'          => ['required', 'date'],
             'deadline'              => ['required', 'date', 'after_or_equal:request_date'],
             'title'                 => ['required', 'string', 'max:255'],
-            'assets'                => ['nullable'],
-
+            // 'assets'                => ['nullable', Rule::in(Formrequest::getAssetOptions())],
+            'assets' => $isCAPEX
+                ? ['required', Rule::in(Formrequest::getAssetOptions())]
+                : ['nullable', Rule::in(Formrequest::getAssetOptions())],
+            'capex_type_id' => [
+                $isCAPEX ? 'nullable' : 'required',
+            ],
             'ca_number' => [
                 Rule::requiredIf(
                     auth()->user()->hasRole('finance') && $request->isMethod('put')
@@ -1345,189 +1296,131 @@ class RequestController extends Controller
             'items.*.vendors.*.price'   => $isCAPEX ? ['nullable'] : [],
             'items.*.selected_vendor' => $isCAPEX ? ['nullable', 'integer'] : [],
             'links.*.link'           => ['nullable', 'max:255'],
-
         ]);
+
         $parsePrice = fn($v) => (float) str_replace(',', '.', str_replace('.', '', $v ?? '0'));
         $parseQty   = fn($v) => (float) str_replace(',', '.', $v ?? '0');
+
+        // ✅ Fix 1: Cari record efisien
+        $formrequest = null;
+        foreach (Formrequest::select('id')->cursor() as $u) {
+            if (substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash) {
+                $formrequest = Formrequest::find($u->id);
+                break;
+            }
+        }
+
+        if (!$formrequest) {
+            return back()->with('error', 'Data tidak ditemukan.');
+        }
+
+        $previousStatus = $formrequest->status;
+
+        $totalAmount = collect($validated['items'])->sum(function ($item) use ($parseQty, $parsePrice, $isCAPEX) {
+            if ($isCAPEX) {
+                $vendors = $item['vendors'] ?? [];
+                $selectedVendorIndex = isset($item['selected_vendor']) ? (int) $item['selected_vendor'] : null;
+                $selectedPrice = ($selectedVendorIndex !== null && isset($vendors[$selectedVendorIndex]))
+                    ? $vendors[$selectedVendorIndex]['price'] ?? '0'
+                    : '0';
+                return $parseQty($item['qty']) * $parsePrice($selectedPrice);
+            }
+            return $parseQty($item['qty']) * $parsePrice($item['price']);
+        });
+
+        // ✅ Fix 2: Satu transaction saja (hapus nested DB::transaction)
         DB::beginTransaction();
         try {
-            // $formrequest = Formrequest::all()->first(function ($u) use ($hash) {
-            $formrequest = Formrequest::get()->first(function ($u) use ($hash) {
-                return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
-            });
-
-            if (!$formrequest) {
-                Log::warning('UPDATE REQUEST - NOT FOUND', ['hash' => $hash]);
-                return back()->with('error', 'Data tidak ditemukan.');
-            }
-
-            $previousStatus = $formrequest->status;
-            $totalAmount = collect($validated['items'])->sum(function ($item) use ($parseQty, $parsePrice, $isCAPEX) {
-                if ($isCAPEX) {
-                    $vendors = $item['vendors'] ?? [];
-                    $selectedVendorIndex = isset($item['selected_vendor']) ? (int) $item['selected_vendor'] : null;
-
-                    $selectedPrice = null;
-                    if ($selectedVendorIndex !== null && isset($vendors[$selectedVendorIndex])) {
-                        $selectedPrice = $vendors[$selectedVendorIndex]['price'] ?? '0';
-                    }
-
-                    return $parseQty($item['qty']) * $parsePrice($selectedPrice ?? '0');
-                }
-
-                return $parseQty($item['qty']) * $parsePrice($item['price']);
-            });
             $formrequest->update([
-                'vendor_id'       => $validated['vendor_id'] ?? null,
-                'request_date'    => $validated['request_date'],
-                'deadline'        => $validated['deadline'],
-                'title'           => $validated['title'],
-                'ca_number'       => $validated['ca_number'] ?? null,
-                'notes'           => $validated['notes'] ?? null,
-                'notes_fa'        => $validated['notes_fa'] ?? null,
-                'notes_dir'       => $validated['notes_dir'] ?? null,
-                'assets'       => $validated['assets'] ?? null,
-                'total_amount'    => round($totalAmount, 2),
-                'status'          => $validated['status'],
+                'vendor_id'    => $validated['vendor_id'] ?? null,
+                'request_date' => $validated['request_date'],
+                'deadline'     => $validated['deadline'],
+                'title'        => $validated['title'],
+                // 'capex_type_id'        => $validated['capex_type_id'],
+                'ca_number'    => $validated['ca_number'] ?? null,
+                'notes'        => $validated['notes'] ?? null,
+                'notes_fa'     => $validated['notes_fa'] ?? null,
+                'notes_dir'    => $validated['notes_dir'] ?? null,
+                // 'assets'       => $validated['assets'] ?? null,
+                'assets' => $isCAPEX
+                    ? $validated['assets']
+                    : ($validated['assets'] ?? $formrequest->assets),
+                'capex_type_id' => $isCAPEX
+                    ? $validated['capex_type_id']
+                    : ($validated['assets'] ?? $formrequest->capex_type_id),
+                'total_amount' => round($totalAmount, 2),
+                'status'       => $validated['status'],
             ]);
-            /*
-        |--------------------------------------------------------------------------
-        | APPROVAL LOGIC (tidak diubah)
-        |--------------------------------------------------------------------------
-        */
+            // Approval logic
             $approval = Requestapproval::firstOrCreate(['request_id' => $formrequest->id]);
+
             if ($validated['status'] === 'Approved Manager' && $previousStatus !== 'Approved Manager') {
                 $approval->update(['approver1' => auth()->id(), 'approver1_at' => now()]);
             }
             if ($validated['status'] === 'Approved Director' && $previousStatus !== 'Approved Director') {
                 $approval->update(['approver2' => auth()->id(), 'approver2_at' => now()]);
             }
-            if ($validated['status'] === 'Submitted' && $previousStatus !== 'Submitted') {
-                try {
-                    $employee = auth()->user()->employee;
-                    if ($employee) {
-                        $baseUrl = config('services.manager_api.url');
-                        $managerResponse = Http::get("{$baseUrl}/api/manager/{$employee->id}");
-                        if ($managerResponse->successful()) {
-                            $managerEmail = data_get($managerResponse->json(), 'manager.company_email');
-                            if ($managerEmail) {
-                                Mail::to($managerEmail)->send(new RequestMail($formrequest));
-                            }
-                        }
-                    }
-                } catch (\Throwable $mailException) {
-                    Log::error('MAIL ERROR', ['message' => $mailException->getMessage()]);
-                }
-            }
-            if ($validated['status'] === 'Approved Manager' && $previousStatus !== 'Approved Manager') {
-                try {
-                    $employees = Employee::whereHas('position', function ($query) {
-                        $query->whereIn('id', [
-                            '01973a06-74e2-706d-97fe-097c12788c59',
-                            '01992267-3466-724e-93b3-46350f7e9094'
-                        ]);
-                    })->get();
-                    foreach ($employees as $employee) {
-                        if ($employee->company_email) {
-                            Mail::to($employee->company_email)->send(new RequestMail($formrequest));
-                        }
-                    }
-                } catch (\Throwable $mailException) {
-                    Log::error('MAIL ERROR', ['message' => $mailException->getMessage()]);
-                }
-            }
+            // Items & links
+            $existingItemIds = Requestitem::where('request_id', $formrequest->id)->pluck('id');
+            ItemVendorQuotation::whereIn('request_item_id', $existingItemIds)->delete();
+            Requestitem::where('request_id', $formrequest->id)->delete();
+            Requestlink::where('request_id', $formrequest->id)->delete();
 
-            DB::transaction(function () use ($formrequest, $validated, $parseQty, $parsePrice, $isCAPEX) {
+            foreach ($validated['items'] as $item) {
+                $qty   = $parseQty($item['qty']);
+                $price = $isCAPEX ? 0 : $parsePrice($item['price']);
 
-                $existingItemIds = Requestitem::where('request_id', $formrequest->id)->pluck('id');
+                $newItem = Requestitem::create([
+                    'request_id'    => $formrequest->id,
+                    'item_name'     => $item['item_name'],
+                    'specification' => $item['specification'] ?? null,
+                    'qty'           => $qty,
+                    'uom'           => $item['uom'],
+                    'price'         => $price,
+                    'total_price'   => $isCAPEX ? 0 : round($qty * $price, 2),
+                ]);
 
-                ItemVendorQuotation::whereIn('request_item_id', $existingItemIds)->delete();
-                Requestitem::where('request_id', $formrequest->id)->delete();
-                Requestlink::where('request_id', $formrequest->id)->delete();
+                if ($isCAPEX && !empty($item['vendors'])) {
+                    $selectedVendorIndex = isset($item['selected_vendor']) ? (int) $item['selected_vendor'] : null;
 
-                foreach ($validated['items'] as $idx => $item) {
-                    $qty   = $parseQty($item['qty']);
-                    $price = $isCAPEX ? 0 : $parsePrice($item['price']);
-
-                    $newItem = Requestitem::create([
-                        'request_id'    => $formrequest->id,
-                        'item_name'     => $item['item_name'],
-                        'specification' => $item['specification'] ?? null,
-                        'qty'           => $qty,
-                        'uom'           => $item['uom'],
-                        'price'         => $price,
-                        'total_price'   => $isCAPEX ? 0 : round($qty * $price, 2),
-                    ]);
-                    // if ($isCAPEX && !empty($item['vendors'])) {
-                    //     $selectedVendorIndex = isset($item['selected_vendor'])
-                    //         ? (int) $item['selected_vendor']
-                    //         : null;
-
-                    //     foreach ($item['vendors'] as $vIdx => $vendorData) {
-                    //         if (empty($vendorData['vendor_id'])) continue;
-
-                    //         $isSelected = ($selectedVendorIndex !== null && $vIdx == $selectedVendorIndex);
-
-                    //         ItemVendorQuotation::create([
-                    //             'request_item_id' => $newItem->id,
-                    //             'vendor_id'       => $vendorData['vendor_id'],
-                    //             'price'           => $parsePrice($vendorData['price'] ?? '0'),
-                    //             'is_selected'     => $isSelected,
-                    //         ]);
-                    //     }
-                    //     if ($selectedVendorIndex !== null && isset($item['vendors'][$selectedVendorIndex])) {
-                    //         $selectedPrice = $parsePrice($item['vendors'][$selectedVendorIndex]['price'] ?? '0');
-                    //         $newItem->update([
-                    //             'price'       => $selectedPrice,
-                    //             'total_price' => round($qty * $selectedPrice, 2),
-                    //         ]);
-                    //     }
-                    // }
-                    if ($isCAPEX && !empty($item['vendors'])) {
-    $selectedVendorIndex = isset($item['selected_vendor'])
-        ? (int) $item['selected_vendor']
-        : null;
-
-    foreach ($item['vendors'] as $vIdx => $vendorData) {
-        if (empty($vendorData['vendor_id'])) continue;
-
-        $isSelected = ($selectedVendorIndex !== null && $vIdx == $selectedVendorIndex);
-
-        ItemVendorQuotation::create([
-            'request_item_id' => $newItem->id,
-            'vendor_id'       => $vendorData['vendor_id'],
-            'price'           => $parsePrice($vendorData['price'] ?? '0'),
-            'is_selected'     => $isSelected,
-        ]);
-    }
-
-    if ($selectedVendorIndex !== null && isset($item['vendors'][$selectedVendorIndex])) {
-        $selectedPrice    = $parsePrice($item['vendors'][$selectedVendorIndex]['price'] ?? '0');
-        $selectedVendorId = $item['vendors'][$selectedVendorIndex]['vendor_id'] ?? null; // ← ambil vendor_id
-
-        $newItem->update([
-            'price'       => $selectedPrice,
-            'total_price' => round($qty * $selectedPrice, 2),
-        ]);
-        // ← update vendor_id di FormRequest
-        if ($selectedVendorId) {
-            $formrequest->update(['vendor_id' => $selectedVendorId]);
-        }
-    }
-}
-                }
-                if (!empty($validated['links'])) {
-                    foreach ($validated['links'] as $link) {
-                        if (empty($link['link'])) continue;
-
-                        $formrequest->links()->create([
-                            'link' => $link['link'],
+                    foreach ($item['vendors'] as $vIdx => $vendorData) {
+                        if (empty($vendorData['vendor_id'])) continue;
+                        ItemVendorQuotation::create([
+                            'request_item_id' => $newItem->id,
+                            'vendor_id'       => $vendorData['vendor_id'],
+                            'price'           => $parsePrice($vendorData['price'] ?? '0'),
+                            'is_selected'     => ($selectedVendorIndex !== null && $vIdx == $selectedVendorIndex),
                         ]);
                     }
+
+                    if ($selectedVendorIndex !== null && isset($item['vendors'][$selectedVendorIndex])) {
+                        $selectedPrice    = $parsePrice($item['vendors'][$selectedVendorIndex]['price'] ?? '0');
+                        $selectedVendorId = $item['vendors'][$selectedVendorIndex]['vendor_id'] ?? null;
+
+                        $newItem->update([
+                            'price'       => $selectedPrice,
+                            'total_price' => round($qty * $selectedPrice, 2),
+                        ]);
+
+                        if ($selectedVendorId) {
+                            $formrequest->update(['vendor_id' => $selectedVendorId]);
+                        }
+                    }
                 }
-            });
+            }
+
+            if (!empty($validated['links'])) {
+                foreach ($validated['links'] as $link) {
+                    if (empty($link['link'])) continue;
+                    $formrequest->links()->create(['link' => $link['link']]);
+                }
+            }
+
             DB::commit();
-            Log::info('UPDATE SUCCESS', ['id' => $formrequest->id]);
+
+            // ✅ Fix 3: Kirim email SETELAH commit, gunakan queue (non-blocking)
+            $this->dispatchEmails($validated['status'], $previousStatus, $formrequest);
+
             return redirect()->route('request')->with('success', 'Request berhasil diupdate.');
         } catch (\Throwable $e) {
             DB::rollBack();
@@ -1535,6 +1428,337 @@ class RequestController extends Controller
             return back()->withInput()->with('error', 'Gagal update request: ' . $e->getMessage());
         }
     }
+
+    // ✅ Pisahkan email logic ke method sendiri, pakai queue
+    private function dispatchEmails(string $status, string $previousStatus, $formrequest): void
+    {
+        try {
+            if ($status === 'Submitted' && $previousStatus !== 'Submitted') {
+                $employee = auth()->user()->employee;
+                if ($employee) {
+                    $baseUrl = config('services.manager_api.url');
+                    $managerResponse = Http::timeout(5)->get("{$baseUrl}/api/manager/{$employee->id}");
+                    if ($managerResponse->successful()) {
+                        $managerEmail = data_get($managerResponse->json(), 'manager.company_email');
+                        if ($managerEmail) {
+                            // ✅ queue() bukan send()
+                            Mail::to($managerEmail)->queue(new RequestMail($formrequest));
+                        }
+                    }
+                }
+            }
+
+            if ($status === 'Approved Manager' && $previousStatus !== 'Approved Manager') {
+                $employees = Employee::whereHas('position', function ($query) {
+                    $query->whereIn('id', [
+                        '01973a06-74e2-706d-97fe-097c12788c59',
+                        '01992267-3466-724e-93b3-46350f7e9094',
+                    ]);
+                })->get();
+
+                foreach ($employees as $employee) {
+                    if ($employee->company_email) {
+                        Mail::to($employee->company_email)->queue(new RequestMail($formrequest));
+                    }
+                }
+            }
+        } catch (\Throwable $mailException) {
+            Log::error('MAIL ERROR', ['message' => $mailException->getMessage()]);
+        }
+    }
+//     private function dispatchEmails(string $status, string $previousStatus, $formrequest): void
+// {
+//     try {
+//         $requestType = $formrequest->requesttype ?? null;
+//         $isCAPEX = $requestType?->code === 'CAPEX';
+
+//         // =========================
+//         // SUBMITTED → MANAGER
+//         // =========================
+//         if ($status === 'Submitted' && $previousStatus !== 'Submitted') {
+//             $employee = auth()->user()->employee;
+
+//             if ($employee) {
+//                 $baseUrl = config('services.manager_api.url');
+
+//                 $managerResponse = Http::timeout(5)
+//                     ->get("{$baseUrl}/api/manager/{$employee->id}");
+
+//                 if ($managerResponse->successful()) {
+//                     $managerEmail = data_get($managerResponse->json(), 'manager.company_email');
+
+//                     if ($managerEmail) {
+//                         Mail::to($managerEmail)->queue(new RequestMail($formrequest));
+//                     }
+//                 }
+//             }
+//         }
+//         // =========================
+//         // APPROVED MANAGER
+//         // =========================
+//         if ($status === 'Approved Manager' && $previousStatus !== 'Approved Manager') {
+
+//             // ✅ KHUSUS CAPEX
+//             if ($isCAPEX) {
+//                 $email = $formrequest->capextype?->user?->employee?->company_mail;
+
+//                 if ($email) {
+//                     Mail::to($email)->queue(new RequestMail($formrequest));
+//                 }
+//             } else {
+//                 // NON CAPEX (logic lama)
+//                 $employees = Employee::whereHas('position', function ($query) {
+//                     $query->whereIn('id', [
+//                         '01973a06-74e2-706d-97fe-097c12788c59',
+//                         '01992267-3466-724e-93b3-46350f7e9094',
+//                     ]);
+//                 })->get();
+
+//                 foreach ($employees as $employee) {
+//                     if ($employee->company_email) {
+//                         Mail::to($employee->company_email)->queue(new RequestMail($formrequest));
+//                     }
+//                 }
+//             }
+//         }
+//         // =========================
+//         // APPROVED IT / BD (KHUSUS CAPEX)
+//         // =========================
+//         if (
+//             $isCAPEX &&
+//             in_array($status, ['Approved IT', 'Approved BD']) &&
+//             $previousStatus !== $status
+//         ) {
+//             $employees = Employee::whereHas('position', function ($query) {
+//                 $query->whereIn('id', [
+//                     '01973a06-74e2-706d-97fe-097c12788c59',
+//                     '01992267-3466-724e-93b3-46350f7e9094',
+//                 ]);
+//             })->get();
+
+//             foreach ($employees as $employee) {
+//                 if ($employee->company_email) {
+//                     Mail::to($employee->company_email)->queue(new RequestMail($formrequest));
+//                 }
+//             }
+//         }
+
+//     } catch (\Throwable $mailException) {
+//         Log::error('MAIL ERROR', [
+//             'message' => $mailException->getMessage()
+//         ]);
+//     }
+// }
+    // ini yang paling benar
+    // public function update(Request $request, $hash)
+    // {
+    //     Log::info('UPDATE REQUEST - START', [
+    //         'hash' => $hash,
+    //         'user_id' => auth()->id(),
+    //         'payload' => $request->all()
+    //     ]);
+    //     $requestType = RequestType::find($request->input('request_type_id'));
+    //     $isCAPEX = $requestType?->code === 'CAPEX';
+    //     $validated = $request->validate([
+    //         'request_type_id'       => ['nullable', 'exists:request_type,id'],
+    //         'vendor_id'             => ['nullable', 'exists:vendor,id'],
+    //         'request_date'          => ['required', 'date'],
+    //         'deadline'              => ['required', 'date', 'after_or_equal:request_date'],
+    //         'title'                 => ['required', 'string', 'max:255'],
+    //         'assets'                => ['nullable'],
+    //         'ca_number' => [
+    //             Rule::requiredIf(
+    //                 auth()->user()->hasRole('finance') && $request->isMethod('put')
+    //             ),
+    //             'string',
+    //             'max:255'
+    //         ],
+    //         'notes'                 => ['nullable', 'string'],
+    //         'notes_fa'              => ['nullable', 'string'],
+    //         'notes_fir'             => ['nullable', 'string'],
+    //         'destination'           => ['nullable', 'string', 'max:255'],
+    //         'status'                => ['required', Rule::in([
+    //             'Draft',
+    //             'Submitted',
+    //             'Approved Manager',
+    //             'Rejected Manager',
+    //             'Approved Finance',
+    //             'Rejected Finance',
+    //             'Approved Director',
+    //             'Rejected Director',
+    //             'Done'
+    //         ])],
+    //         'items'                     => ['required', 'array', 'min:1'],
+    //         'items.*.item_name'         => ['required', 'string', 'max:255'],
+    //         'items.*.specification'     => ['nullable', 'string'],
+    //         'items.*.uom'               => ['required', Rule::in(Requestitem::getUomOptions())],
+    //         'items.*.qty'               => ['required'],
+    //         'items.*.price'             => $isCAPEX ? ['nullable'] : ['required'],
+    //         'items.*.vendors'           => $isCAPEX ? ['nullable', 'array'] : [],
+    //         'items.*.vendors.*.vendor_id' => $isCAPEX ? ['nullable', 'exists:vendor,id'] : [],
+    //         'items.*.vendors.*.price'   => $isCAPEX ? ['nullable'] : [],
+    //         'items.*.selected_vendor' => $isCAPEX ? ['nullable', 'integer'] : [],
+    //         'links.*.link'           => ['nullable', 'max:255'],
+    //     ]);
+    //     $parsePrice = fn($v) => (float) str_replace(',', '.', str_replace('.', '', $v ?? '0'));
+    //     $parseQty   = fn($v) => (float) str_replace(',', '.', $v ?? '0');
+    //     DB::beginTransaction();
+    //     try {
+    //         $formrequest = Formrequest::get()->first(function ($u) use ($hash) {
+    //             return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
+    //         });
+    //         if (!$formrequest) {
+    //             Log::warning('UPDATE REQUEST - NOT FOUND', ['hash' => $hash]);
+    //             return back()->with('error', 'Data tidak ditemukan.');
+    //         }
+    //         $previousStatus = $formrequest->status;
+    //         $totalAmount = collect($validated['items'])->sum(function ($item) use ($parseQty, $parsePrice, $isCAPEX) {
+    //             if ($isCAPEX) {
+    //                 $vendors = $item['vendors'] ?? [];
+    //                 $selectedVendorIndex = isset($item['selected_vendor']) ? (int) $item['selected_vendor'] : null;
+
+    //                 $selectedPrice = null;
+    //                 if ($selectedVendorIndex !== null && isset($vendors[$selectedVendorIndex])) {
+    //                     $selectedPrice = $vendors[$selectedVendorIndex]['price'] ?? '0';
+    //                 }
+    //                 return $parseQty($item['qty']) * $parsePrice($selectedPrice ?? '0');
+    //             }
+    //             return $parseQty($item['qty']) * $parsePrice($item['price']);
+    //         });
+    //         $formrequest->update([
+    //             'vendor_id'       => $validated['vendor_id'] ?? null,
+    //             'request_date'    => $validated['request_date'],
+    //             'deadline'        => $validated['deadline'],
+    //             'title'           => $validated['title'],
+    //             'ca_number'       => $validated['ca_number'] ?? null,
+    //             'notes'           => $validated['notes'] ?? null,
+    //             'notes_fa'        => $validated['notes_fa'] ?? null,
+    //             'notes_dir'       => $validated['notes_dir'] ?? null,
+    //             'assets'       => $validated['assets'] ?? null,
+    //             'total_amount'    => round($totalAmount, 2),
+    //             'status'          => $validated['status'],
+    //         ]);
+    //         /*
+    //     |--------------------------------------------------------------------------
+    //     | APPROVAL LOGIC (tidak diubah)
+    //     |--------------------------------------------------------------------------
+    //     */
+    //         $approval = Requestapproval::firstOrCreate(['request_id' => $formrequest->id]);
+    //         if ($validated['status'] === 'Approved Manager' && $previousStatus !== 'Approved Manager') {
+    //             $approval->update(['approver1' => auth()->id(), 'approver1_at' => now()]);
+    //         }
+    //         if ($validated['status'] === 'Approved Director' && $previousStatus !== 'Approved Director') {
+    //             $approval->update(['approver2' => auth()->id(), 'approver2_at' => now()]);
+    //         }
+    //         if ($validated['status'] === 'Submitted' && $previousStatus !== 'Submitted') {
+    //             try {
+    //                 $employee = auth()->user()->employee;
+    //                 if ($employee) {
+    //                     $baseUrl = config('services.manager_api.url');
+    //                     $managerResponse = Http::get("{$baseUrl}/api/manager/{$employee->id}");
+    //                     if ($managerResponse->successful()) {
+    //                         $managerEmail = data_get($managerResponse->json(), 'manager.company_email');
+    //                         if ($managerEmail) {
+    //                             Mail::to($managerEmail)->send(new RequestMail($formrequest));
+    //                         }
+    //                     }
+    //                 }
+    //             } catch (\Throwable $mailException) {
+    //                 Log::error('MAIL ERROR', ['message' => $mailException->getMessage()]);
+    //             }
+    //         }
+    //         if ($validated['status'] === 'Approved Manager' && $previousStatus !== 'Approved Manager') {
+    //             try {
+    //                 $employees = Employee::whereHas('position', function ($query) {
+    //                     $query->whereIn('id', [
+    //                         '01973a06-74e2-706d-97fe-097c12788c59',
+    //                         '01992267-3466-724e-93b3-46350f7e9094'
+    //                     ]);
+    //                 })->get();
+    //                 foreach ($employees as $employee) {
+    //                     if ($employee->company_email) {
+    //                         Mail::to($employee->company_email)->send(new RequestMail($formrequest));
+    //                     }
+    //                 }
+    //             } catch (\Throwable $mailException) {
+    //                 Log::error('MAIL ERROR', ['message' => $mailException->getMessage()]);
+    //             }
+    //         }
+
+    //         DB::transaction(function () use ($formrequest, $validated, $parseQty, $parsePrice, $isCAPEX) {
+
+    //             $existingItemIds = Requestitem::where('request_id', $formrequest->id)->pluck('id');
+
+    //             ItemVendorQuotation::whereIn('request_item_id', $existingItemIds)->delete();
+    //             Requestitem::where('request_id', $formrequest->id)->delete();
+    //             Requestlink::where('request_id', $formrequest->id)->delete();
+
+    //             foreach ($validated['items'] as $idx => $item) {
+    //                 $qty   = $parseQty($item['qty']);
+    //                 $price = $isCAPEX ? 0 : $parsePrice($item['price']);
+
+    //                 $newItem = Requestitem::create([
+    //                     'request_id'    => $formrequest->id,
+    //                     'item_name'     => $item['item_name'],
+    //                     'specification' => $item['specification'] ?? null,
+    //                     'qty'           => $qty,
+    //                     'uom'           => $item['uom'],
+    //                     'price'         => $price,
+    //                     'total_price'   => $isCAPEX ? 0 : round($qty * $price, 2),
+    //                 ]);
+
+    //                 if ($isCAPEX && !empty($item['vendors'])) {
+    //                     $selectedVendorIndex = isset($item['selected_vendor'])
+    //                         ? (int) $item['selected_vendor']
+    //                         : null;
+
+    //                     foreach ($item['vendors'] as $vIdx => $vendorData) {
+    //                         if (empty($vendorData['vendor_id'])) continue;
+
+    //                         $isSelected = ($selectedVendorIndex !== null && $vIdx == $selectedVendorIndex);
+
+    //                         ItemVendorQuotation::create([
+    //                             'request_item_id' => $newItem->id,
+    //                             'vendor_id'       => $vendorData['vendor_id'],
+    //                             'price'           => $parsePrice($vendorData['price'] ?? '0'),
+    //                             'is_selected'     => $isSelected,
+    //                         ]);
+    //                     }
+
+    //                     if ($selectedVendorIndex !== null && isset($item['vendors'][$selectedVendorIndex])) {
+    //                         $selectedPrice    = $parsePrice($item['vendors'][$selectedVendorIndex]['price'] ?? '0');
+    //                         $selectedVendorId = $item['vendors'][$selectedVendorIndex]['vendor_id'] ?? null; // ← ambil vendor_id
+
+    //                         $newItem->update([
+    //                             'price'       => $selectedPrice,
+    //                             'total_price' => round($qty * $selectedPrice, 2),
+    //                         ]);
+    //                         // ← update vendor_id di FormRequest
+    //                         if ($selectedVendorId) {
+    //                             $formrequest->update(['vendor_id' => $selectedVendorId]);
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //             if (!empty($validated['links'])) {
+    //                 foreach ($validated['links'] as $link) {
+    //                     if (empty($link['link'])) continue;
+
+    //                     $formrequest->links()->create([
+    //                         'link' => $link['link'],
+    //                     ]);
+    //                 }
+    //             }
+    //         });
+    //         DB::commit();
+    //         Log::info('UPDATE SUCCESS', ['id' => $formrequest->id]);
+    //         return redirect()->route('request')->with('success', 'Request berhasil diupdate.');
+    //     } catch (\Throwable $e) {
+    //         DB::rollBack();
+    //         Log::error('UPDATE ERROR', ['message' => $e->getMessage()]);
+    //         return back()->withInput()->with('error', 'Gagal update request: ' . $e->getMessage());
+    //     }
+    // }
     // public function update(Request $request, $hash)
     // {
     //     Log::info('UPDATE REQUEST - START', [

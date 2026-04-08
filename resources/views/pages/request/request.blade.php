@@ -739,6 +739,7 @@
                                         <th class="text-center">Document Number</th>
                                         <th class="text-center">Companies</th>
                                         <th class="text-center">Request Type</th>
+                                        {{-- <th class="text-center">Capex</th> --}}
                                         <th class="text-center">Towards</th>
                                         <th class="text-center">User</th>
                                         <th class="text-center">Title</th>
@@ -891,6 +892,11 @@
                             name: 'request_type_name',
                             className: 'text-center'
                         },
+                        // {
+                        //     data: 'code',
+                        //     name: 'code',
+                        //     className: 'text-center'
+                        // },
                         {
                             data: 'vendor_name',
                             name: 'vendor_name',
@@ -1112,7 +1118,7 @@
 
                 <div class="user-card-field">
                     <div class="user-card-label">Towards</div>
-                    <div class="user-card-value">${request.vendor?.vendor_name || 'N/A'}</div>
+                    <div class="user-card-value">${request.vendor?.vendor_name || 'Empty'}</div>
                 </div>
 
                 <div class="user-card-field">
