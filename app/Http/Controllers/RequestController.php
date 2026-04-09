@@ -561,17 +561,17 @@ class RequestController extends Controller
         $user = auth()->user();
         if ($user->hasRole('user') && $request->user_id !== $user->id) {
             return redirect()->route('request')
-                ->with('error', 'you account doesnt have access to edit this request anjay.');
+                ->with('error', 'you account doesnt have access to show this request.');
         }
         if (!$user->hasRole('admin')) {
             $lockRules = [
                 'Draft'             => ['finance', 'manager', 'director'], // selain ini boleh edit
                 'Submitted'         => ['user', 'finance', 'director'],
-                'Approved Manager'  => ['user', 'manager', 'finance'],
+                // 'Approved Manager'  => ['user', 'manager', 'finance'],
                 'Rejected Manager'  => ['director', 'manager', 'finance'],
-                'Approved Director' => ['user', 'manager', 'director'],
+                // 'Approved Director' => ['user', 'manager', 'director'],
                 'Rejected Director' => ['finance', 'user'],
-                'Done'              => ['user', 'manager', 'director'],
+                // 'Done'              => ['user', 'manager', 'director'],
             ];
             $lockedRoles = $lockRules[$request->status] ?? [];
             $isLocked = collect($lockedRoles)
@@ -579,7 +579,7 @@ class RequestController extends Controller
 
             if ($isLocked) {
                 return redirect()->route('request')
-                    ->with('error', "Request with status '{$request->status}' can't be edited.");
+                    ->with('error', "Request with status '{$request->status}' can't be showed.");
             }
         }
         $vendors = Vendor::where('status', 'Active')->pluck('vendor_name', 'id');
@@ -698,6 +698,29 @@ class RequestController extends Controller
             'userCompanyName'
         ));
     }
+    private function resolveManager(\App\Models\Employee $employee): ?\App\Models\Employee
+{
+    // Ambil struktur milik employee ini
+    $structure = $employee->structuresnew;
+
+    if (!$structure) {
+        return null;
+    }
+
+    // Ambil parent structure (atasan langsung)
+    $parentStructure = $structure->parent;
+
+    if (!$parentStructure) {
+        return null;
+    }
+
+    // Gunakan employees() bukan employee() karena hasOne bukan hasMany
+    $managerEmployee = $parentStructure->employees()
+        ->with('structuresnew.submissionposition.positionRelation')
+        ->first();
+
+    return $managerEmployee; // ?\App\Models\Employee ✅
+}
     public function pdfview($id)
     {
         set_time_limit(120);
@@ -1249,6 +1272,170 @@ class RequestController extends Controller
     }
     public function update(Request $request, $hash)
     {
+$formrequest = null;
+    foreach (Formrequest::select('id')->cursor() as $u) {
+        if (substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash) {
+            $formrequest = Formrequest::find($u->id);
+            break;
+        }
+    }
+
+    if (!$formrequest) {
+        return back()->with('error', 'Data tidak ditemukan.');
+    }
+
+    // $parsePrice = fn($v) => (float) str_replace(',', '.', str_replace('.', '', $v ?? '0'));
+    // ✅ PERBAIKAN
+$parsePrice = function($v) {
+    if (is_null($v) || $v === '') return 0.0;
+    
+    $v = trim(preg_replace('/[^\d,.]/', '', $v));
+
+    // Format Indonesia: "4.000.000,00" → titik ribuan, koma desimal
+    if (preg_match('/^\d{1,3}(\.\d{3})+(,\d{1,4})?$/', $v)) {
+        $v = str_replace('.', '', $v);
+        $v = str_replace(',', '.', $v);
+    }
+    // Format koma ribuan: "4,000,000.00" → koma ribuan, titik desimal
+    elseif (preg_match('/^\d{1,3}(,\d{3})+(\.\d{1,4})?$/', $v)) {
+        $v = str_replace(',', '', $v);
+    }
+    // Format plain: "4000000.00" atau "4000000,00" → langsung cast
+    elseif (preg_match('/^\d+(,\d{1,4})?$/', $v)) {
+        $v = str_replace(',', '.', $v);
+    }
+    // Sudah plain dengan titik desimal: "4000000.00"
+    // Tidak perlu diubah, langsung cast
+
+    return (float) $v;
+};
+    $parseQty   = fn($v) => (float) str_replace(',', '.', $v ?? '0');
+
+    // ✅ Block khusus role director
+    if (auth()->user()->hasRole('director')) {
+        $validated = $request->validate([
+            'notes_dir'                   => ['nullable', 'string'],
+            'status'                      => ['required', Rule::in([
+                'Approved Director',
+                'Rejected Director',
+            ])],
+            'items'                       => ['nullable', 'array'],
+            'items.*.selected_vendor'     => ['nullable', 'integer'],
+            'items.*.vendors'             => ['nullable', 'array'],
+            'items.*.vendors.*.vendor_id' => ['nullable', 'exists:vendor,id'],
+            'items.*.vendors.*.price'     => ['nullable'],
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $previousStatus = $formrequest->status;
+
+            $formrequest->update([
+                'notes_dir' => $validated['notes_dir'] ?? $formrequest->notes_dir,
+                'status'    => $validated['status'],
+            ]);
+
+            // Approval logic
+            if ($validated['status'] === 'Approved Director' && $previousStatus !== 'Approved Director') {
+                $approval = Requestapproval::firstOrCreate(['request_id' => $formrequest->id]);
+                $approval->update(['approver2' => auth()->id(), 'approver2_at' => now()]);
+            }
+
+            // Update selected_vendor, price, total_price, vendor_id (CAPEX only)
+            // foreach ($validated['items'] ?? [] as $index => $item) {
+            //     $selectedVendorIndex = isset($item['selected_vendor']) ? (int) $item['selected_vendor'] : null;
+
+            //     // Update is_selected di ItemVendorQuotation
+            //     $requestItem = $formrequest->items->get($index);
+            //     if (!$requestItem) continue;
+
+            //     if (!empty($item['vendors'])) {
+            //         foreach ($item['vendors'] as $vIdx => $vendorData) {
+            //             ItemVendorQuotation::where('request_item_id', $requestItem->id)
+            //                 ->where('vendor_id', $vendorData['vendor_id'])
+            //                 ->update([
+            //                     'is_selected' => ($selectedVendorIndex !== null && $vIdx == $selectedVendorIndex),
+            //                 ]);
+            //         }
+            //     }
+
+            //     // Update price, total_price, vendor_id berdasarkan selected vendor
+            //     if ($selectedVendorIndex !== null && isset($item['vendors'][$selectedVendorIndex])) {
+            //         $selectedPrice    = $parsePrice($item['vendors'][$selectedVendorIndex]['price'] ?? '0');
+            //         $selectedVendorId = $item['vendors'][$selectedVendorIndex]['vendor_id'] ?? null;
+            //         $qty              = $requestItem->qty;
+
+            //         $requestItem->update([
+            //             'selected_vendor' => $selectedVendorIndex,
+            //             'price'           => $selectedPrice,
+            //             'total_price'     => round($qty * $selectedPrice, 2),
+            //         ]);
+
+            //         if ($selectedVendorId) {
+            //             $formrequest->update(['vendor_id' => $selectedVendorId]);
+            //         }
+            //     }
+            // }
+            foreach ($validated['items'] ?? [] as $index => $item) {
+    // DEBUG SEMENTARA
+    Log::info("ITEM[$index] RAW", [
+        'selected_vendor' => $item['selected_vendor'] ?? null,
+        'vendors'         => $item['vendors'] ?? [],
+    ]);
+
+    $selectedVendorIndex = isset($item['selected_vendor']) ? (int) $item['selected_vendor'] : null;
+    
+         $requestItem = $formrequest->items->get($index);
+                if (!$requestItem) continue;
+
+                if (!empty($item['vendors'])) {
+                    foreach ($item['vendors'] as $vIdx => $vendorData) {
+                        ItemVendorQuotation::where('request_item_id', $requestItem->id)
+                            ->where('vendor_id', $vendorData['vendor_id'])
+                            ->update([
+                                'is_selected' => ($selectedVendorIndex !== null && $vIdx == $selectedVendorIndex),
+                            ]);
+                    }
+                }
+    
+    if ($selectedVendorIndex !== null && isset($item['vendors'][$selectedVendorIndex])) {
+        $rawPrice      = $item['vendors'][$selectedVendorIndex]['price'] ?? '0';
+        $selectedPrice = $parsePrice($rawPrice);
+        $qty           = $requestItem->qty;
+        
+        // DEBUG
+        Log::info("ITEM[$index] CALC", [
+            'raw_price'     => $rawPrice,
+            'parsed_price'  => $selectedPrice,
+            'qty'           => $qty,
+            'total'         => round($qty * $selectedPrice, 2),
+        ]);
+        
+        $requestItem->update([
+            'selected_vendor' => $selectedVendorIndex,
+            'price'           => $selectedPrice,
+            'total_price'     => round($qty * $selectedPrice, 2),
+        ]);
+    }
+}
+
+            // Hitung ulang total_amount formrequest
+            $formrequest->update([
+                'total_amount' => round($formrequest->items()->sum('total_price'), 2),
+            ]);
+
+            DB::commit();
+
+            $this->dispatchEmails($validated['status'], $previousStatus, $formrequest);
+
+            return redirect()->route('request')->with('success', 'Request updated successfully.');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('UPDATE ERROR DIRECTOR', ['message' => $e->getMessage()]);
+            return back()->withInput()->with('error', 'Failed to update request: ' . $e->getMessage());
+        }
+    }
+
         $requestType = RequestType::find($request->input('request_type_id'));
         $isCAPEX = $requestType?->code === 'CAPEX';
 
@@ -1298,6 +1485,7 @@ class RequestController extends Controller
             'items.*.selected_vendor' => $isCAPEX ? ['nullable', 'integer'] : [],
             'links.*.link'           => ['nullable', 'max:255'],
         ]);
+        
 
         $parsePrice = fn($v) => (float) str_replace(',', '.', str_replace('.', '', $v ?? '0'));
         $parseQty   = fn($v) => (float) str_replace(',', '.', $v ?? '0');
@@ -1327,6 +1515,8 @@ class RequestController extends Controller
             return $parseQty($item['qty']) * $parsePrice($item['price']);
         });
 
+        
+
         DB::beginTransaction();
         try {
             $formrequest->update([
@@ -1334,12 +1524,10 @@ class RequestController extends Controller
                 'request_date' => $validated['request_date'],
                 'deadline'     => $validated['deadline'],
                 'title'        => $validated['title'],
-                // 'capex_type_id'        => $validated['capex_type_id'],
                 'ca_number'    => $validated['ca_number'] ?? null,
                 'notes'        => $validated['notes'] ?? null,
                 'notes_fa'     => $validated['notes_fa'] ?? null,
                 'notes_dir'    => $validated['notes_dir'] ?? null,
-                // 'assets'       => $validated['assets'] ?? null,
                 'assets' => $isCAPEX
                     ? $validated['assets']
                     : ($validated['assets'] ?? $formrequest->assets),

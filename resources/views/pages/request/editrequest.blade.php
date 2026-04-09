@@ -95,7 +95,7 @@
                     </label>
                     <option value="">Choose Companies</option>
                     <select name="company_id"
-                        id="company_id"class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
+                        id="company_id"class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm"{{ $isDirector ? 'disabled' : '' }}>
                         @foreach ($companies as $id => $name)
                             <option value="{{ $id }}"
                                 {{ old('company_id', $request->company_id) == $id ? 'selected' : '' }}>
@@ -103,6 +103,10 @@
                             </option>
                         @endforeach
                     </select>
+                    @if($isDirector)
+    <input type="hidden" name="company_id"
+        value="{{ old('company_id', $request->company_id) }}">
+@endif
                     @error('company_id')
                         <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
                             <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -160,7 +164,11 @@
                         Title Request
                     </label>
                     <input type="text" id="title" name="title" class="form-input w-full px-4 py-3 rounded-xl"
-                        value="{{ old('title', $request->title) }}" placeholder="butuh segera untuk bla bla bla" required>
+                        value="{{ old('title', $request->title) }}" placeholder="butuh segera untuk bla bla bla" required {{ $isDirector ? 'disabled' : '' }}>
+                         @if($isDirector)
+    <input type="hidden" name="title"
+        value="{{ old('title', $request->title) }}">
+@endif
                     @error('title')
                         <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
                             <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -183,7 +191,7 @@
                             Vendor
                         </label>
                         <select id="vendor_id" name="vendor_id"
-                            class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
+                            class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm" {{ $isDirector ? 'disabled' : '' }}>
                             <option value="">Choose Vendor</option>
                             @foreach ($vendors as $id => $name)
                                 <option value="{{ $id }}"
@@ -192,6 +200,10 @@
                                 </option>
                             @endforeach
                         </select>
+                          @if($isDirector)
+    <input type="hidden" name="vendor_id"
+        value="{{ old('vendor_id', $request->vendor_id) }}">
+@endif
                         @error('vendor_id')
                             <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
                                 <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -218,7 +230,7 @@
                     </label>
 
                     <select id="assets" name="assets"
-                        class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
+                        class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm" {{ $isDirector ? 'disabled' : '' }}>
                         <option value="">Choose Assets</option>
                         @foreach ($assets as $key => $value)
                             <option value="{{ $key }}"
@@ -227,6 +239,10 @@
                             </option>
                         @endforeach
                     </select>
+                       @if($isDirector)
+    <input type="hidden" name="assets"
+        value="{{ old('assets', $request->assets) }}">
+@endif
                     @error('assets')
                         <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
                             <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -250,7 +266,7 @@
                         Capex Type<span class="text-red-400">*</span>
                     </label>
                     <select id="capex_type_id" name="capex_type_id"
-    class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
+    class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm"{{ $isDirector ? 'disabled' : '' }}>
     <option value="">Choose CAPEX Type</option>
     @foreach ($capextypes as $item)
         @if ($item->user?->employee)
@@ -262,6 +278,10 @@
         @endif
     @endforeach
 </select>
+         @if($isDirector)
+    <input type="hidden" name="capex_type_id"
+        value="{{ old('capex_type_id', $request->capex_type_id) }}">
+@endif
                     @error('capex_type_id')
                         <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
                             <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -286,7 +306,11 @@
                     </label>
                     <input type="date" id="request_date" name="request_date"
                         class="form-input w-full px-4 py-3 rounded-xl"
-                        value="{{ old('request_date', optional($request->request_date)->format('Y-m-d')) }}" required>
+                        value="{{ old('request_date', optional($request->request_date)->format('Y-m-d')) }}" required{{ $isDirector ? 'disabled' : '' }}>
+                         @if($isDirector)
+    <input type="hidden" name="request_date"
+        value="{{ old('request_date', $request->request_date) }}">
+@endif
                     @error('request_date')
                         <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
                             <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -308,7 +332,11 @@
                         Deadline
                     </label>
                     <input type="date" id="deadline" name="deadline" class="form-input w-full px-4 py-3 rounded-xl"
-                        value="{{ old('deadline', optional($request->deadline)->format('Y-m-d')) }}" required>
+                        value="{{ old('deadline', optional($request->deadline)->format('Y-m-d')) }}" required {{ $isDirector ? 'disabled' : '' }}>
+                         @if($isDirector)
+    <input type="hidden" name="deadline"
+        value="{{ old('deadline', $request->deadline) }}">
+@endif
                     @error('deadline')
                         <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
                             <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -332,7 +360,7 @@
                     + Add Item
                 </button>
             </div>
-            <div>
+            {{-- <div>
                 <label class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
                     Link Reference / Attachments
                 </label>
@@ -346,8 +374,11 @@
                                 <input type="text" name="links[{{ $i }}][link]"
                                     class="form-input w-full px-4 py-3 rounded-xl"
                                     value="{{ is_array($link) ? $link['link'] ?? '' : $link->link ?? '' }}"
-                                    placeholder="link referal product or link product photo">
-
+                                    placeholder="link referal product or link product photo"{{ $isDirector ? 'disabled' : '' }}>
+ @if($isDirector)
+    <input type="hidden" name="li"
+        value="{{ old('capex_type_id', $request->capex_type_id) }}">
+@endif
                                 <button type="button" class="remove-link px-3 py-2 bg-red-500 text-white rounded-lg">
                                     ✕
                                 </button>
@@ -356,7 +387,7 @@
                     @else
                         <div class="flex gap-2 link-row mb-2">
                             <input type="url" name="links[0][link]" class="form-input w-full px-4 py-3 rounded-xl"
-                                placeholder="link referal product or link product photo">
+                                placeholder="link referal product or link product photo" {{ $isDirector ? 'disabled' : '' }}>
 
                             <button type="button" class="remove-link px-3 py-2 bg-red-500 text-white rounded-lg">
                                 ✕
@@ -373,7 +404,85 @@
                 @error('links.*.link')
                     <p class="mt-1 text-xs text-red-400">{{ $message }}</p>
                 @enderror
+            </div> --}}
+            <div>
+    <label class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
+        Link Reference / Attachments
+    </label>
+
+    <div id="links-wrapper">
+        @php
+            $links = old('links', $request->links ?? []);
+        @endphp
+
+        @if (count($links))
+            @foreach ($links as $i => $link)
+                @php
+                    $value = is_array($link) ? ($link['link'] ?? '') : ($link->link ?? '');
+                @endphp
+
+                <div class="flex gap-2 link-row mb-2">
+
+                    <input type="text"
+                        name="links[{{ $i }}][link]"
+                        class="form-input w-full px-4 py-3 rounded-xl"
+                        value="{{ $value }}"
+                        placeholder="link referal product or link product photo"
+                        {{ $isDirector ? 'disabled' : '' }}>
+
+                    {{-- 🔥 Hidden input supaya tetap terkirim --}}
+                    @if($isDirector)
+                        <input type="hidden"
+                            name="links[{{ $i }}][link]"
+                            value="{{ $value }}">
+                    @endif
+
+                    {{-- ❌ Director tidak boleh hapus --}}
+                    @if(!$isDirector)
+                        <button type="button"
+                            class="remove-link px-3 py-2 bg-red-500 text-white rounded-lg">
+                            ✕
+                        </button>
+                    @endif
+
+                </div>
+            @endforeach
+        @else
+            <div class="flex gap-2 link-row mb-2">
+
+                <input type="url"
+                    name="links[0][link]"
+                    class="form-input w-full px-4 py-3 rounded-xl"
+                    placeholder="link referal product or link product photo"
+                    {{ $isDirector ? 'disabled' : '' }}>
+
+                @if($isDirector)
+                    <input type="hidden" name="links[0][link]" value="">
+                @endif
+
+                @if(!$isDirector)
+                    <button type="button"
+                        class="remove-link px-3 py-2 bg-red-500 text-white rounded-lg">
+                        ✕
+                    </button>
+                @endif
+
             </div>
+        @endif
+    </div>
+
+    {{-- ❌ Director tidak boleh tambah --}}
+    @if(!$isDirector)
+        <button type="button" id="add-link"
+            class="mt-3 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm">
+            + Add Links
+        </button>
+    @endif
+
+    @error('links.*.link')
+        <p class="mt-1 text-xs text-red-400">{{ $message }}</p>
+    @enderror
+</div>
             <div>
                 <label for="notes" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
                     <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
@@ -384,7 +493,11 @@
                     Applicant Notes
                 </label>
                 <textarea id="notes" name="notes" class="form-input w-full px-4 py-3 rounded-xl"
-                    placeholder="butuh segera untuk bla bla bla" rows="4" required>{{ old('notes', $request->notes) }}</textarea>
+                    placeholder="butuh segera untuk bla bla bla" rows="4" required {{ $isDirector ? 'disabled' : '' }}>{{ old('notes', $request->notes) }} </textarea>
+                     @if($isDirector)
+    <input type="hidden" name="deadline"
+        value="{{ old('notes', $request->notes) }}">
+@endif
                 @error('notes')
                     <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
                         <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -396,6 +509,32 @@
                     </p>
                 @enderror
             </div>
+                         @if($isDirector)
+
+            <div>
+                <label for="notes_dir" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
+                    <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    Director Notes
+                </label>
+                <textarea id="notes_dir" name="notes_dir" class="form-input w-full px-4 py-3 rounded-xl"
+                    placeholder="notes from directors" rows="4">{{ old('notes_dir', $request->notes_dir) }}</textarea>
+                     
+                @error('notes_dir')
+                    <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        {{ $message }}
+                    </p>
+                @enderror
+            </div>
+            @endif
             <div>
                 <label for="status" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
                     <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
@@ -611,32 +750,59 @@
             <input type="text" 
                 name="items[${index}][item_name]" 
                 value="${item?.item_name ?? ''}"
-                class="w-full form-input rounded-lg px-2 py-1" placeholder="item name" required>
+                class="w-full form-input rounded-lg px-2 py-1" placeholder="item name" required ${isDirector ? 'disabled' : ''}>
+                 ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][item_name]" 
+            value="${item?.item_name ?? ''}">
+    ` : ''}
+
+                
         </td>
         <td class="p-2">
             <input type="text" 
                 name="items[${index}][specification]" 
                 value="${item?.specification ?? ''}"
-                class="w-full form-input rounded-lg px-2 py-1"placeholder="specification" >
+                class="w-full form-input rounded-lg px-2 py-1"placeholder="specification" required ${isDirector ? 'disabled' : ''}>
+                  ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][specification]" 
+            value="${item?.specification ?? ''}">
+    ` : ''}
         </td>
         <td class="p-2">
             <input type="text" 
                 name="items[${index}][qty]" 
                 value="${item?.qty ?? ''}"
-                class="qty w-full form-input rounded-lg px-2 py-1" required>
+                class="qty w-full form-input rounded-lg px-2 py-1" required ${isDirector ? 'disabled' : ''}>
+                      ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][qty]" 
+            value="${item?.qty ?? ''}">
+    ` : ''}
         </td>
         <td class="p-2">
             <select name="items[${index}][uom]" 
-                class="select2-uom w-full form-input rounded-lg px-2 py-1">
+                class="select2-uom w-full form-input rounded-lg px-2 py-1" required ${isDirector ? 'disabled' : ''}>
                 ${uomOptions}
             </select>
+             ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][uom]" 
+            value="${item?.uom ?? ''}">
+    ` : ''}
         </td>
         <td class="p-2">
             <input type="text" 
                 name="items[${index}][price]" 
                 value="${item?.price ?? ''}"
-                class="price w-full form-input rounded-lg px-2 py-1" placeholder="price "required>
-        </td>
+                class="price w-full form-input rounded-lg px-2 py-1" placeholder="price "required ${isDirector ? 'disabled' : ''}>
+        ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][price]" 
+            value="${item?.price ?? ''}">
+    ` : ''}
+                </td>
         <td class="p-2">
             <input type="text" 
                 name="items[${index}][total_price]" 
@@ -666,32 +832,57 @@
             <input type="text" 
                 name="items[${index}][item_name]" 
                 value="${item?.item_name ?? ''}"
-                class="w-full form-input rounded-lg px-2 py-1" placeholder="item name" required>
+                class="w-full form-input rounded-lg px-2 py-1" placeholder="item name" required ${isDirector ? 'disabled' : ''}>
+                  ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][item_name]" 
+            value="${item?.item_name ?? ''}">
+    ` : ''}
         </td>
         <td class="p-2">
             <input type="text" 
                 name="items[${index}][specification]" 
                 value="${item?.specification ?? ''}"
-                class="w-full form-input rounded-lg px-2 py-1"placeholder="specification" >
+                class="w-full form-input rounded-lg px-2 py-1"placeholder="specification" required ${isDirector ? 'disabled' : ''}>
+                  ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][specification]" 
+            value="${item?.specification ?? ''}">
+    ` : ''}
         </td>
         <td class="p-2">
             <input type="text" 
                 name="items[${index}][qty]" 
                 value="${item?.qty ?? ''}"
-                class="qty w-full form-input rounded-lg px-2 py-1" required>
+                class="qty w-full form-input rounded-lg px-2 py-1" required ${isDirector ? 'disabled' : ''}>
+                  ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][qty]" 
+            value="${item?.qty ?? ''}">
+    ` : ''}
         </td>
         <td class="p-2">
             <select name="items[${index}][uom]" 
-                class="select2-uom w-full form-input rounded-lg px-2 py-1">
+                class="select2-uom w-full form-input rounded-lg px-2 py-1" required ${isDirector ? 'disabled' : ''}>
                 ${uomOptions}
             </select>
+             ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][uom]" 
+            value="${item?.oum ?? ''}">
+    ` : ''}
         </td>
         <td class="p-2">
             <input type="text" 
                 name="items[${index}][price]" 
                 value="${item?.price ?? ''}"
-                class="price w-full form-input rounded-lg px-2 py-1" placeholder="price "required>
-        </td>
+                class="price w-full form-input rounded-lg px-2 py-1" placeholder="price "required ${isDirector ? 'disabled' : ''}>
+          ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][price]" 
+            value="${item?.price ?? ''}">
+    ` : ''}
+                </td>
         <td class="p-2">
             <input type="text" 
                 name="items[${index}][total_price]" 
@@ -710,7 +901,6 @@
         function createRowPR(item = null) {
             let uoms = getUomOptions();
             let uomOptions = '';
-
             uoms.forEach(u => {
                 let selected = item?.uom == u ? 'selected' : '';
                 uomOptions += `<option value="${u}" ${selected}>${u}</option>`;
@@ -721,31 +911,56 @@
             <input type="text" 
                 name="items[${index}][item_name]" 
                 value="${item?.item_name ?? ''}"
-                class="w-full form-input rounded-lg px-2 py-1" placeholder="item name" required>
-        </td>
+                class="w-full form-input rounded-lg px-2 py-1" placeholder="item name" required ${isDirector ? 'disabled' : ''}>
+        ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][item_name]" 
+            value="${item?.item_name ?? ''}">
+    ` : ''}
+                </td>
         <td class="p-2">
             <input type="text" 
                 name="items[${index}][specification]" 
                 value="${item?.specification ?? ''}"
-                class="w-full form-input rounded-lg px-2 py-1"placeholder="specification" >
+                class="w-full form-input rounded-lg px-2 py-1"placeholder="specification" required ${isDirector ? 'disabled' : ''}>
+                  ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][specification]" 
+            value="${item?.specification ?? ''}">
+    ` : ''}
         </td>
         <td class="p-2">
             <input type="text" 
                 name="items[${index}][qty]" 
                 value="${item?.qty ?? ''}"
-                class="qty w-full form-input rounded-lg px-2 py-1" required>
+                class="qty w-full form-input rounded-lg px-2 py-1" required ${isDirector ? 'disabled' : ''}>
+                  ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][qty]" 
+            value="${item?.qty ?? ''}">
+    ` : ''}
         </td>
         <td class="p-2">
             <select name="items[${index}][uom]" 
-                class="select2-uom w-full form-input rounded-lg px-2 py-1">
+                class="select2-uom w-full form-input rounded-lg px-2 py-1" required ${isDirector ? 'disabled' : ''}>
                 ${uomOptions}
             </select>
+                ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][uom]" 
+            value="${item?.uom ?? ''}">
+    ` : ''}
         </td>
         <td class="p-2">
             <input type="text" 
                 name="items[${index}][price]" 
                 value="${item?.price ?? ''}"
-                class="price w-full form-input rounded-lg px-2 py-1" placeholder="price "required>
+                class="price w-full form-input rounded-lg px-2 py-1" placeholder="price "required ${isDirector ? 'disabled' : ''}>
+                    ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][price]" 
+            value="${item?.price ?? ''}">
+    ` : ''}
         </td>
         <td class="p-2">
             <input type="text" 
@@ -776,32 +991,57 @@
             <input type="text" 
                 name="items[${index}][item_name]" 
                 value="${item?.item_name ?? ''}"
-                class="w-full form-input rounded-lg px-2 py-1" placeholder="item name" required>
+                class="w-full form-input rounded-lg px-2 py-1" placeholder="item name" required ${isDirector ? 'disabled' : ''}>
+                 ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][item_name]" 
+            value="${item?.item_name ?? ''}">
+    ` : ''}
         </td>
         <td class="p-2">
             <input type="text" 
                 name="items[${index}][specification]" 
                 value="${item?.specification ?? ''}"
-                class="w-full form-input rounded-lg px-2 py-1"placeholder="specification" >
+                class="w-full form-input rounded-lg px-2 py-1"placeholder="specification" required ${isDirector ? 'disabled' : ''}>
+                    ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][specification]" 
+            value="${item?.specification ?? ''}">
+    ` : ''}
         </td>
         <td class="p-2">
             <input type="text" 
                 name="items[${index}][qty]" 
                 value="${item?.qty ?? ''}"
-                class="qty w-full form-input rounded-lg px-2 py-1" required>
+                class="qty w-full form-input rounded-lg px-2 py-1" required ${isDirector ? 'disabled' : ''}>
+                  ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][qty]" 
+            value="${item?.qty ?? ''}">
+    ` : ''}
         </td>
         <td class="p-2">
             <select name="items[${index}][uom]" 
-                class="select2-uom w-full form-input rounded-lg px-2 py-1">
+                class="select2-uom w-full form-input rounded-lg px-2 py-1" required ${isDirector ? 'disabled' : ''}>
                 ${uomOptions}
             </select>
+              ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][uom]" 
+            value="${item?.uom ?? ''}">
+    ` : ''}
         </td>
         <td class="p-2">
             <input type="text" 
                 name="items[${index}][price]" 
                 value="${item?.price ?? ''}"
-                class="price w-full form-input rounded-lg px-2 py-1" placeholder="price "required>
-        </td>
+                class="price w-full form-input rounded-lg px-2 py-1" placeholder="price "required ${isDirector ? 'disabled' : ''}>
+           ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][price]" 
+            value="${item?.price ?? ''}">
+    ` : ''}
+                </td>
         <td class="p-2">
             <input type="text" 
                 name="items[${index}][total_price]" 
@@ -809,8 +1049,11 @@
                 class="total w-full form-input rounded-lg px-2 py-1" placeholder="total price" readonly>
         </td>
         <td class="p-2 text-center">
-            <button type="button" class="remove-row text-red-500">X</button>
+           ${!isDirector ? `
+                <button type="button" class="remove-row text-red-500">X</button>
+            ` : ''}
         </td>
+        
     </tr>
     `;
             index++;
@@ -831,6 +1074,7 @@
                     })
                     .join('');
             }
+            const disabledAttr = isDirector ? 'disabled' : '';
 
             const row = `
     <tr>
@@ -838,19 +1082,34 @@
             <input type="text" 
                 name="items[${index}][item_name]" 
                 value="${item?.item_name ?? ''}"
-                class="w-full form-input rounded-lg px-2 py-1" placeholder="item name"required>
+                class="w-full form-input rounded-lg px-2 py-1" placeholder="item name" required ${disabledAttr}>
+                   ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][item_name]" 
+            value="${item?.item_name ?? ''}">
+    ` : ''}
         </td>
         <td class="p-2">
             <input type="text" 
                 name="items[${index}][qty]" 
                 value="${item?.qty ?? ''}"
-                class="qty w-full form-input rounded-lg px-2 py-1" placeholder="qty"required>
+                class="qty w-full form-input rounded-lg px-2 py-1" placeholder="qty"required ${disabledAttr}>
+                   ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][qty]" 
+            value="${item?.qty ?? ''}">
+    ` : ''}
         </td>
         <td class="p-2">
             <select name="items[${index}][uom]" 
-                class="select2-uom w-full form-input rounded-lg px-2 py-1">
+                class="select2-uom w-full form-input rounded-lg px-2 py-1" ${disabledAttr}>
                 ${uomOptions}
             </select>
+               ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][uom]" 
+            value="${item?.uom ?? ''}">
+    ` : ''}
         </td>
         ${[0,1,2].map(i => `
           <td class="p-2">
@@ -859,16 +1118,26 @@
             <!-- Kiri: select + price -->
             <div class="flex-1">
                 <select name="items[${index}][vendors][${i}][vendor_id]" 
-                    class="select2-vendor w-full rounded-lg px-2 py-1">
+                    class="select2-vendor w-full rounded-lg px-2 py-1" ${disabledAttr}>
                     <option value="">-- Vendor ${i+1} --</option>
                     ${vendorOption(item?.vendors?.[i]?.vendor_id)}
                 </select>
+                 ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][vendors][${i}][vendor_id]" 
+            value="${item?.vendors?.[i]?.vendor_id ?? ''}">
+    ` : ''}
 
                 <input type="text" 
                     name="items[${index}][vendors][${i}][price]" 
                     value="${item?.vendors?.[i]?.price ?? ''}"
                     class="price mt-1 w-full form-input rounded-lg px-2 py-1"
-                    placeholder="price">
+                    placeholder="price" ${disabledAttr}>
+                     ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][vendors][${i}][price]" 
+            value="${item?.vendors?.[i]?.price ?? ''}">
+    ` : ''}
             </div>
             ${isDirector ? `
         <!-- Kanan: radio -->
@@ -877,7 +1146,7 @@
                 <input type="radio" 
                     name="items[${index}][selected_vendor]" 
                     value="${i}"
-                    ${item?.vendors?.[i]?.is_selected ? 'checked' : ''}>
+                    ${item?.vendors?.[i]?.is_selected ? 'checked' : ''}required>
                 Choose
             </label>
         </div>
@@ -888,7 +1157,9 @@
             </td>
             `).join('')}
         <td class="p-2 text-center">
-            <button type="button" class="remove-row text-red-500">X</button>
+            ${!isDirector ? `
+                <button type="button" class="remove-row text-red-500">X</button>
+            ` : ''}
         </td>
     </tr>
     `;

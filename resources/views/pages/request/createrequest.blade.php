@@ -924,7 +924,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const vendorWrapper = document.getElementById('vendor_wrapper');
-            const hideVendorTypes = ['CAPEX', 'PAYREQ', 'RE'];
+            const hideVendorTypes = ['CAPEX'];
 
             function toggleVendor() {
                 const selected = $('#request_type_id').find(':selected');
@@ -958,22 +958,40 @@
             $('#request_type_id').on('change', toggleAssets);
             toggleAssets();
         });
-        document.addEventListener('DOMContentLoaded', function() {
-            const CapextypeWrapper = document.getElementById('capex_type_wrapper');
-            const hideCapextype = ['CA', 'PAYREQ', 'PR', 'RE'];
+        // document.addEventListener('DOMContentLoaded', function() {
+        //     const CapextypeWrapper = document.getElementById('capex_type_wrapper');
+        //     const hideCapextype = ['CA', 'PAYREQ', 'PR', 'RE'];
 
-            function toggleCapextype() {
-                const selected = $('#capex_type_id').find(':selected');
+        //     function toggleCapextype() {
+        //         const selected = $('#capex_type_id').find(':selected');
+        //         const code = selected.data('code');
+        //         console.log('CODE:', code);
+        //         if (code && hideCapextype.includes(code)) {
+        //             CapextypeWrapper.style.display = 'none';
+        //             $('#capex_type_id').val(null).trigger('change');
+        //         } else {
+        //             CapextypeWrapper.style.display = 'block';
+        //         }
+        //     }
+        //     $('#capex_type_id').on('change', toggleCapextype);
+        //     toggleCapextype();
+        // });
+          document.addEventListener('DOMContentLoaded', function() {
+            const capextypeWrapper = document.getElementById('capex_type_wrapper');
+            const hideCapexTypes = ['CAPEX', 'PAYREQ', 'RE'];
+
+            function toggleVendor() {
+                const selected = $('#request_type_id').find(':selected');
                 const code = selected.data('code');
                 console.log('CODE:', code);
-                if (code && hideCapextype.includes(code)) {
-                    CapextypeWrapper.style.display = 'none';
+                if (code && hideCapexTypes.includes(code)) {
+                    capexWrapper.style.display = 'none';
                     $('#capex_type_id').val(null).trigger('change');
                 } else {
-                    CapextypeWrapper.style.display = 'block';
+                    capextypeWrapper.style.display = 'block';
                 }
             }
-            $('#capex_type_id').on('change', toggleCapextype);
+            $('#request_type_id').on('change', toggleCapextype);
             toggleCapextype();
         });
     </script>

@@ -907,7 +907,6 @@
         ${[0,1,2].map(i => `
           <td class="p-2">
         <div class="flex items-start gap-2">
-            
             <!-- Kiri: select + price -->
             <div class="flex-1">
                 <select name="items[${index}][vendors][${i}][vendor_id]" 
@@ -926,10 +925,10 @@
         <!-- Kanan: radio -->
         <div class="flex items-center mt-1">
             <label class="flex items-center gap-1 text-xs text-slate-400 whitespace-nowrap">
-                <input type="radio" 
-                    name="items[${index}][selected_vendor]" 
-                    value="${i}"
-                    ${item?.vendors?.[i]?.is_selected ? 'checked' : ''} disabled>
+          <input type="radio" 
+    name="items[${index}][selected_vendor]" 
+    value="${i}"
+    ${(item?.selected_vendor == i) ? 'checked' : ''}>
                 Choose
             </label>
         </div>
