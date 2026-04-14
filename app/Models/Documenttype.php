@@ -1,12 +1,13 @@
 <?php
 
 namespace App\Models;
+
 use Illuminate\Database\Eloquent\Model;
 use Ramsey\Uuid\Uuid;
 
-class Requesttype extends Model
+class Documenttype extends Model
 {
-      protected $table = 'request_type';
+       protected $table = 'document_type';
     public $incrementing = false;
     protected $connection = 'mysql';
     protected $keyType = 'string';
@@ -21,17 +22,13 @@ class Requesttype extends Model
         });
     }
      protected $fillable = [
-        'request_type_name','code'
+        'document_type_name'
     ];
-      public function setRequestTypeNameAttribute($value)
+      public function setDocumentTypeNameAttribute($value)
     {
-        $this->attributes['request_type_name'] = strtoupper($value);
+        $this->attributes['document_type_name'] = strtoupper($value);
     }
-      public function setCodeAttribute($value)
-    {
-        $this->attributes['code'] = strtoupper($value);
-    }
-    public function requests()
+     public function requests()
 {
     return $this->hasMany(Formrequest::class, 'request_type_id');
 }

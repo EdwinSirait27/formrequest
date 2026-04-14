@@ -5,7 +5,44 @@
 @section('subtitle', 'Your account information')
 
 @section('content')
+<style>
+      .select2-container--default .select2-selection--single {
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            height: 50px;
+            border-radius: 12px;
+        }
 
+        .select2-selection__rendered {
+            color: #1e293b !important;
+            line-height: 50px !important;
+        }
+
+        .select2-selection__arrow {
+            height: 50px !important;
+        }
+
+        .select2-dropdown {
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #1e293b;
+        }
+
+        .dark .select2-container--default .select2-selection--single {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+        }
+
+        .dark .select2-selection__rendered {
+            color: #ffffff !important;
+        }
+
+        .dark .select2-dropdown {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            color: #ffffff;
+        }
+</style>
     <div class="max-w-3xl mx-auto space-y-6">
 
         {{-- Profile Card --}}
@@ -15,35 +52,19 @@
             {{-- Avatar & Name --}}
             <div class="flex items-center gap-5 pb-6 mb-6 border-b" style="border-color: var(--border-color);">
 
-                {{-- <div
-                    class="flex-shrink-0 w-16 h-16 rounded-2xl overflow-hidden shadow-lg shadow-blue-500/30 bg-gray-200 flex items-center justify-center">
-                    @if (Auth::user()->employee && Auth::user()->employee->employee_name)
-                       
-                    @else
-                        <span class="text-2xl font-bold text-gray-700">
-                            {{ strtoupper(substr(Auth::user()->employee->employee_name ?? (Auth::user()->name ?? 'U'), 0, 1)) }}
-                        </span>
-                    @endif
-                </div> --}}
-                <div class="flex-shrink-0 w-16 h-16 rounded-2xl shadow-lg shadow-blue-500/30 
+               
+                <div
+                    class="flex-shrink-0 w-16 h-16 rounded-2xl shadow-lg shadow-blue-500/30 
             flex items-center justify-center text-white font-bold text-xl bg-blue-500">
 
-    {{
-        strtoupper(
-            substr(
-                explode(' ', Auth::user()->employee->employee_name ?? Auth::user()->name ?? 'U')[0],
-                0,
-                1
-            ) .
-            (
-                isset(explode(' ', Auth::user()->employee->employee_name ?? Auth::user()->name ?? '')[1])
-                ? substr(explode(' ', Auth::user()->employee->employee_name ?? Auth::user()->name ?? '')[1], 0, 1)
-                : ''
-            )
-        )
-    }}
+                    {{ strtoupper(
+                        substr(explode(' ', Auth::user()->employee->employee_name ?? (Auth::user()->name ?? 'U'))[0], 0, 1) .
+                            (isset(explode(' ', Auth::user()->employee->employee_name ?? (Auth::user()->name ?? ''))[1])
+                                ? substr(explode(' ', Auth::user()->employee->employee_name ?? (Auth::user()->name ?? ''))[1], 0, 1)
+                                : ''),
+                    ) }}
 
-</div>
+                </div>
                 <div>
                     <h2 class="text-xl font-bold" style="color: var(--text-primary)">
                         {{ Auth::user()->employee->employee_name ?? (Auth::user()->name ?? '-') }}
@@ -231,6 +252,29 @@
                         </span>
                     </div>
                 </div>
+                @if (count($user->all_roles_formrequest ?? []) > 1)
+                <div class="space-y-1.5 sm:col-span-2">
+
+                    <form method="POST" action="{{ route('profile.update-active-role') }}">
+                        @csrf
+                        <label for="active_role_formrequest" class="text-sm text-white">Select Active Role</label>
+                        <select name="role" id="active_role_formrequest"
+                            class="select2 mt-1 block w-full rounded-lg bg-slate-800 text-white p-2 border border-slate-700">
+                            @foreach ($user->all_roles_formrequest ?? [] as $role)
+                                <option value="{{ $role }}"
+                                    {{ $user->active_role_formrequest == $role ? 'selected' : '' }}>
+                                    {{ ucfirst($role) }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <button type="submit"
+                            class="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
+                            Update Active Role
+                        </button>
+                    </form>
+                </div>
+
+                @endif
                 <div class="max-w-xl mx-auto bg-white shadow-lg rounded-2xl p-6 space-y-6">
 
                     <!-- Title -->
@@ -289,22 +333,6 @@
     </div>
     @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
-        {{-- <script>
-const canvas = document.getElementById('signature-pad');
-const signaturePad = new SignaturePad(canvas);
-
-function clearPad() {
-    signaturePad.clear();
-}
-
-function saveSignature() {
-    if (!signaturePad.isEmpty()) {
-        document.getElementById('signature').value = signaturePad.toDataURL();
-    }
-}
-</script> --}}
-        <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
-
         <script>
             const canvas = document.getElementById('signature-pad');
 
@@ -362,6 +390,11 @@ function saveSignature() {
             @if (session('error'))
                 toastr.error(@json(session('error')));
             @endif
+              $('#active_role_formrequest').select2({
+                placeholder: "Choose Roles",
+                allowClear: true,
+                width: '100%'
+            });
         </script>
     @endpush
 @endsection

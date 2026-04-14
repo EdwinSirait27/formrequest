@@ -38,6 +38,40 @@
                 </label>
 
             </div>
+            {{-- <div>
+                <label for="roles" class="block text-sm font-semibold text-slate-300 mb-2 flex items-center space-x-2">
+                    <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                    </svg>
+                    <span>Roles</span>
+                    <span class="text-red-400">*</span>
+                </label>
+                <div class="relative">
+                    @foreach ($roles as $role)
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="roles[]" value="{{ $role->name }}"
+                                {{ in_array($role->name, $userRoles) ? 'checked' : '' }}>
+                            <label class="form-check-label">
+                                {{ ucfirst($role->name) }}
+                            </label>
+                        </div>
+                    @endforeach
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+
+                    </div>
+                </div>
+                @error('roles')
+                    <p class="mt-2 text-sm text-red-400 flex items-center space-x-1">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span>{{ $message }}</span>
+                    </p>
+                @enderror
+            </div> --}}
             <div>
                 <label for="roles" class="block text-sm font-semibold text-slate-300 mb-2 flex items-center space-x-2">
                     <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

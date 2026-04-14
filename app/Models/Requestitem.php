@@ -45,7 +45,7 @@ class Requestitem extends Model
     ];
     public static function getUomOptions()
     {
-        return ['pieces', 'unit', 'set', 'pack', 'box', 'rim', 'kg', 'liter', 'meter', 'roll'];
+        return ['pieces', 'unit', 'set', 'pack', 'box', 'rim', 'kg', 'liter', 'meter', 'roll','monthly','3 month','6 month','yearly'];
     }
     public function request()
     {

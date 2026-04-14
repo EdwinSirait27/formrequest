@@ -223,6 +223,69 @@
                     @enderror
                 </div>
             </div>
+            <div id="payment_type_payreq_wrapper">
+                <div>
+                    <label for="payment_type_payreq" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
+                        <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        Payment Type<span class="text-red-400">*</span>
+                    </label>
+                    <select id="payment_type_payreq" name="payment_type_payreq"
+                        class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
+                        <option value="">Choose Payment Type</option>
+                        @foreach ($paymenttypepayreqs as $key => $value)
+                            <option value="{{ $key }}" {{ old('payment_type_payreq') == $key ? 'selected' : '' }}>
+                                {{ $value }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('payment_type_payreq')
+                        <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                            {{ $message }}
+                        </p>
+                    @enderror
+                </div>
+            </div>
+            <div id="document_type_wrapper">
+                <div>
+                    <label for="document_type_id" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
+                        <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        Document Type<span class="text-red-400">*</span>
+                    </label>
+                   <select id="document_type_id" name="document_type_id"
+                            class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
+                            <option value="">Choose Document Type</option>
+                           @foreach ($documenttypes as $document)
+                        <option value="{{ $document->id }}"
+                            {{ old('document_type_id') == $document->id ? 'selected' : '' }}>
+                            {{ $document->document_type_name }}
+                        </option>
+                    @endforeach
+                        </select>
+                    @error('document_type_id')
+                        <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                            {{ $message }}
+                        </p>
+                    @enderror
+                </div>
+            </div>
             <div id="capex_type_wrapper">
                 <div>
                     <label for="capex_type_id" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
@@ -442,7 +505,8 @@
                 <tbody id="items-table"></tbody>
             </table>
         `);
-            } else if (code === 'CAPEX') {
+            } 
+            else if (code === 'CAPEX') {
                 $('#table-container').html(`
             <table class="w-full text-sm text-left border border-slate-700 rounded-xl">
                 <thead>
@@ -459,17 +523,18 @@
                 <tbody id="items-table"></tbody>
             </table>
         `);
-            } else if (code === 'PAYREQ') {
+         } 
+            else if (code === 'PAYREQ') {
                 $('#table-container').html(`
             <table class="w-full text-sm text-left border border-slate-700 rounded-xl">
                 <thead>
                     <tr>
-                        <th class="p-2">Item Name</th>
-                        <th class="p-2">Specification</th>
-                        <th class="p-2">Qty</th>
-                        <th class="p-2">UOM</th>
-                        <th class="p-2">Price</th>
-                        <th class="p-2">Total</th>
+                       <th class="p-2">Item Name</th>
+                        <th class="p-2">QTY</th>
+                        <th class="p-2">Uoms</th>
+                        <th class="p-2">Vendor I</th>
+                        <th class="p-2">Vendor II</th>
+                        <th class="p-2">Vendor III</th>
                         <th class="p-2">Action</th>
                     </tr>
                 </thead>
@@ -525,7 +590,6 @@
             uoms.forEach(u => {
                 uomOptions += `<option value="${u}">${u}</option>`;
             });
-
             return `
     <tr>
         <td class="p-2">
@@ -566,52 +630,78 @@
     `;
         }
 
-        function createRowPAYREQ() {
+         function createRowPAYREQ() {
+            const options = Object.entries(vendors)
+                .map(([id, name]) => `<option value="${id}">${name}</option>`)
+                .join('');
             let uoms = getUomOptions();
             let uomOptions = '';
 
             uoms.forEach(u => {
                 uomOptions += `<option value="${u}">${u}</option>`;
             });
-
-            return `
+            const row = `
     <tr>
+        {{-- Item Name --}}
         <td class="p-2">
-            <input type="text" placeholder="items name" 
+            <input type="text" placeholder="Item Name" 
                 name="items[${index}][item_name]" 
                 class="w-full form-input rounded-lg px-2 py-1" required>
         </td>
+        {{-- QTY --}}
         <td class="p-2">
-            <input type="text" placeholder="specification" 
-                name="items[${index}][specification]" 
-                class="w-full form-input rounded-lg px-2 py-1">
-        </td>
-        <td class="p-2">
-            <input type="text" placeholder="5 / 0,5" 
+            <input type="text" placeholder="5 / 0.5" 
                 name="items[${index}][qty]" 
                 class="qty w-full form-input rounded-lg px-2 py-1" required>
         </td>
-        <td class="p-2">
+         <td class="p-2">
             <select name="items[${index}][uom]" 
                 class="select2-uom w-full form-input rounded-lg px-2 py-1">
                 ${uomOptions}
             </select>
         </td>
+        {{-- Vendor 1 --}}
         <td class="p-2">
-            <input type="text" placeholder="0" 
-                name="items[${index}][price]" 
-                class="price w-full form-input rounded-lg px-2 py-1" required>
+            <select name="items[${index}][vendors][0][vendor_id]" 
+                class="select2-vendor w-full rounded-lg px-2 py-1"required>
+                <option value="">-- Vendor 1 --</option>
+                ${options}
+            </select>
+            <input type="text" placeholder="Price" 
+                name="items[${index}][vendors][0][price]" 
+                class="price mt-1 w-full form-input rounded-lg px-2 py-1"required>
         </td>
+        
+        {{-- Vendor 2 --}}
         <td class="p-2">
-            <input type="text" 
-                name="items[${index}][total_price]" 
-                class="total w-full form-input rounded-lg px-2 py-1" readonly>
+            <select name="items[${index}][vendors][1][vendor_id]" 
+                class="select2-vendor w-full rounded-lg px-2 py-1">
+                <option value="">-- Vendor 2 --</option>
+                ${options}
+            </select>
+            <input type="text" placeholder="Price" 
+                name="items[${index}][vendors][1][price]" 
+                class="price mt-1 w-full form-input rounded-lg px-2 py-1">
         </td>
+        {{-- Vendor 3 --}}
+        <td class="p-2">
+            <select name="items[${index}][vendors][2][vendor_id]" 
+                class="select2-vendor w-full rounded-lg px-2 py-1">
+                <option value="">-- Vendor 3 --</option>
+                ${options}
+            </select>
+            <input type="text" placeholder="Price" 
+                name="items[${index}][vendors][2][price]" 
+                class="price mt-1 w-full form-input rounded-lg px-2 py-1">
+        </td>
+        {{-- Action --}}
         <td class="p-2 text-center">
             <button type="button" class="remove-row text-red-500">X</button>
         </td>
     </tr>
     `;
+            index++;
+            return row;
         }
 
         function createRowPR() {
@@ -804,6 +894,11 @@
                 allowClear: true,
                 width: '100%'
             });
+            $('#document_type_id').select2({
+                placeholder: "Choose Document Type",
+                allowClear: true,
+                width: '100%'
+            });
             $('#request_type_id').on('select2:select select2:clear', function() {
                 let code = getCurrentCode();
                 console.log('CODE:', code);
@@ -823,9 +918,20 @@
             let row = '';
             if (code === 'CA') {
                 row = createRowCA();
-            } else if (code === 'CAPEX') {
+            } 
+            else if (code === 'CAPEX') {
                 row = createRowCAPEX();
-            } else {
+            } 
+            else if (code === 'PAYREQ') {
+                row = createRowPAYREQ();
+            } 
+            else if (code === 'PR') {
+                row = createRowPR();
+            } 
+            else if (code === 'RE') {
+                row = createRowRE();
+            } 
+            else {
                 alert('Type tidak dikenali');
                 return;
             }
@@ -900,6 +1006,13 @@
             });
         });
         $(document).ready(function() {
+            $('#payment_type_payreq').select2({
+                placeholder: "Choose Payment Types...",
+                allowClear: true,
+                width: '100%'
+            });
+        });
+        $(document).ready(function() {
             $('#company_id').select2({
                 placeholder: "Choose Companies...",
                 allowClear: true,
@@ -924,7 +1037,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const vendorWrapper = document.getElementById('vendor_wrapper');
-            const hideVendorTypes = ['CAPEX'];
+            const hideVendorTypes = ['CAPEX','PAYREQ'];
 
             function toggleVendor() {
                 const selected = $('#request_type_id').find(':selected');
@@ -958,34 +1071,51 @@
             $('#request_type_id').on('change', toggleAssets);
             toggleAssets();
         });
-        // document.addEventListener('DOMContentLoaded', function() {
-        //     const CapextypeWrapper = document.getElementById('capex_type_wrapper');
-        //     const hideCapextype = ['CA', 'PAYREQ', 'PR', 'RE'];
+        document.addEventListener('DOMContentLoaded', function() {
+            const paymenttyperequestWrapper = document.getElementById('payment_type_payreq_wrapper');
+            const hidePaymenttyperequests = ['CA', 'CAPEX', 'PR', 'RE'];
 
-        //     function toggleCapextype() {
-        //         const selected = $('#capex_type_id').find(':selected');
-        //         const code = selected.data('code');
-        //         console.log('CODE:', code);
-        //         if (code && hideCapextype.includes(code)) {
-        //             CapextypeWrapper.style.display = 'none';
-        //             $('#capex_type_id').val(null).trigger('change');
-        //         } else {
-        //             CapextypeWrapper.style.display = 'block';
-        //         }
-        //     }
-        //     $('#capex_type_id').on('change', toggleCapextype);
-        //     toggleCapextype();
-        // });
+            function togglePaymenttyperequests() {
+                const selected = $('#request_type_id').find(':selected');
+                const code = selected.data('code');
+                console.log('CODE:', code);
+                if (code && hidePaymenttyperequests.includes(code)) {
+                    paymenttyperequestWrapper.style.display = 'none';
+                    $('#payment_type_payreq').val(null).trigger('change');
+                } else {
+                    paymenttyperequestWrapper.style.display = 'block';
+                }
+            }
+            $('#request_type_id').on('change', togglePaymenttyperequests);
+            togglePaymenttyperequests();
+        });
+        document.addEventListener('DOMContentLoaded', function() {
+            const documenttypeWrapper = document.getElementById('document_type_wrapper');
+            const hideDocumenttypes = ['CA', 'CAPEX', 'PR', 'RE'];
+
+            function toggleDocumenttypes() {
+                const selected = $('#request_type_id').find(':selected');
+                const code = selected.data('code');
+                console.log('CODE:', code);
+                if (code && hideDocumenttypes.includes(code)) {
+                    documenttypeWrapper.style.display = 'none';
+                    $('#document_type').val(null).trigger('change');
+                } else {
+                    documenttypeWrapper.style.display = 'block';
+                }
+            }
+            $('#request_type_id').on('change', toggleDocumenttypes);
+            toggleDocumenttypes();
+        });
           document.addEventListener('DOMContentLoaded', function() {
-            const capextypeWrapper = document.getElementById('capex_type_wrapper');
-            const hideCapexTypes = ['CAPEX', 'PAYREQ', 'RE'];
-
-            function toggleVendor() {
+              const capextypeWrapper = document.getElementById('capex_type_wrapper');
+            const hideCapexTypes = ['PAYREQ', 'RE','CA','PR'];
+            function toggleCapextype() {
                 const selected = $('#request_type_id').find(':selected');
                 const code = selected.data('code');
                 console.log('CODE:', code);
                 if (code && hideCapexTypes.includes(code)) {
-                    capexWrapper.style.display = 'none';
+                    capextypeWrapper.style.display = 'none';
                     $('#capex_type_id').val(null).trigger('change');
                 } else {
                     capextypeWrapper.style.display = 'block';

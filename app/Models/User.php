@@ -21,7 +21,12 @@ class User extends Authenticatable
     protected $fillable = [
         'username',
         'password',
+        'active_role_formrequest',
+        'all_roles_formrequest',
     ];
+     protected $casts = [
+    'all_roles_formrequest' => 'array',
+];
     protected $hidden = [
         'password',
         'remember_token',

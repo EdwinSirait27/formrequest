@@ -11,18 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('request_approval', function (Blueprint $table) {
-    $table->uuid('capex_approver')->nullable()->after('approver2');
-    $table->timestamp('capex_approver_at')->nullable()->after('approver2_at');            
+        Schema::create('document_type', function (Blueprint $table) {
+                       $table->uuid('id')->primary();
+$table->string('document_type_name')->nullable();
         });
     }
+
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::table('request_approval', function (Blueprint $table) {
-            
-        });
+        Schema::dropIfExists('document_type');
     }
 };

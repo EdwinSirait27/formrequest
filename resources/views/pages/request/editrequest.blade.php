@@ -255,6 +255,78 @@
                     @enderror
                 </div>
             </div>
+             <div id="payment_type_payreq_wrapper">
+                <div>
+                    <label for="payment_type_payreq" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
+                        <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        Payment Type<span class="text-red-400">*</span>
+                    </label>
+                    <select id="payment_type_payreq" name="payment_type_payreq"
+                        class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
+                        <option value="">Choose Payment Type</option>
+                         @foreach ($paymenttypepayreqs as $key => $value)
+                            <option value="{{ $key }}"
+                                {{ old('payment_type_payreq', $request->payment_type_payreq) == $key ? 'selected' : '' }}>
+                                {{ $value }}
+                            </option>
+                        @endforeach
+                    </select>
+                     @if($isDirector)
+    <input type="hidden" name="payment_type_payreq"
+        value="{{ old('payment_type_payreq', $request->payment_type_payreq) }}">
+@endif
+                    @error('payment_type_payreq')
+                        <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                            {{ $message }}
+                        </p>
+                    @enderror
+                </div>
+            </div>
+            <div id="document_type_wrapper">
+                <div>
+                    <label for="document_type_id" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
+                        <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        Document Type<span class="text-red-400">*</span>
+                    </label>
+                   <select id="document_type_id" name="document_type_id"
+                            class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm" >
+                            <option value="">Choose Document Type</option>
+                           @foreach ($documenttypes as $document)
+                            <option value="{{ $document->id }}" 
+                                {{ old('document_type_id', $request->document_type_id) == $document->id ? 'selected' : '' }}>
+                                {{ $document->document_type_name }}
+                            </option>
+                        @endforeach
+                        </select>
+                          @if($isDirector)
+    <input type="hidden" name="document_type_id"
+        value="{{ old('document_type_id', $request->document_type_id) }}">
+@endif
+                    @error('document_type_id')
+                        <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                            {{ $message }}
+                        </p>
+                    @enderror
+                </div>
+            </div>
             <div id="capex_type_wrapper">
                 <div>
                     <label for="capex_type_id" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
@@ -360,51 +432,7 @@
                     + Add Item
                 </button>
             </div>
-            {{-- <div>
-                <label class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
-                    Link Reference / Attachments
-                </label>
-                <div id="links-wrapper">
-                    @php
-                        $links = old('links', $request->links ?? []);
-                    @endphp
-                    @if (count($links))
-                        @foreach ($links as $i => $link)
-                            <div class="flex gap-2 link-row mb-2">
-                                <input type="text" name="links[{{ $i }}][link]"
-                                    class="form-input w-full px-4 py-3 rounded-xl"
-                                    value="{{ is_array($link) ? $link['link'] ?? '' : $link->link ?? '' }}"
-                                    placeholder="link referal product or link product photo"{{ $isDirector ? 'disabled' : '' }}>
- @if($isDirector)
-    <input type="hidden" name="li"
-        value="{{ old('capex_type_id', $request->capex_type_id) }}">
-@endif
-                                <button type="button" class="remove-link px-3 py-2 bg-red-500 text-white rounded-lg">
-                                    ✕
-                                </button>
-                            </div>
-                        @endforeach
-                    @else
-                        <div class="flex gap-2 link-row mb-2">
-                            <input type="url" name="links[0][link]" class="form-input w-full px-4 py-3 rounded-xl"
-                                placeholder="link referal product or link product photo" {{ $isDirector ? 'disabled' : '' }}>
-
-                            <button type="button" class="remove-link px-3 py-2 bg-red-500 text-white rounded-lg">
-                                ✕
-                            </button>
-                        </div>
-                    @endif
-                </div>
-
-                <button type="button" id="add-link"
-                    class="mt-3 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm">
-                    + Add Links
-                </button>
-
-                @error('links.*.link')
-                    <p class="mt-1 text-xs text-red-400">{{ $message }}</p>
-                @enderror
-            </div> --}}
+           
             <div>
     <label class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
         Link Reference / Attachments
@@ -697,34 +725,34 @@
                 <tbody id="items-table"></tbody>
             </table>
         `);
-            } else if (code === 'PR') {
+          } else if (code === 'PR') {
                 $('#table-container').html(`
             <table class="w-full text-sm text-left border border-slate-700 rounded-xl">
                 <thead>
                     <tr>
-                       <th class="p-2">Item Name</th>
-                        <th class="p-2">QTY</th>
-                        <th class="p-2">Uoms</th>
-                        <th class="p-2">Vendor I</th>
-                        <th class="p-2">Vendor II</th>
-                        <th class="p-2">Vendor III</th>
+                        <th class="p-2">Item Name</th>
+                        <th class="p-2">Specification</th>
+                        <th class="p-2">Qty</th>
+                        <th class="p-2">UOM</th>
+                        <th class="p-2">Price</th>
+                        <th class="p-2">Total</th>
                         <th class="p-2">Action</th>
                     </tr>
                 </thead>
                 <tbody id="items-table"></tbody>
             </table>
         `);
-            } else if (code === 'RE') {
+           } else if (code === 'RE') {
                 $('#table-container').html(`
             <table class="w-full text-sm text-left border border-slate-700 rounded-xl">
                 <thead>
                     <tr>
-                       <th class="p-2">Item Name</th>
-                        <th class="p-2">QTY</th>
-                        <th class="p-2">Uoms</th>
-                        <th class="p-2">Vendor I</th>
-                        <th class="p-2">Vendor II</th>
-                        <th class="p-2">Vendor III</th>
+                        <th class="p-2">Item Name</th>
+                        <th class="p-2">Specification</th>
+                        <th class="p-2">Qty</th>
+                        <th class="p-2">UOM</th>
+                        <th class="p-2">Price</th>
+                        <th class="p-2">Total</th>
                         <th class="p-2">Action</th>
                     </tr>
                 </thead>
@@ -818,22 +846,110 @@
             return row;
         }
 
-        function createRowPAYREQ(item = null) {
+    //     function createRowPAYREQ(item = null) {
+    //         let uoms = getUomOptions();
+    //         let uomOptions = '';
+
+    //         uoms.forEach(u => {
+    //             let selected = item?.uom == u ? 'selected' : '';
+    //             uomOptions += `<option value="${u}" ${selected}>${u}</option>`;
+    //         });
+    //         const row = `
+    // <tr>
+    //     <td class="p-2">
+    //         <input type="text" 
+    //             name="items[${index}][item_name]" 
+    //             value="${item?.item_name ?? ''}"
+    //             class="w-full form-input rounded-lg px-2 py-1" placeholder="item name" required ${isDirector ? 'disabled' : ''}>
+    //               ${isDirector ? `
+    //     <input type="hidden" 
+    //         name="items[${index}][item_name]" 
+    //         value="${item?.item_name ?? ''}">
+    // ` : ''}
+    //     </td>
+    //     <td class="p-2">
+    //         <input type="text" 
+    //             name="items[${index}][specification]" 
+    //             value="${item?.specification ?? ''}"
+    //             class="w-full form-input rounded-lg px-2 py-1"placeholder="specification" required ${isDirector ? 'disabled' : ''}>
+    //               ${isDirector ? `
+    //     <input type="hidden" 
+    //         name="items[${index}][specification]" 
+    //         value="${item?.specification ?? ''}">
+    // ` : ''}
+    //     </td>
+    //     <td class="p-2">
+    //         <input type="text" 
+    //             name="items[${index}][qty]" 
+    //             value="${item?.qty ?? ''}"
+    //             class="qty w-full form-input rounded-lg px-2 py-1" required ${isDirector ? 'disabled' : ''}>
+    //               ${isDirector ? `
+    //     <input type="hidden" 
+    //         name="items[${index}][qty]" 
+    //         value="${item?.qty ?? ''}">
+    // ` : ''}
+    //     </td>
+    //     <td class="p-2">
+    //         <select name="items[${index}][uom]" 
+    //             class="select2-uom w-full form-input rounded-lg px-2 py-1" required ${isDirector ? 'disabled' : ''}>
+    //             ${uomOptions}
+    //         </select>
+    //          ${isDirector ? `
+    //     <input type="hidden" 
+    //         name="items[${index}][uom]" 
+    //         value="${item?.oum ?? ''}">
+    // ` : ''}
+    //     </td>
+    //     <td class="p-2">
+    //         <input type="text" 
+    //             name="items[${index}][price]" 
+    //             value="${item?.price ?? ''}"
+    //             class="price w-full form-input rounded-lg px-2 py-1" placeholder="price "required ${isDirector ? 'disabled' : ''}>
+    //       ${isDirector ? `
+    //     <input type="hidden" 
+    //         name="items[${index}][price]" 
+    //         value="${item?.price ?? ''}">
+    // ` : ''}
+    //             </td>
+    //     <td class="p-2">
+    //         <input type="text" 
+    //             name="items[${index}][total_price]" 
+    //             value="${item?.total_price ?? ''}"
+    //             class="total w-full form-input rounded-lg px-2 py-1" placeholder="total price" readonly>
+    //     </td>
+    //     <td class="p-2 text-center">
+    //         <button type="button" class="remove-row text-red-500">X</button>
+    //     </td>
+    // </tr>
+    // `;
+    //         index++;
+    //         return row;
+    //     }
+     function createRowPAYREQ(item = null) {
             let uoms = getUomOptions();
             let uomOptions = '';
-
             uoms.forEach(u => {
                 let selected = item?.uom == u ? 'selected' : '';
                 uomOptions += `<option value="${u}" ${selected}>${u}</option>`;
             });
+            function vendorOption(selectedId) {
+                return Object.entries(vendors)
+                    .map(([id, name]) => {
+                        let selected = String(id) === String(selectedId) ? 'selected' : '';
+                        return `<option value="${id}" ${selected}>${name}</option>`;
+                    })
+                    .join('');
+            }
+            const disabledAttr = isDirector ? 'disabled' : '';
+
             const row = `
     <tr>
         <td class="p-2">
             <input type="text" 
                 name="items[${index}][item_name]" 
                 value="${item?.item_name ?? ''}"
-                class="w-full form-input rounded-lg px-2 py-1" placeholder="item name" required ${isDirector ? 'disabled' : ''}>
-                  ${isDirector ? `
+                class="w-full form-input rounded-lg px-2 py-1" placeholder="item name" required ${disabledAttr}>
+                   ${isDirector ? `
         <input type="hidden" 
             name="items[${index}][item_name]" 
             value="${item?.item_name ?? ''}">
@@ -841,21 +957,10 @@
         </td>
         <td class="p-2">
             <input type="text" 
-                name="items[${index}][specification]" 
-                value="${item?.specification ?? ''}"
-                class="w-full form-input rounded-lg px-2 py-1"placeholder="specification" required ${isDirector ? 'disabled' : ''}>
-                  ${isDirector ? `
-        <input type="hidden" 
-            name="items[${index}][specification]" 
-            value="${item?.specification ?? ''}">
-    ` : ''}
-        </td>
-        <td class="p-2">
-            <input type="text" 
                 name="items[${index}][qty]" 
                 value="${item?.qty ?? ''}"
-                class="qty w-full form-input rounded-lg px-2 py-1" required ${isDirector ? 'disabled' : ''}>
-                  ${isDirector ? `
+                class="qty w-full form-input rounded-lg px-2 py-1" placeholder="qty"required ${disabledAttr}>
+                   ${isDirector ? `
         <input type="hidden" 
             name="items[${index}][qty]" 
             value="${item?.qty ?? ''}">
@@ -863,34 +968,64 @@
         </td>
         <td class="p-2">
             <select name="items[${index}][uom]" 
-                class="select2-uom w-full form-input rounded-lg px-2 py-1" required ${isDirector ? 'disabled' : ''}>
+                class="select2-uom w-full form-input rounded-lg px-2 py-1" ${disabledAttr}>
                 ${uomOptions}
             </select>
-             ${isDirector ? `
+               ${isDirector ? `
         <input type="hidden" 
             name="items[${index}][uom]" 
-            value="${item?.oum ?? ''}">
+            value="${item?.uom ?? ''}">
     ` : ''}
         </td>
-        <td class="p-2">
-            <input type="text" 
-                name="items[${index}][price]" 
-                value="${item?.price ?? ''}"
-                class="price w-full form-input rounded-lg px-2 py-1" placeholder="price "required ${isDirector ? 'disabled' : ''}>
-          ${isDirector ? `
+        ${[0,1,2].map(i => `
+          <td class="p-2">
+        <div class="flex items-start gap-2">
+            
+            <!-- Kiri: select + price -->
+            <div class="flex-1">
+                <select name="items[${index}][vendors][${i}][vendor_id]" 
+                    class="select2-vendor w-full rounded-lg px-2 py-1" ${disabledAttr}>
+                    <option value="">-- Vendor ${i+1} --</option>
+                    ${vendorOption(item?.vendors?.[i]?.vendor_id)}
+                </select>
+                 ${isDirector ? `
         <input type="hidden" 
-            name="items[${index}][price]" 
-            value="${item?.price ?? ''}">
+            name="items[${index}][vendors][${i}][vendor_id]" 
+            value="${item?.vendors?.[i]?.vendor_id ?? ''}">
     ` : ''}
-                </td>
-        <td class="p-2">
-            <input type="text" 
-                name="items[${index}][total_price]" 
-                value="${item?.total_price ?? ''}"
-                class="total w-full form-input rounded-lg px-2 py-1" placeholder="total price" readonly>
-        </td>
+
+                <input type="text" 
+                    name="items[${index}][vendors][${i}][price]" 
+                    value="${item?.vendors?.[i]?.price ?? ''}"
+                    class="price mt-1 w-full form-input rounded-lg px-2 py-1"
+                    placeholder="price" ${disabledAttr}>
+                     ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][vendors][${i}][price]" 
+            value="${item?.vendors?.[i]?.price ?? ''}">
+    ` : ''}
+            </div>
+            ${isDirector ? `
+        <!-- Kanan: radio -->
+        <div class="flex items-center mt-1">
+            <label class="flex items-center gap-1 text-xs text-slate-400 whitespace-nowrap">
+                <input type="radio" 
+                    name="items[${index}][selected_vendor]" 
+                    value="${i}"
+                    ${item?.vendors?.[i]?.is_selected ? 'checked' : ''}required>
+                Choose
+            </label>
+        </div>
+        ` : ``}
+        </div>
+    </td>
+        </label>
+            </td>
+            `).join('')}
         <td class="p-2 text-center">
-            <button type="button" class="remove-row text-red-500">X</button>
+            ${!isDirector ? `
+                <button type="button" class="remove-row text-red-500">X</button>
+            ` : ''}
         </td>
     </tr>
     `;
@@ -1174,8 +1309,18 @@
                 let row = '';
                 if (code === 'CA') {
                     row = createRowCA(item);
-                } else if (code === 'CAPEX') {
+                } 
+                else if (code === 'CAPEX') {
                     row = createRowCAPEX(item);
+                }
+                else if (code === 'PAYREQ') {
+                    row = createRowPAYREQ(item);
+                }
+                else if (code === 'PR') {
+                    row = createRowPR(item);
+                }
+                else if (code === 'RE') {
+                    row = createRowRE(item);
                 }
                 $('#items-table').append(row);
             });
@@ -1213,6 +1358,16 @@
                 allowClear: true,
                 width: '100%'
             });
+            $('#payment_type_payreq').select2({
+                placeholder: "Choose Payment Type",
+                allowClear: true,
+                width: '100%'
+            });
+            $('#document_type_id').select2({
+                placeholder: "Choose Document Type",
+                allowClear: true,
+                width: '100%'
+            });
             $('#assets').select2({
                 placeholder: "Choose Assets",
                 allowClear: true,
@@ -1243,9 +1398,20 @@
             let row = '';
             if (code === 'CA') {
                 row = createRowCA();
-            } else if (code === 'CAPEX') {
+            } 
+            else if (code === 'CAPEX') {
                 row = createRowCAPEX();
-            } else {
+            } 
+            else if (code === 'PAYREQ') {
+                row = createRowPAYREQ();
+            } 
+            else if (code === 'PR') {
+                row = createRowPR();
+            } 
+            else if (code === 'RE') {
+                row = createRowRE();
+            } 
+            else {
                 alert('Type tidak dikenali');
                 return;
             }
@@ -1334,9 +1500,10 @@ $(document).on('click', '.remove-row', function() {
     </script>
     <script>
        
-        document.addEventListener('DOMContentLoaded', function() {
+         document.addEventListener('DOMContentLoaded', function() {
             const vendorWrapper = document.getElementById('vendor_wrapper');
-            const hideVendorTypes = ['CAPEX', 'PAYREQ', 'RE'];
+            const hideVendorTypes = ['CAPEX','PAYREQ'];
+
             function toggleVendor() {
                 const selected = $('#request_type_id').find(':selected');
                 const code = selected.data('code');
@@ -1351,9 +1518,10 @@ $(document).on('click', '.remove-row', function() {
             $('#request_type_id').on('change', toggleVendor);
             toggleVendor();
         });
-        document.addEventListener('DOMContentLoaded', function() {
+       document.addEventListener('DOMContentLoaded', function() {
             const assetsWrapper = document.getElementById('assets_wrapper');
             const hideAssets = ['CA', 'PAYREQ', 'PR', 'RE'];
+
             function toggleAssets() {
                 const selected = $('#request_type_id').find(':selected');
                 const code = selected.data('code');
@@ -1367,6 +1535,42 @@ $(document).on('click', '.remove-row', function() {
             }
             $('#request_type_id').on('change', toggleAssets);
             toggleAssets();
+        });
+         document.addEventListener('DOMContentLoaded', function() {
+            const paymenttyperequestWrapper = document.getElementById('payment_type_payreq_wrapper');
+            const hidePaymenttyperequests = ['CA', 'CAPEX', 'PR', 'RE'];
+
+            function togglePaymenttyperequests() {
+                const selected = $('#request_type_id').find(':selected');
+                const code = selected.data('code');
+                console.log('CODE:', code);
+                if (code && hidePaymenttyperequests.includes(code)) {
+                    paymenttyperequestWrapper.style.display = 'none';
+                    $('#payment_type_payreq').val(null).trigger('change');
+                } else {
+                    paymenttyperequestWrapper.style.display = 'block';
+                }
+            }
+            $('#request_type_id').on('change', togglePaymenttyperequests);
+            togglePaymenttyperequests();
+        });
+         document.addEventListener('DOMContentLoaded', function() {
+            const documenttypeWrapper = document.getElementById('document_type_wrapper');
+            const hideDocumenttypes = ['CA', 'CAPEX', 'PR', 'RE'];
+
+            function toggleDocumenttypes() {
+                const selected = $('#request_type_id').find(':selected');
+                const code = selected.data('code');
+                console.log('CODE:', code);
+                if (code && hideDocumenttypes.includes(code)) {
+                    documenttypeWrapper.style.display = 'none';
+                    $('#document_type').val(null).trigger('change');
+                } else {
+                    documenttypeWrapper.style.display = 'block';
+                }
+            }
+            $('#request_type_id').on('change', toggleDocumenttypes);
+            toggleDocumenttypes();
         });
         document.addEventListener('DOMContentLoaded', function() {
             const capextypeWrapper = document.getElementById('capex_type_wrapper');

@@ -1,7 +1,7 @@
 @extends('layouts.app')
-@section('title', 'Edit Request Type - ' . $requesttype->request_type_name)
-@section('header', 'Edit Request Type')
-@section('subtitle', 'Edit Request Type')
+@section('title', 'Edit Roles')
+@section('header', 'Edit Roles')
+@section('subtitle', 'Edit Roles')
 @section('content')
 <style>
 /* LIGHT MODE */
@@ -56,8 +56,8 @@
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <h3 class="text-sm font-semibold text-amber-400 mb-1">Edit Request Type: {{ $requesttype->request_type_name }}</h3>
-                    <p class="text-xs text-slate-400 leading-relaxed">Update the Request Type information below. Fields marked with
+                    <h3 class="text-sm font-semibold text-amber-400 mb-1">Edit Roles: {{ $role->name}}</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">Update the Roles information below. Fields marked with
                         <span class="text-red-400">*</span> are required.
                     </p>
                 </div>
@@ -65,25 +65,24 @@
         </div>
 
         {{-- Form --}}
-            <form method="POST" action="{{ route('updaterequesttype', request()->route('hash')) }}">
+            <form method="POST" action="{{ route('updateroles', request()->route('hash')) }}">
             @csrf
             @method('PUT')
-
             {{-- Vendor Name --}}
             <div>
-                <label for="vendor_name" class="block text-sm font-semibold text-slate-300 mb-2 flex items-center space-x-2">
+                <label for="name" class="block text-sm font-semibold text-slate-300 mb-2 flex items-center space-x-2">
                     <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
-                    <span>Request Type Name</span>
+                    <span>Role Name</span>
                     <span class="text-red-400">*</span>
                 </label>
-                <input type="text" id="request_type_name" name="request_type_name" required
-                    placeholder="Example: Cash Advance"
+                <input type="text" id="name" name="name" readonly
+                    placeholder="Example: Admin"
                     class="w-full px-4 py-3.5 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-200"
-                    value="{{ old('request_type_name', $requesttype->request_type_name) }}">
-                @error('request_type_name')
+                     value="{{ old('name', $role->name) }}">
+                @error('name')
                     <p class="mt-2 text-sm text-red-400 flex items-center space-x-1">
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
@@ -93,39 +92,55 @@
                 @enderror
             </div>
             <div>
-                <label for="code" class="block text-sm font-semibold text-slate-300 mb-2 flex items-center space-x-2">
-                    <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                    <span>Code</span>
-                    <span class="text-red-400">*</span>
-                </label>
-                <input type="text" id="code" name="code" required
-                    placeholder="Example: CA"
-                    class="w-full px-4 py-3.5 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-200"
-                    value="{{ old('code', $requesttype->code) }}">
-                @error('code')
-                    <p class="mt-2 text-sm text-red-400 flex items-center space-x-1">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                        </svg>
-                        <span>{{ $message }}</span>
-                    </p>
-                @enderror
-            </div>
+    <!-- Label utama (jangan di dalam loop) -->
+    <label class="block text-sm font-semibold text-slate-300 mb-3 flex items-center space-x-2">
+        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+        <span>Permissions</span>
+        <span class="text-red-400">*</span>
+    </label>
+
+    <!-- List permissions -->
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+        @foreach($permissions as $permission)
+            <label for="permission-{{ $permission->id }}" class="flex items-center space-x-2 text-sm text-slate-300">
+                
+                <input type="checkbox"
+                    id="permission-{{ $permission->id }}"
+                    name="permissions[]"
+                    value="{{ $permission->id }}"
+                    class="rounded border-slate-600 bg-slate-800 text-amber-500 focus:ring-amber-500"
+                    {{ in_array($permission->id, $rolePermissions) ? 'checked' : '' }}
+                >
+
+                <span>{{ $permission->name }}</span>
+            </label>
+        @endforeach
+    </div>
+
+    @error('permissions')
+        <p class="mt-2 text-sm text-red-400 flex items-center space-x-1">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+            </svg>
+            <span>{{ $message }}</span>
+        </p>
+    @enderror
+</div>
 
             {{-- Email --}}
             
 
             {{-- Action Buttons --}}
             <div class="flex space-x-3 pt-4">
-                <a href="{{ route('requesttype') }}"
+                <a href="{{ route('roles') }}"
                     class="flex-1 py-3.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-semibold rounded-xl transition-all duration-200 flex items-center justify-center space-x-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                     </svg>
-                    <span>Cancel</span>
+                    <span>Back</span>
                 </a>
 
                 <button type="submit"

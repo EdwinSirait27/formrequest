@@ -32,11 +32,9 @@ return new class extends Migration
             'approved finance',
             'rejected finance'
         ])->nullable();
-
         $table->timestamps();
     });
  }
-
     /**
      * Reverse the migrations.
      */

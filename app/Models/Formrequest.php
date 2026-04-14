@@ -58,7 +58,6 @@ class Formrequest extends Model
         'document_number',
         'request_date',
         'user_id',
-        'transfer',
         'company_id',
         'user_id',
         'total_amount',
@@ -71,9 +70,13 @@ class Formrequest extends Model
         'vendor_id',
         'destination',
         'assets',
+        'document_type_id',
+        'payment_method',
+        'va_number',
         'towards_to',
         'revision_number',
         'deadline',
+        'payment_type_payreq',
         'status'
     ];
     protected $casts = [
@@ -81,14 +84,10 @@ class Formrequest extends Model
         'deadline' => 'date',
         'total_amount' => 'decimal:2',
     ];
-    //   public static function getAssetOptions()
-    // {
-    //     return ['Bangunan',
-    //         'Peralatan & Inventaris',
-    //         'IT Hardware & Software',
-    //         'Kendaraan',
-    //         'Machine & Equipment'];
-    // }
+    public function setDocumentTypeAttribute($value)
+    {
+        $this->attributes['document_type'] = strtoupper($value);
+    }
     public static function getAssetOptions()
 {
     return [
@@ -99,6 +98,19 @@ class Formrequest extends Model
         'Machine & Equipment' => 'Machine & Equipment'
     ];
 }
+    public static function getPayreqOptions()
+{
+    return [
+        'Monthly' => 'Monthly',
+        'Quarterly' => 'Quarterly',
+        'Semiannual' => 'Semiannual',
+        'Annually' => 'Annually'
+    ];
+}
+ public function setTitleAttribute($value)
+    {
+        $this->attributes['title'] = strtoupper($value);
+    }
     public function vendor()
     {
         return $this->belongsTo(Vendor::class, 'vendor_id');
@@ -126,6 +138,10 @@ class Formrequest extends Model
     public function requesttype()
     {
         return $this->belongsTo(Requesttype::class, 'request_type_id');
+    }
+    public function documenttype()
+    {
+        return $this->belongsTo(Documenttype::class, 'document_type_id');
     }
     public function  capextype()
     {

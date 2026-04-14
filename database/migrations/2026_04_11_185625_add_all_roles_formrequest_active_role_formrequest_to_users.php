@@ -1,9 +1,7 @@
-<?php
-
+<?php    
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-
 return new class extends Migration
 {
     /**
@@ -11,9 +9,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('request_approval', function (Blueprint $table) {
-    $table->uuid('capex_approver')->nullable()->after('approver2');
-    $table->timestamp('capex_approver_at')->nullable()->after('approver2_at');            
+          Schema::connection('hrx')->table('users', function (Blueprint $table) {
+    $table->string('active_role_formrequest')->nullable()->after('password');
+     $table->json('all_roles_formrequest')->nullable()->after('active_role_formrequest');
         });
     }
     /**
@@ -21,8 +19,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('request_approval', function (Blueprint $table) {
-            
+        Schema::table('users', function (Blueprint $table) {
+            //
         });
     }
 };

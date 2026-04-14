@@ -289,7 +289,7 @@ if (localStorage.getItem('theme') === 'light') {
                                     Dashboard
                                 </a>
                             </li>
-                            @role('admin|finance')
+                            @role('admin')
                                 <a href="{{ route('vendor') }}"
                                     class="group flex gap-x-3 rounded-lg p-3 text-sm leading-6 font-semibold transition-all
                                           {{ request()->routeIs('vendor')
@@ -372,6 +372,13 @@ if (localStorage.getItem('theme') === 'light') {
                                         class="block rounded-md px-3 py-2 text-sm transition
                                                       {{ request()->routeIs('users.*') ? 'nav-sub-item-active' : 'nav-sub-item' }}">
                                         List Users
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('roles') }}"
+                                        class="block rounded-md px-3 py-2 text-sm transition
+                                                      {{ request()->routeIs('roles.*') ? 'nav-sub-item-active' : 'nav-sub-item' }}">
+                                        Roles & Permissions
                                     </a>
                                 </li>
                                 {{-- <li>

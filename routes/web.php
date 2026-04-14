@@ -8,18 +8,20 @@ use App\Http\Controllers\RequestTypeController;
 use App\Http\Controllers\RequestController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CapextypeController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\VendorController;
-Route::middleware('throttle:15,1')->group(function () {
+Route::middleware('throttle:15,1', 'guest')->group(function () {
     Route::get('/', [AuthController::class, 'loginPage'])->name('login')->middleware('guest');
     Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 });
-
-Route::middleware(['auth','role:admin|finance|manager|director|user'])->group(function () {
+Route::middleware(['throttle:20,1','auth','role:admin|finance|manager|director|user'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'dashboardPage'])->name('dashboard');
     Route::get('/profile', [ProfileController::class, 'profile'])->name('profile');
     Route::post('/savesign', [AuthController::class, 'save'])->name('save.signature');
     Route::put('/profile/update-role', [ProfileController::class, 'updateRole'])
         ->name('profile.updateRole');
+         Route::post('/updateroles', [ProfileController::class, 'updateActiveRole'])
+        ->name('profile.update-active-role');
     Route::post('/logout', [AuthController::class, 'logout'])
         ->name('logout.post');
     Route::get('/request', [RequestController::class, 'formpage'])->name('request');
@@ -32,7 +34,7 @@ Route::middleware(['auth','role:admin|finance|manager|director|user'])->group(fu
     Route::put('/updaterequest/{hash}', [RequestController::class, 'update'])->name('updaterequest');
     Route::post('/storerequest', [RequestController::class, 'store'])->name('storerequest');
 });
-Route::middleware(['auth', 'role:admin|finance'])->group(function () {
+Route::middleware(['throttle:20,1','auth', 'role:admin|finance'])->group(function () {
     Route::get('/vendor', [VendorController::class, 'index'])->name('vendor');
     Route::get('/createvendor', [VendorController::class, 'create'])->name('createvendor');
     Route::get('/vendors/data', [VendorController::class, 'getVendors'])
@@ -41,12 +43,9 @@ Route::middleware(['auth', 'role:admin|finance'])->group(function () {
     Route::get('/showvendor/{hash}', [VendorController::class, 'show'])->name('showvendor');
     Route::put('/updatevendor/{hash}', [VendorController::class, 'update'])->name('updatevendor');
     Route::post('/storevendor', [VendorController::class, 'store'])->name('storevendor');
-
     // Request Type
-    
 });
-
-Route::middleware(['auth', 'role:admin'])->group(function () {
+Route::middleware(['throttle:20,1','auth', 'role:admin'])->group(function () {
     // users
     Route::get('/users', [UserController::class, 'users'])->name('users');
     Route::match(['GET', 'POST'], '/users/users', [UserController::class, 'getUsers'])->name('users.users');
@@ -61,8 +60,6 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/showrequesttype/{hash}', [RequestTypeController::class, 'show'])->name('showrequesttype');
     Route::put('/updaterequesttype/{hash}', [RequestTypeController::class, 'update'])->name('updaterequesttype');
     Route::post('/storerequesttype', [RequestTypeController::class, 'store'])->name('storerequesttype');
-    
-
      Route::get('/capextype', [CapexTypeController::class, 'index'])->name('capextype');
     Route::get('/createcapextype', [CapexTypeController::class, 'create'])->name('createcapextype');
     Route::match(['GET', 'POST'], '/capextypes/capextypes', [CapexTypeController::class, 'getCapextypes'])->name('capextypes.capextypes');
@@ -70,36 +67,52 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/showcapextype/{hash}', [CapexTypeController::class, 'show'])->name('showcapextype');
     Route::put('/updatecapextype/{hash}', [CapexTypeController::class, 'update'])->name('updatecapextype');
     Route::post('/storecapextype', [CapexTypeController::class, 'store'])->name('storecapextype');
-    // Vendor
-
-    //request
+    // roles
+     Route::get('/roles', [RoleController::class, 'index'])->name('roles');
+    Route::get('/editroles/{hash}', [RoleController::class, 'edit'])->name('editroles');
+    Route::put('/updateroles/{hash}', [RoleController::class, 'update'])->name('updateroles');
+    Route::match(['GET', 'POST'], '/roles/roles', [RoleController::class, 'getRoles'])->name('roles.roles');
 
 });
-// Route::middleware(['auth', 'role:admin'])
-//     ->prefix('admin')
-//     ->name('admin.')
-//     ->group(function () {
-//     Route::get('/request', [RequestControllerAdmin::class, 'formpage'])->name('admin.request');
-//     Route::get('/createrequest', [RequestControllerAdmin::class, 'create'])->name('admin.createrequest');
-//     Route::get('/requests/data', [RequestControllerAdmin::class, 'admin.getRequestsadmin'])
-//     ->name('admin.requestsdata');
-//     Route::get('/editrequest/{hash}', [RequestControllerAdmin::class, 'edit'])->name('admin.editrequest');
-//     Route::get('/showrequest/{hash}', [RequestControllerAdmin::class, 'show'])->name('admin.showrequest');
-//     Route::get('/pdf/{id}', [RequestControllerAdmin::class, 'pdfview'])->name('admin.request.pdf');
-//     Route::put('/updaterequest/{hash}', [RequestControllerAdmin::class, 'update'])->name('admin.updaterequest');
-//     Route::post('/storerequest', [RequestControllerAdmin::class, 'store'])->name('admin.storerequest');
+// Route::middleware('throttle:15,1', 'guest')->group(function () {
+//     Route::get('/', [AuthController::class, 'loginPage'])->name('login')->middleware('guest');
+//     Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+// });
+// Route::middleware('throttle:15,1', 'auth', 'role:admin|user|finance|director|manager')->group(function () {
+//     Route::get('/profile', [ProfileController::class, 'profile'])->name('profile');
+//     Route::post('/savesign', [AuthController::class, 'save'])->name('save.signature');
+//     Route::put('/profile/update-role', [ProfileController::class, 'updateRole'])
+//         ->name('profile.updateRole');
+//     Route::post('/logout', [AuthController::class, 'logout'])
+//         ->name('logout.post');
+//     Route::group(['middleware' => ['permission:dashboard|dashboard user|dashboard finance|dashboard manager|dashboard director']], function () {
+//         Route::get('/dashboard', [DashboardController::class, 'dashboardPage'])->name('dashboard');
 //     });
-// Route::middleware(['auth', 'role:manager'])
-//     ->prefix('manager')
-//     ->name('manager.')
-//     ->group(function () {
-//     Route::get('/request', [RequestControllerManager::class, 'formpage'])->name('request');
-//     Route::get('/createrequest', [RequestControllerManager::class, 'create'])->name('createrequest');
-//     Route::get('/requests/data', [RequestControllerManager::class, 'getRequests'])
-//     ->name('requestsdata');
-//     Route::get('/editrequest/{hash}', [RequestControllerManager::class, 'edit'])->name('editrequest');
-//     Route::get('/showrequest/{hash}', [RequestControllerManager::class, 'show'])->name('showrequest');
-//     Route::get('/pdf/{id}', [RequestControllerManager::class, 'pdfview'])->name('request.pdf');
-//     Route::put('/updaterequest/{hash}', [RequestControllerManager::class, 'update'])->name('updaterequest');
-//     Route::post('/storerequest', [RequestControllerManager::class, 'store'])->name('storerequest');
+//     Route::group(['middleware' => ['permission:view request|view request user|view request finance|permission:view request manager|view request director']], function () {
+//         Route::get('/request', [RequestController::class, 'formpage'])->name('request');
 //     });
+
+  
+//     Route::group(['middleware' => ['permission:view vendor']], function () {
+//         Route::get('/vendor', [VendorController::class, 'index'])->name('vendor');
+//     });
+//     Route::group(['middleware' => ['permission:view requesttype']], function () {
+//         Route::get('/requesttype', [RequestTypeController::class, 'index'])->name('requesttype');
+//     });
+//     Route::group(['middleware' => ['permission:view capextype']], function () {
+//         Route::get('/capextype', [CapexTypeController::class, 'index'])->name('capextype');
+//     });
+//     Route::group(['middleware' => ['permission:userspermissions']], function () {
+//       Route::get('/users', [UserController::class, 'users'])->name('users');
+//     Route::match(['GET', 'POST'], '/users/users', [UserController::class, 'getUsers'])->name('users.users');
+//     Route::get('/editusers/{hash}', [UserController::class, 'edit'])->name('editusers');
+//     Route::put('/updateusers/{hash}/update', [UserController::class, 'update'])->name('updateusers');
+//     Route::post('/users/bulk-update-role', [UserController::class, 'bulkUpdateRole'])->name('users.bulkUpdateRole');
+//      Route::get('/roles', [RoleController::class, 'index'])->name('roles');
+//     Route::get('/editroles/{hash}', [RoleController::class, 'edit'])->name('editroles');
+//     Route::put('/updateroles/{hash}', [RoleController::class, 'update'])->name('updateroles');
+//     Route::match(['GET', 'POST'], '/roles/roles', [RoleController::class, 'getRoles'])->name('roles.roles');
+//     });
+// });
+
+ 

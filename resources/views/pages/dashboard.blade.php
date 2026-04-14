@@ -8,12 +8,22 @@
 
     {{-- Stats --}}
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
+@role('manager')
         @foreach ([['label' => 'Total Requests', 'value' => $stats['total'], 'color' => 'text-slate-300'], ['label' => 'Submitted', 'value' => $stats['Submitted'], 'color' => 'text-yellow-400'], ['label' => 'Approved', 'value' => $stats['approved'], 'color' => 'text-emerald-400'], ['label' => 'Rejected', 'value' => $stats['rejected'], 'color' => 'text-red-400'],['label' => 'Done', 'value' => $stats['Done'], 'color' => 'text-slate-300']] as $stat)
             <div class="bg-slate-800 rounded-xl p-4 border border-slate-700">
                 <p class="text-xs text-slate-400 mb-1">{{ $stat['label'] }}</p>
                 <p class="text-2xl font-semibold {{ $stat['color'] }}">{{ $stat['value'] }}</p>
             </div>
         @endforeach
+        @endrole
+        @role('user')
+        @foreach ([['label' => 'Total Requests', 'value' => $stats['total'], 'color' => 'text-slate-300'], ['label' => 'Submitted', 'value' => $stats['Submitted'], 'color' => 'text-yellow-400'], ['label' => 'Approved', 'value' => $stats['approved'], 'color' => 'text-emerald-400'], ['label' => 'Rejected', 'value' => $stats['rejected'], 'color' => 'text-red-400'],['label' => 'Done', 'value' => $stats['Done'], 'color' => 'text-slate-300']] as $stat)
+            <div class="bg-slate-800 rounded-xl p-4 border border-slate-700">
+                <p class="text-xs text-slate-400 mb-1">{{ $stat['label'] }}</p>
+                <p class="text-2xl font-semibold {{ $stat['color'] }}">{{ $stat['value'] }}</p>
+            </div>
+        @endforeach
+        @endrole
     </div>
 
     {{-- Request Types --}}
