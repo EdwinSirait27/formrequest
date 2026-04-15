@@ -1208,7 +1208,7 @@ $request = Requesttype::select('id','code')->get();
         ];
 
         $typesNeedMultiVendorPR = [
-            '019cd03f-b3ab-70a2-bee9-3e9ce248ca32',
+            '019d3986-b0e4-706c-a809-08564111507b',
         ];
 
         $isMultiVendorCapex = in_array($request->request_type_id, $typesNeedMultiVendorCapex);
