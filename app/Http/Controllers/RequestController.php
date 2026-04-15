@@ -1485,6 +1485,7 @@ $request = Requesttype::select('id','code')->get();
         $validated = $request->validate([
             'request_type_id'       => ['nullable', 'exists:request_type,id'],
             'vendor_id'             => ['nullable', 'exists:vendor,id'],
+            'company_id'             => ['nullable', 'exists:company_tables,id'],
             'request_date'          => ['required', 'date'],
             'deadline'              => ['required', 'date', 'after_or_equal:request_date'],
             'title'                 => ['required', 'string', 'max:255'],
@@ -1532,10 +1533,6 @@ $request = Requesttype::select('id','code')->get();
             'items.*.uom'               => ['required', Rule::in(Requestitem::getUomOptions())],
             'items.*.qty'               => ['required'],
             'items.*.price' => $isMultiVendor ? ['nullable'] : ['required'],
-            // 'items.*.vendors'           => $isMultiVendor ? ['nullable', 'array'] : [],
-            // 'items.*.vendors.*.vendor_id' => $isMultiVendor ? ['nullable', 'exists:vendor,id'] : [],
-            // 'items.*.vendors.*.price'   => $isMultiVendor ? ['nullable'] : [],
-            // 'items.*.selected_vendor' => $isMultiVendor ? ['nullable', 'integer'] : [],
             'items.*.vendors' => $isMultiVendor ? ['nullable', 'array'] : ['prohibited'],
 'items.*.vendors.*.vendor_id' => $isMultiVendor ? ['nullable', 'exists:vendor,id'] : ['prohibited'],
 'items.*.vendors.*.price' => $isMultiVendor ? ['nullable'] : ['prohibited'],
@@ -1571,6 +1568,7 @@ $request = Requesttype::select('id','code')->get();
         try {
             $formrequest->update([
                 'vendor_id'    => $validated['vendor_id'] ?? null,
+                'company_id'    => $validated['company_id'] ?? null,
                 'request_date' => $validated['request_date'],
                 'deadline'     => $validated['deadline'],
                 'title'        => $validated['title'],
@@ -1696,7 +1694,6 @@ if ($validated['status'] === 'Approved Manager' && $previousStatus !== 'Approved
                     }
                 }
             }
-            // if ($status === 'Approved Manager' && $previousStatus !== 'Approved Manager') {
             if (
     in_array($status, ['Approved Manager', 'Approved IT', 'Approved BD']) &&
     $previousStatus !== $status
