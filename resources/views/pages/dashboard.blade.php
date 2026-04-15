@@ -7,8 +7,9 @@
 @section('content')
 
     {{-- Stats --}}
+    @role('manager')
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
-@role('manager')
+
         @foreach ([['label' => 'Total Requests', 'value' => $stats['total'], 'color' => 'text-slate-300'], ['label' => 'Submitted', 'value' => $stats['Submitted'], 'color' => 'text-yellow-400'], ['label' => 'Approved', 'value' => $stats['approved'], 'color' => 'text-emerald-400'], ['label' => 'Rejected', 'value' => $stats['rejected'], 'color' => 'text-red-400'],['label' => 'Done', 'value' => $stats['Done'], 'color' => 'text-slate-300']] as $stat)
             <div class="bg-slate-800 rounded-xl p-4 border border-slate-700">
                 <p class="text-xs text-slate-400 mb-1">{{ $stat['label'] }}</p>
@@ -31,7 +32,8 @@
         <p class="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">Request Types</p>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             @foreach ($requestTypes as $type)
-                <a href="{{ route('request', ['type' => $type->code]) }}"
+                        <a href="{{ route('request', ['type' => $type->code]) }}"
+    
                     class="group bg-slate-800 border border-slate-700 hover:border-slate-500 rounded-xl p-4 flex flex-col gap-3 transition-all">
                     <div class="flex items-center justify-between gap-3">
                         <div class="min-w-0">

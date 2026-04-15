@@ -106,24 +106,19 @@ class DashboardController extends Controller
     $requestTypes = Requesttype::withCount([
         'requests as requests_count' => fn ($q) => $q->whereNotIn('status', ['rejected', 'cancelled'])
     ])->get();
-
     if ($user->hasRole('manager')) {
-
         $employee = $user->employee;
         $userIds  = collect();
         if ($employee && $employee->structure_id) {
             $structure = Structuresnew::with('allChildren')->find($employee->structure_id);
-
             if ($structure) {
                 $structureIds = $structure->getAllIds();
                 $employeeIds  = Employee::whereIn('structure_id', $structureIds)->pluck('id');
                 $userIds      = User::whereIn('employee_id', $employeeIds)->pluck('id');
             }
         }
-
         // Tambahkan user manager itu sendiri
         $userIds = $userIds->push($user->id)->unique();
-
         $baseQuery = Formrequest::where(function ($q) use ($userIds) {
             $q->where(function ($q1) use ($userIds) {
                 $q1->whereIn('user_id', $userIds)
@@ -141,32 +136,38 @@ class DashboardController extends Controller
                    ->whereHas('capexType', fn($ct) => $ct->where('user_id', auth()->id()));
             });
         });
-
+        // $stats = [
+        //     'total'    => (clone $baseQuery)->count(),
+        //     'pending'  => (clone $baseQuery)->where('status', 'Submitted')->count(),
+        //     'approved' => (clone $baseQuery)->where('status', 'Approved Manager')->count(),
+        //     'rejected' => Formrequest::whereIn('user_id', $userIds)
+        //                     ->whereIn('status', ['Rejected Manager', 'Rejected Director'])
+        //                     ->count(),
+        //     'Done'     => Formrequest::whereIn('user_id', $userIds)
+        //                     ->where('status', 'Done')
+        //                     ->count(),
+        // ];
         $stats = [
-            'total'    => (clone $baseQuery)->count(),
-            'pending'  => (clone $baseQuery)->where('status', 'Submitted')->count(),
-            'approved' => (clone $baseQuery)->where('status', 'Approved Manager')->count(),
-            'rejected' => Formrequest::whereIn('user_id', $userIds)
-                            ->whereIn('status', ['Rejected Manager', 'Rejected Director'])
-                            ->count(),
-            'Done'     => Formrequest::whereIn('user_id', $userIds)
-                            ->where('status', 'Done')
-                            ->count(),
-        ];
-
+    'total'     => (clone $baseQuery)->count(),
+    'Submitted' => (clone $baseQuery)->where('status', 'Submitted')->count(),
+    'approved'  => (clone $baseQuery)->where('status', 'Approved Manager')->count(),
+    'rejected'  => Formrequest::whereIn('user_id', $userIds)
+                        ->whereIn('status', ['Rejected Manager', 'Rejected Director'])
+                        ->count(),
+    'Done'      => Formrequest::whereIn('user_id', $userIds)
+                        ->where('status', 'Done')
+                        ->count(),
+];
         $recentRequests = (clone $baseQuery)
             ->with(['user.employee', 'requestType'])
             ->latest()
             ->take(10)
             ->get();
-
     } elseif ($user->hasRole('user|admin')) {
-
         $statusCounts = Formrequest::where('user_id', $user->id)
             ->selectRaw('status, COUNT(*) as count')
             ->groupBy('status')
             ->pluck('count', 'status');
-
         $stats = [
             'total'     => $statusCounts->sum(),
             'Submitted' => $statusCounts->get('Submitted', 0),

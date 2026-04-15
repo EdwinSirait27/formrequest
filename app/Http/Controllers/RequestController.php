@@ -71,6 +71,7 @@ class RequestController extends Controller
             'deadline',
             'status',
         ]);
+
         $search = $request->input('search.value');
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -119,6 +120,11 @@ class RequestController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
+        if ($request->filled('type')) {
+    $query->whereHas('requesttype', function ($q) use ($request) {
+        $q->where('code', strtoupper($request->type));
+    });
+}
         $user = auth()->user();
         if ($user->hasRole('admin')) {
         } 

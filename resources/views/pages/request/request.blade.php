@@ -861,6 +861,8 @@
                             d.request_date = $('#request_date').val();
                             d.deadline = $('#deadline').val();
                             d.status = $('#status-filter').val();
+                            // d.type = $('#request-type-filter').val();
+                            d.type = "{{ request('type') }}";
                         }
                     },
                     columns: [{
