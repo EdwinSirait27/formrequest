@@ -236,7 +236,7 @@
                     <select id="payment_type_payreq" name="payment_type_payreq"
                         class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
                         <option value="">Choose Payment Type</option>
-                        @foreach ($paymenttypepayreqs as $key => $value)
+                        @foreach ($paymenttypeprs as $key => $value)
                             <option value="{{ $key }}" {{ old('payment_type_payreq') == $key ? 'selected' : '' }}>
                                 {{ $value }}
                             </option>
@@ -529,23 +529,6 @@
             <table class="w-full text-sm text-left border border-slate-700 rounded-xl">
                 <thead>
                     <tr>
-                       <th class="p-2">Item Name</th>
-                        <th class="p-2">QTY</th>
-                        <th class="p-2">Uoms</th>
-                        <th class="p-2">Vendor I</th>
-                        <th class="p-2">Vendor II</th>
-                        <th class="p-2">Vendor III</th>
-                        <th class="p-2">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="items-table"></tbody>
-            </table>
-        `);
-            } else if (code === 'PR') {
-                $('#table-container').html(`
-            <table class="w-full text-sm text-left border border-slate-700 rounded-xl">
-                <thead>
-                    <tr>
                         <th class="p-2">Item Name</th>
                         <th class="p-2">Specification</th>
                         <th class="p-2">Qty</th>
@@ -557,6 +540,24 @@
                 </thead>
                 <tbody id="items-table"></tbody>
             </table>
+        `);
+            } else if (code === 'PR') {
+                 $('#table-container').html(`
+            <table class="w-full text-sm text-left border border-slate-700 rounded-xl">
+                <thead>
+                    <tr>
+                       <th class="p-2">Item Name</th>
+                        <th class="p-2">QTY</th>
+                        <th class="p-2">Uoms</th>
+                        <th class="p-2">Vendor I</th>
+                        <th class="p-2">Vendor II</th>
+                        <th class="p-2">Vendor III</th>
+                        <th class="p-2">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="items-table"></tbody>
+            </table>
+               
         `);
             } else if (code === 'RE') {
                 $('#table-container').html(`
@@ -630,7 +631,7 @@
     `;
         }
 
-         function createRowPAYREQ() {
+         function createRowPR() {
             const options = Object.entries(vendors)
                 .map(([id, name]) => `<option value="${id}">${name}</option>`)
                 .join('');
@@ -704,7 +705,7 @@
             return row;
         }
 
-        function createRowPR() {
+        function createRowPAYREQ() {
             let uoms = getUomOptions();
             let uomOptions = '';
 
@@ -1037,7 +1038,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const vendorWrapper = document.getElementById('vendor_wrapper');
-            const hideVendorTypes = ['CAPEX','PAYREQ'];
+            const hideVendorTypes = ['CAPEX','PR'];
 
             function toggleVendor() {
                 const selected = $('#request_type_id').find(':selected');
@@ -1073,7 +1074,7 @@
         });
         document.addEventListener('DOMContentLoaded', function() {
             const paymenttyperequestWrapper = document.getElementById('payment_type_payreq_wrapper');
-            const hidePaymenttyperequests = ['CA', 'CAPEX', 'PR', 'RE'];
+            const hidePaymenttyperequests = ['CA', 'CAPEX', 'PAYREQ', 'RE'];
 
             function togglePaymenttyperequests() {
                 const selected = $('#request_type_id').find(':selected');
@@ -1091,7 +1092,7 @@
         });
         document.addEventListener('DOMContentLoaded', function() {
             const documenttypeWrapper = document.getElementById('document_type_wrapper');
-            const hideDocumenttypes = ['CA', 'CAPEX', 'PR', 'RE'];
+            const hideDocumenttypes = ['CA', 'CAPEX', 'PAYREQ', 'RE'];
 
             function toggleDocumenttypes() {
                 const selected = $('#request_type_id').find(':selected');

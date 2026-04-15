@@ -98,7 +98,7 @@ class Formrequest extends Model
         'Machine & Equipment' => 'Machine & Equipment'
     ];
 }
-    public static function getPayreqOptions()
+    public static function getPROptions()
 {
     return [
         'Monthly' => 'Monthly',

@@ -26,7 +26,6 @@ use App\Models\Company;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Client\Response;
-
 class RequestController extends Controller
 {
     public function formpage()
@@ -382,7 +381,7 @@ class RequestController extends Controller
             ->select('id', 'user_id', 'code')
             ->get();
         $documenttypes = Documenttype::select('id', 'document_type_name')->get();
-        $paymenttypepayreqs = Formrequest::getPayreqOptions();
+        $paymenttypeprs = Formrequest::getPROptions();
 
         $user = auth()->user();
         $userCompanyName = optional($user->employee->company)->name;
@@ -530,7 +529,7 @@ class RequestController extends Controller
             'statuses',
             'uoms',
             'documenttypes',
-            'paymenttypepayreqs',
+            'paymenttypeprs',
             'assets',
             'isDirector',
             'userCompanyId',
@@ -1013,7 +1012,7 @@ $request = Requesttype::select('id','code')->get();
         ];
         $uoms = Requestitem::getUomOptions();
         $assets = Formrequest::getAssetOptions();
-        $paymenttypepayreqs = Formrequest::getPayreqOptions();
+        $paymenttypeprs = Formrequest::getPROptions();
         return view('pages.request.createrequest', compact(
             'companies',
             'userCompanyId',
@@ -1025,7 +1024,7 @@ $request = Requesttype::select('id','code')->get();
             'isMainCompany',
             'requesttypes',
             'documenttypes',
-            'paymenttypepayreqs',
+            'paymenttypeprs',
             'statuses'
         ));
     }
@@ -1481,8 +1480,8 @@ $request = Requesttype::select('id','code')->get();
         }
         $requestType = RequestType::find($request->input('request_type_id'));
         $isCAPEX = $requestType?->code === 'CAPEX';
-        $isPAYREQ = $requestType?->code === 'PAYREQ';
-        $isMultiVendor = $isCAPEX || $isPAYREQ;
+        $isPR = $requestType?->code === 'PR';
+        $isMultiVendor = $isCAPEX || $isPR;
         $validated = $request->validate([
             'request_type_id'       => ['nullable', 'exists:request_type,id'],
             'vendor_id'             => ['nullable', 'exists:vendor,id'],
@@ -1493,14 +1492,14 @@ $request = Requesttype::select('id','code')->get();
                 ? ['required', Rule::in(Formrequest::getAssetOptions())]
                 : ['nullable', Rule::in(Formrequest::getAssetOptions())],
             'document_type_id' => [
-                $isPAYREQ ? 'required' : 'nullable',
+                $isPR ? 'required' : 'nullable',
             ],
             'capex_type_id' => [
                 $isCAPEX ? 'required' : 'nullable',
             ],
-            'payment_type_payreq' => $isPAYREQ
-                ? ['required', Rule::in(Formrequest::getPayreqOptions())]
-                : ['nullable', Rule::in(Formrequest::getPayreqOptions())],
+            'payment_type_payreq' => $isPR
+                ? ['required', Rule::in(Formrequest::getPROptions())]
+                : ['nullable', Rule::in(Formrequest::getPROptions())],
             'ca_number' => [
                 Rule::requiredIf(
                     auth()->user()->hasRole('finance') && $request->isMethod('put')
@@ -1582,10 +1581,10 @@ $request = Requesttype::select('id','code')->get();
                 'assets' => $isCAPEX
                     ? $validated['assets']
                     : ($validated['assets'] ?? $formrequest->assets),
-                'document_type_id' => $isPAYREQ
+                'document_type_id' => $isPR
                     ? $validated['document_type_id']
                     : ($validated['document_type_id'] ?? $formrequest->document_type_id),
-                'payment_type_payreq' => $isPAYREQ
+                'payment_type_payreq' => $isPR
                     ? $validated['payment_type_payreq']
                     : ($validated['payment_type_payreq'] ?? $formrequest->payment_type_payreq),
                 'capex_type_id' => $isCAPEX

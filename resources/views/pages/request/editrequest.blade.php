@@ -268,7 +268,7 @@
                     <select id="payment_type_payreq" name="payment_type_payreq"
                         class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
                         <option value="">Choose Payment Type</option>
-                         @foreach ($paymenttypepayreqs as $key => $value)
+                         @foreach ($paymenttypeprs as $key => $value)
                             <option value="{{ $key }}"
                                 {{ old('payment_type_payreq', $request->payment_type_payreq) == $key ? 'selected' : '' }}>
                                 {{ $value }}
@@ -709,24 +709,7 @@
             </table>
         `);
             } else if (code === 'PAYREQ') {
-                $('#table-container').html(`
-            <table class="w-full text-sm text-left border border-slate-700 rounded-xl">
-                <thead>
-                    <tr>
-                       <th class="p-2">Item Name</th>
-                        <th class="p-2">QTY</th>
-                        <th class="p-2">Uoms</th>
-                        <th class="p-2">Vendor I</th>
-                        <th class="p-2">Vendor II</th>
-                        <th class="p-2">Vendor III</th>
-                        <th class="p-2">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="items-table"></tbody>
-            </table>
-        `);
-          } else if (code === 'PR') {
-                $('#table-container').html(`
+               $('#table-container').html(`
             <table class="w-full text-sm text-left border border-slate-700 rounded-xl">
                 <thead>
                     <tr>
@@ -741,6 +724,24 @@
                 </thead>
                 <tbody id="items-table"></tbody>
             </table>
+        `);
+          } else if (code === 'PR') {
+              $('#table-container').html(`
+            <table class="w-full text-sm text-left border border-slate-700 rounded-xl">
+                <thead>
+                    <tr>
+                       <th class="p-2">Item Name</th>
+                        <th class="p-2">QTY</th>
+                        <th class="p-2">Uoms</th>
+                        <th class="p-2">Vendor I</th>
+                        <th class="p-2">Vendor II</th>
+                        <th class="p-2">Vendor III</th>
+                        <th class="p-2">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="items-table"></tbody>
+            </table>
+               
         `);
            } else if (code === 'RE') {
                 $('#table-container').html(`
@@ -925,7 +926,88 @@
     //         index++;
     //         return row;
     //     }
-     function createRowPAYREQ(item = null) {
+     function createRowPAYREQ(item = null)  {
+            let uoms = getUomOptions();
+            let uomOptions = '';
+            uoms.forEach(u => {
+                let selected = item?.uom == u ? 'selected' : '';
+                uomOptions += `<option value="${u}" ${selected}>${u}</option>`;
+            });
+            const row = `
+    <tr>
+        <td class="p-2">
+            <input type="text" 
+                name="items[${index}][item_name]" 
+                value="${item?.item_name ?? ''}"
+                class="w-full form-input rounded-lg px-2 py-1" placeholder="item name" required ${isDirector ? 'disabled' : ''}>
+        ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][item_name]" 
+            value="${item?.item_name ?? ''}">
+    ` : ''}
+                </td>
+        <td class="p-2">
+            <input type="text" 
+                name="items[${index}][specification]" 
+                value="${item?.specification ?? ''}"
+                class="w-full form-input rounded-lg px-2 py-1"placeholder="specification" required ${isDirector ? 'disabled' : ''}>
+                  ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][specification]" 
+            value="${item?.specification ?? ''}">
+    ` : ''}
+        </td>
+        <td class="p-2">
+            <input type="text" 
+                name="items[${index}][qty]" 
+                value="${item?.qty ?? ''}"
+                class="qty w-full form-input rounded-lg px-2 py-1" required ${isDirector ? 'disabled' : ''}>
+                  ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][qty]" 
+            value="${item?.qty ?? ''}">
+    ` : ''}
+        </td>
+        <td class="p-2">
+            <select name="items[${index}][uom]" 
+                class="select2-uom w-full form-input rounded-lg px-2 py-1" required ${isDirector ? 'disabled' : ''}>
+                ${uomOptions}
+            </select>
+                ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][uom]" 
+            value="${item?.uom ?? ''}">
+    ` : ''}
+        </td>
+        <td class="p-2">
+            <input type="text" 
+                name="items[${index}][price]" 
+                value="${item?.price ?? ''}"
+                class="price w-full form-input rounded-lg px-2 py-1" placeholder="price "required ${isDirector ? 'disabled' : ''}>
+                    ${isDirector ? `
+        <input type="hidden" 
+            name="items[${index}][price]" 
+            value="${item?.price ?? ''}">
+    ` : ''}
+        </td>
+        <td class="p-2">
+            <input type="text" 
+                name="items[${index}][total_price]" 
+                value="${item?.total_price ?? ''}"
+                class="total w-full form-input rounded-lg px-2 py-1" placeholder="total price" readonly>
+        </td>
+        <td class="p-2 text-center">
+            <button type="button" class="remove-row text-red-500">X</button>
+        </td>
+    </tr>
+    `;
+            index++;
+            return row;
+        }
+
+
+        function createRowPR(item = null)
+        {
             let uoms = getUomOptions();
             let uomOptions = '';
             uoms.forEach(u => {
@@ -1033,85 +1115,8 @@
             return row;
         }
 
-        function createRowPR(item = null) {
-            let uoms = getUomOptions();
-            let uomOptions = '';
-            uoms.forEach(u => {
-                let selected = item?.uom == u ? 'selected' : '';
-                uomOptions += `<option value="${u}" ${selected}>${u}</option>`;
-            });
-            const row = `
-    <tr>
-        <td class="p-2">
-            <input type="text" 
-                name="items[${index}][item_name]" 
-                value="${item?.item_name ?? ''}"
-                class="w-full form-input rounded-lg px-2 py-1" placeholder="item name" required ${isDirector ? 'disabled' : ''}>
-        ${isDirector ? `
-        <input type="hidden" 
-            name="items[${index}][item_name]" 
-            value="${item?.item_name ?? ''}">
-    ` : ''}
-                </td>
-        <td class="p-2">
-            <input type="text" 
-                name="items[${index}][specification]" 
-                value="${item?.specification ?? ''}"
-                class="w-full form-input rounded-lg px-2 py-1"placeholder="specification" required ${isDirector ? 'disabled' : ''}>
-                  ${isDirector ? `
-        <input type="hidden" 
-            name="items[${index}][specification]" 
-            value="${item?.specification ?? ''}">
-    ` : ''}
-        </td>
-        <td class="p-2">
-            <input type="text" 
-                name="items[${index}][qty]" 
-                value="${item?.qty ?? ''}"
-                class="qty w-full form-input rounded-lg px-2 py-1" required ${isDirector ? 'disabled' : ''}>
-                  ${isDirector ? `
-        <input type="hidden" 
-            name="items[${index}][qty]" 
-            value="${item?.qty ?? ''}">
-    ` : ''}
-        </td>
-        <td class="p-2">
-            <select name="items[${index}][uom]" 
-                class="select2-uom w-full form-input rounded-lg px-2 py-1" required ${isDirector ? 'disabled' : ''}>
-                ${uomOptions}
-            </select>
-                ${isDirector ? `
-        <input type="hidden" 
-            name="items[${index}][uom]" 
-            value="${item?.uom ?? ''}">
-    ` : ''}
-        </td>
-        <td class="p-2">
-            <input type="text" 
-                name="items[${index}][price]" 
-                value="${item?.price ?? ''}"
-                class="price w-full form-input rounded-lg px-2 py-1" placeholder="price "required ${isDirector ? 'disabled' : ''}>
-                    ${isDirector ? `
-        <input type="hidden" 
-            name="items[${index}][price]" 
-            value="${item?.price ?? ''}">
-    ` : ''}
-        </td>
-        <td class="p-2">
-            <input type="text" 
-                name="items[${index}][total_price]" 
-                value="${item?.total_price ?? ''}"
-                class="total w-full form-input rounded-lg px-2 py-1" placeholder="total price" readonly>
-        </td>
-        <td class="p-2 text-center">
-            <button type="button" class="remove-row text-red-500">X</button>
-        </td>
-    </tr>
-    `;
-            index++;
-            return row;
-        }
-
+        
+       
         function createRowRE(item = null) {
             let uoms = getUomOptions();
             let uomOptions = '';
@@ -1502,7 +1507,7 @@ $(document).on('click', '.remove-row', function() {
        
          document.addEventListener('DOMContentLoaded', function() {
             const vendorWrapper = document.getElementById('vendor_wrapper');
-            const hideVendorTypes = ['CAPEX','PAYREQ'];
+            const hideVendorTypes = ['CAPEX','PR'];
 
             function toggleVendor() {
                 const selected = $('#request_type_id').find(':selected');
@@ -1538,7 +1543,7 @@ $(document).on('click', '.remove-row', function() {
         });
          document.addEventListener('DOMContentLoaded', function() {
             const paymenttyperequestWrapper = document.getElementById('payment_type_payreq_wrapper');
-            const hidePaymenttyperequests = ['CA', 'CAPEX', 'PR', 'RE'];
+            const hidePaymenttyperequests = ['CA', 'CAPEX', 'PAYREQ', 'RE'];
 
             function togglePaymenttyperequests() {
                 const selected = $('#request_type_id').find(':selected');
@@ -1556,7 +1561,7 @@ $(document).on('click', '.remove-row', function() {
         });
          document.addEventListener('DOMContentLoaded', function() {
             const documenttypeWrapper = document.getElementById('document_type_wrapper');
-            const hideDocumenttypes = ['CA', 'CAPEX', 'PR', 'RE'];
+            const hideDocumenttypes = ['CA', 'CAPEX', 'PAYREQ', 'RE'];
 
             function toggleDocumenttypes() {
                 const selected = $('#request_type_id').find(':selected');

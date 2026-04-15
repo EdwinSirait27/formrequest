@@ -4,7 +4,6 @@
 @section('subtitle', 'Manage system users and permissions')
 @section('content')
     <style>
-        /* Base DataTables Styling */
         .dataTables_wrapper {
             font-family: inherit;
         }
@@ -15,12 +14,14 @@
             color: #ffffff;
             font-size: 0.875rem;
         }
+
         .dark .dataTables_wrapper .dataTables_length,
         .dark .dataTables_wrapper .dataTables_filter,
         .dark .dataTables_wrapper .dataTables_info,
         .dark .dataTables_wrapper .dataTables_paginate {
             color: #ffffff;
         }
+
         .dataTables_wrapper .dataTables_length select,
         .dataTables_wrapper .dataTables_filter input {
             border: 1px solid #e2e8f0;
@@ -29,16 +30,19 @@
             font-size: 0.875rem;
             margin: 0 0.5rem;
         }
+
         .dark .dataTables_wrapper .dataTables_length select,
         .dark .dataTables_wrapper .dataTables_filter input {
             border-color: #475569;
             background-color: #334155;
             color: #f1f5f9;
         }
+
         /* Table Styling - Desktop Only */
         #users-table {
             width: 100% !important;
         }
+
         #users-table thead {
             background: linear-gradient(to right, #000000, #000000);
             color: rgb(255, 255, 255);
@@ -423,10 +427,8 @@
                 <div class="flex items-center justify-between mb-2">
                     <h3 class="text-xs md:text-sm font-semibold opacity-90">1 Thessalonians 5:17</h3>
                     <svg class="w-6 h-6 md:w-8 md:h-8 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-        d="M12 2v20M7 7h10" />
-</svg>
-
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v20M7 7h10" />
+                    </svg>
                 </div>
                 <p class="text-2xl md:text-3xl font-bold mb-1">pray without ceasing</p>
                 <p class="text-purple-100 text-xs">Christ is King!</p>
@@ -445,7 +447,6 @@
                 <p class="text-orange-100 text-xs">namanya juga yang buat ya mau gimana</p>
             </div>
         </div>
-
         {{-- Main Content Card --}}
         <div class="bg-slate-800 rounded-xl md:rounded-2xl shadow-lg border border-slate-700 overflow-hidden">
             {{-- Card Header --}}
