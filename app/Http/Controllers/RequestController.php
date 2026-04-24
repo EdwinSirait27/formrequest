@@ -1009,7 +1009,7 @@ class RequestController extends Controller
         $userCompanyName = optional($user->employee->company)->name;
         $userCompanyId   = optional($user->employee)->company_id;
         if (!$userCompanyId) {
-            abort(403, 'User tidak memiliki company');
+            abort(403, 'User doesnt have company');
         }
         $mainCompany = config('app.main_company_id');
         $isMainCompany = $userCompanyId === $mainCompany;
@@ -1231,6 +1231,7 @@ class RequestController extends Controller
             // }
     public function store(Request $request)
     {
+        // dd($request->all());
         Log::info('STORE REQUEST START', [
             'payload' => $request->all(),
             'user_id' => Auth::id()
@@ -1265,7 +1266,20 @@ class RequestController extends Controller
             'items.*.vendors' => [$isMultivendor ? 'required' : 'nullable', 'array'],
             'items.*.vendors.*.vendor_id' => ['nullable', 'exists:vendor,id'],
             'items.*.price' => [$isMultivendor ? 'nullable' : 'required'],
-            'items.*.vendors.*.price' => [$isMultivendor ? 'required' : 'nullable'],
+            // 'items.*.vendors.*.price' => [$isMultivendor ? 'required' : 'nullable'],
+              'items.*.vendors.*.price' => [
+            'nullable',
+            function ($attribute, $value, $fail) use ($request) {
+                preg_match('/items\.(\d+)\.vendors\.(\d+)\.price/', $attribute, $matches);
+                $itemIndex   = $matches[1];
+                $vendorIndex = $matches[2];
+                $vendorId = $request->input("items.{$itemIndex}.vendors.{$vendorIndex}.vendor_id");
+
+                if (!empty($vendorId) && ($value === null || $value === '')) {
+                    $fail("The {$attribute} field is required when vendor is selected.");
+                }
+            },
+        ],
             'items.*.vendors.*.notes' => ['nullable', 'string'],
             'links.*.link' => ['nullable', 'max:255'],
         ]);
