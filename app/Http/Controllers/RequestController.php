@@ -1718,6 +1718,45 @@ class RequestController extends Controller
     //         Log::error('MAIL ERROR', ['message' => $mailException->getMessage()]);
     //     }
     // }
+    private function dispatchEmails(string $status, string $previousStatus, $formrequest): void
+{
+    try {
+        if ($status === 'Submitted' && $previousStatus !== 'Submitted') {
+            $employee = auth()->user()->employee;
+            if ($employee) {
+                $baseUrl = config('services.manager_api_local.url');
+                $managerResponse = Http::timeout(5)->get("{$baseUrl}/api/manager/{$employee->id}");
+                if ($managerResponse->successful()) {
+                    $managerEmail = data_get($managerResponse->json(), 'manager.company_email');
+                    if ($managerEmail) {
+                        Mail::to($managerEmail)->queue(new RequestMail($formrequest));
+                    }
+                }
+            }
+        }
+
+        if (
+            in_array($status, ['Approved Manager', 'Approved IT', 'Approved BD']) &&
+            $previousStatus !== $status
+        ) {
+            $employees = Employee::whereHas('position', function ($query) {
+                $query->whereIn('id', [
+                    '01973a06-74e2-706d-97fe-097c12788c59',
+                    '01992267-3466-724e-93b3-46350f7e9094',
+                    '01973e38-9ae7-7343-9058-1094c2a8606b',
+                ]);
+            })->get();
+
+            foreach ($employees as $employee) {
+                if ($employee->company_email) {
+                    Mail::to($employee->company_email)->queue(new RequestMail($formrequest));
+                }
+            }
+        }
+    } catch (\Throwable $mailException) {
+        Log::error('MAIL ERROR', ['message' => $mailException->getMessage()]);
+    }
+}
     public function update(Request $request, $hash)
 {
     // ============================================================
