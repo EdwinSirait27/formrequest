@@ -413,7 +413,6 @@
             background: var(--badge-gradient);
             color: white;
         }
-
         .user-card-actions {
             display: flex;
             gap: 0.5rem;

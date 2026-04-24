@@ -777,7 +777,7 @@
             const text = document.getElementById('btnText');
             btn.disabled = true;
             spinner.style.display = 'block';
-            text.textContent = 'Memproses…';
+            text.textContent = 'Process…';
         });
     </script>
 </body>

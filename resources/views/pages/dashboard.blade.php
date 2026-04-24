@@ -7,8 +7,8 @@
 @section('content')
 
     {{-- Stats --}}
-    @role('manager')
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
+        @role('manager')
 
         @foreach ([['label' => 'Total Requests', 'value' => $stats['total'], 'color' => 'text-slate-300'], ['label' => 'Submitted', 'value' => $stats['Submitted'], 'color' => 'text-yellow-400'], ['label' => 'Approved', 'value' => $stats['approved'], 'color' => 'text-emerald-400'], ['label' => 'Rejected', 'value' => $stats['rejected'], 'color' => 'text-red-400'],['label' => 'Done', 'value' => $stats['Done'], 'color' => 'text-slate-300']] as $stat)
             <div class="bg-slate-800 rounded-xl p-4 border border-slate-700">

@@ -10,27 +10,22 @@
             height: 50px;
             border-radius: 12px;
         }
-
         .select2-selection__rendered {
             color: #1e293b !important;
             line-height: 50px !important;
         }
-
         .select2-selection__arrow {
             height: 50px !important;
         }
-
         .select2-dropdown {
             background-color: #ffffff;
             border: 1px solid #cbd5e1;
             color: #1e293b;
         }
-
         .dark .select2-container--default .select2-selection--single {
             background-color: #1e293b;
             border: 1px solid #334155;
         }
-
         .dark .select2-selection__rendered {
             color: #ffffff !important;
         }
@@ -596,7 +591,7 @@
         <td class="p-2">
             <input type="text" placeholder="items name" 
                 name="items[${index}][item_name]" 
-                class="w-full form-input rounded-lg px-2 py-1" required>
+                class="w-full form-input rounded-lg px-2 py-1">
         </td>
         <td class="p-2">
             <input type="text" placeholder="specification" 
@@ -606,7 +601,7 @@
         <td class="p-2">
             <input type="text" placeholder="5 / 0,5" 
                 name="items[${index}][qty]" 
-                class="qty w-full form-input rounded-lg px-2 py-1" required>
+                class="qty w-full form-input rounded-lg px-2 py-1">
         </td>
         <td class="p-2">
             <select name="items[${index}][uom]" 
@@ -617,7 +612,7 @@
         <td class="p-2">
             <input type="text" placeholder="0" 
                 name="items[${index}][price]" 
-                class="price w-full form-input rounded-lg px-2 py-1" required>
+                class="price w-full form-input rounded-lg px-2 py-1">
         </td>
         <td class="p-2">
             <input type="text" 
@@ -647,13 +642,13 @@
         <td class="p-2">
             <input type="text" placeholder="Item Name" 
                 name="items[${index}][item_name]" 
-                class="w-full form-input rounded-lg px-2 py-1" required>
+                class="w-full form-input rounded-lg px-2 py-1">
         </td>
         {{-- QTY --}}
         <td class="p-2">
             <input type="text" placeholder="5 / 0.5" 
                 name="items[${index}][qty]" 
-                class="qty w-full form-input rounded-lg px-2 py-1" required>
+                class="qty w-full form-input rounded-lg px-2 py-1">
         </td>
          <td class="p-2">
             <select name="items[${index}][uom]" 
@@ -664,13 +659,13 @@
         {{-- Vendor 1 --}}
         <td class="p-2">
             <select name="items[${index}][vendors][0][vendor_id]" 
-                class="select2-vendor w-full rounded-lg px-2 py-1"required>
+                class="select2-vendor w-full rounded-lg px-2 py-1">
                 <option value="">-- Vendor 1 --</option>
                 ${options}
             </select>
             <input type="text" placeholder="Price" 
                 name="items[${index}][vendors][0][price]" 
-                class="price mt-1 w-full form-input rounded-lg px-2 py-1"required>
+                class="price mt-1 w-full form-input rounded-lg px-2 py-1">
         </td>
         
         {{-- Vendor 2 --}}
@@ -718,7 +713,7 @@
         <td class="p-2">
             <input type="text" placeholder="items name" 
                 name="items[${index}][item_name]" 
-                class="w-full form-input rounded-lg px-2 py-1" required>
+                class="w-full form-input rounded-lg px-2 py-1">
         </td>
         <td class="p-2">
             <input type="text" placeholder="specification" 
@@ -728,7 +723,7 @@
         <td class="p-2">
             <input type="text" placeholder="5 / 0,5" 
                 name="items[${index}][qty]" 
-                class="qty w-full form-input rounded-lg px-2 py-1" required>
+                class="qty w-full form-input rounded-lg px-2 py-1">
         </td>
         <td class="p-2">
             <select name="items[${index}][uom]" 
@@ -739,7 +734,7 @@
         <td class="p-2">
             <input type="text" placeholder="0" 
                 name="items[${index}][price]" 
-                class="price w-full form-input rounded-lg px-2 py-1" required>
+                class="price w-full form-input rounded-lg px-2 py-1">
         </td>
         <td class="p-2">
             <input type="text" 
@@ -766,7 +761,7 @@
         <td class="p-2">
             <input type="text" placeholder="items name" 
                 name="items[${index}][item_name]" 
-                class="w-full form-input rounded-lg px-2 py-1" required>
+                class="w-full form-input rounded-lg px-2 py-1">
         </td>
         <td class="p-2">
             <input type="text" placeholder="specification" 
@@ -776,7 +771,7 @@
         <td class="p-2">
             <input type="text" placeholder="5 / 0,5" 
                 name="items[${index}][qty]" 
-                class="qty w-full form-input rounded-lg px-2 py-1" required>
+                class="qty w-full form-input rounded-lg px-2 py-1">
         </td>
         <td class="p-2">
             <select name="items[${index}][uom]" 
@@ -787,7 +782,7 @@
         <td class="p-2">
             <input type="text" placeholder="0" 
                 name="items[${index}][price]" 
-                class="price w-full form-input rounded-lg px-2 py-1" required>
+                class="price w-full form-input rounded-lg px-2 py-1">
         </td>
         <td class="p-2">
             <input type="text" 
@@ -817,13 +812,13 @@
         <td class="p-2">
             <input type="text" placeholder="Item Name" 
                 name="items[${index}][item_name]" 
-                class="w-full form-input rounded-lg px-2 py-1" required>
+                class="w-full form-input rounded-lg px-2 py-1">
         </td>
         {{-- QTY --}}
         <td class="p-2">
             <input type="text" placeholder="5 / 0.5" 
                 name="items[${index}][qty]" 
-                class="qty w-full form-input rounded-lg px-2 py-1" required>
+                class="qty w-full form-input rounded-lg px-2 py-1">
         </td>
          <td class="p-2">
             <select name="items[${index}][uom]" 
@@ -834,13 +829,13 @@
         {{-- Vendor 1 --}}
         <td class="p-2">
             <select name="items[${index}][vendors][0][vendor_id]" 
-                class="select2-vendor w-full rounded-lg px-2 py-1"required>
+                class="select2-vendor w-full rounded-lg px-2 py-1">
                 <option value="">-- Vendor 1 --</option>
                 ${options}
             </select>
             <input type="text" placeholder="Price" 
                 name="items[${index}][vendors][0][price]" 
-                class="price mt-1 w-full form-input rounded-lg px-2 py-1"required>
+                class="price mt-1 w-full form-input rounded-lg px-2 py-1">
         </td>
         
         {{-- Vendor 2 --}}

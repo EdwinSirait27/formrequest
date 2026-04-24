@@ -604,7 +604,7 @@
                         CA Number
                     </label>
                     <input type="text" id="ca_number" name="ca_number" class="form-input w-full px-4 py-3 rounded-xl"
-                        value="{{ old('ca_number', optional($request)->ca_number) }}" required>
+                        value="{{ old('ca_number', optional($request)->ca_number) }}">
                     @error('ca_number')
                         <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
                             <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -779,7 +779,7 @@
             <input type="text" 
                 name="items[${index}][item_name]" 
                 value="${item?.item_name ?? ''}"
-                class="w-full form-input rounded-lg px-2 py-1" placeholder="item name" required ${isDirector ? 'disabled' : ''}>
+                class="w-full form-input rounded-lg px-2 py-1" placeholder="item name"${isDirector ? 'disabled' : ''}>
                  ${isDirector ? `
         <input type="hidden" 
             name="items[${index}][item_name]" 
@@ -792,7 +792,7 @@
             <input type="text" 
                 name="items[${index}][specification]" 
                 value="${item?.specification ?? ''}"
-                class="w-full form-input rounded-lg px-2 py-1"placeholder="specification" required ${isDirector ? 'disabled' : ''}>
+                class="w-full form-input rounded-lg px-2 py-1"placeholder="specification"${isDirector ? 'disabled' : ''}>
                   ${isDirector ? `
         <input type="hidden" 
             name="items[${index}][specification]" 
@@ -803,7 +803,7 @@
             <input type="text" 
                 name="items[${index}][qty]" 
                 value="${item?.qty ?? ''}"
-                class="qty w-full form-input rounded-lg px-2 py-1" required ${isDirector ? 'disabled' : ''}>
+                class="qty w-full form-input rounded-lg px-2 py-1"${isDirector ? 'disabled' : ''}>
                       ${isDirector ? `
         <input type="hidden" 
             name="items[${index}][qty]" 
@@ -812,7 +812,7 @@
         </td>
         <td class="p-2">
             <select name="items[${index}][uom]" 
-                class="select2-uom w-full form-input rounded-lg px-2 py-1" required ${isDirector ? 'disabled' : ''}>
+                class="select2-uom w-full form-input rounded-lg px-2 py-1"${isDirector ? 'disabled' : ''}>
                 ${uomOptions}
             </select>
              ${isDirector ? `
@@ -825,7 +825,7 @@
             <input type="text" 
                 name="items[${index}][price]" 
                 value="${item?.price ?? ''}"
-                class="price w-full form-input rounded-lg px-2 py-1" placeholder="price "required ${isDirector ? 'disabled' : ''}>
+                class="price w-full form-input rounded-lg px-2 py-1" placeholder="price "${isDirector ? 'disabled' : ''}>
         ${isDirector ? `
         <input type="hidden" 
             name="items[${index}][price]" 
@@ -939,7 +939,7 @@
             <input type="text" 
                 name="items[${index}][item_name]" 
                 value="${item?.item_name ?? ''}"
-                class="w-full form-input rounded-lg px-2 py-1" placeholder="item name" required ${isDirector ? 'disabled' : ''}>
+                class="w-full form-input rounded-lg px-2 py-1" placeholder="item name"${isDirector ? 'disabled' : ''}>
         ${isDirector ? `
         <input type="hidden" 
             name="items[${index}][item_name]" 
@@ -950,7 +950,7 @@
             <input type="text" 
                 name="items[${index}][specification]" 
                 value="${item?.specification ?? ''}"
-                class="w-full form-input rounded-lg px-2 py-1"placeholder="specification" required ${isDirector ? 'disabled' : ''}>
+                class="w-full form-input rounded-lg px-2 py-1"placeholder="specification"${isDirector ? 'disabled' : ''}>
                   ${isDirector ? `
         <input type="hidden" 
             name="items[${index}][specification]" 
@@ -961,7 +961,7 @@
             <input type="text" 
                 name="items[${index}][qty]" 
                 value="${item?.qty ?? ''}"
-                class="qty w-full form-input rounded-lg px-2 py-1" required ${isDirector ? 'disabled' : ''}>
+                class="qty w-full form-input rounded-lg px-2 py-1"${isDirector ? 'disabled' : ''}>
                   ${isDirector ? `
         <input type="hidden" 
             name="items[${index}][qty]" 
@@ -970,7 +970,7 @@
         </td>
         <td class="p-2">
             <select name="items[${index}][uom]" 
-                class="select2-uom w-full form-input rounded-lg px-2 py-1" required ${isDirector ? 'disabled' : ''}>
+                class="select2-uom w-full form-input rounded-lg px-2 py-1"${isDirector ? 'disabled' : ''}>
                 ${uomOptions}
             </select>
                 ${isDirector ? `
@@ -983,7 +983,7 @@
             <input type="text" 
                 name="items[${index}][price]" 
                 value="${item?.price ?? ''}"
-                class="price w-full form-input rounded-lg px-2 py-1" placeholder="price "required ${isDirector ? 'disabled' : ''}>
+                class="price w-full form-input rounded-lg px-2 py-1" placeholder="price"${isDirector ? 'disabled' : ''}>
                     ${isDirector ? `
         <input type="hidden" 
             name="items[${index}][price]" 
@@ -1030,7 +1030,7 @@
             <input type="text" 
                 name="items[${index}][item_name]" 
                 value="${item?.item_name ?? ''}"
-                class="w-full form-input rounded-lg px-2 py-1" placeholder="item name" required ${disabledAttr}>
+                class="w-full form-input rounded-lg px-2 py-1" placeholder="item name"${disabledAttr}>
                    ${isDirector ? `
         <input type="hidden" 
             name="items[${index}][item_name]" 
@@ -1041,7 +1041,7 @@
             <input type="text" 
                 name="items[${index}][qty]" 
                 value="${item?.qty ?? ''}"
-                class="qty w-full form-input rounded-lg px-2 py-1" placeholder="qty"required ${disabledAttr}>
+                class="qty w-full form-input rounded-lg px-2 py-1" placeholder="qty"${disabledAttr}>
                    ${isDirector ? `
         <input type="hidden" 
             name="items[${index}][qty]" 
@@ -1094,7 +1094,7 @@
                 <input type="radio" 
                     name="items[${index}][selected_vendor]" 
                     value="${i}"
-                    ${item?.vendors?.[i]?.is_selected ? 'checked' : ''}required>
+                    ${item?.vendors?.[i]?.is_selected ? 'checked' : ''}>
                 Choose
             </label>
         </div>
@@ -1131,7 +1131,7 @@
             <input type="text" 
                 name="items[${index}][item_name]" 
                 value="${item?.item_name ?? ''}"
-                class="w-full form-input rounded-lg px-2 py-1" placeholder="item name" required ${isDirector ? 'disabled' : ''}>
+                class="w-full form-input rounded-lg px-2 py-1" placeholder="item name"${isDirector ? 'disabled' : ''}>
                  ${isDirector ? `
         <input type="hidden" 
             name="items[${index}][item_name]" 
@@ -1142,7 +1142,7 @@
             <input type="text" 
                 name="items[${index}][specification]" 
                 value="${item?.specification ?? ''}"
-                class="w-full form-input rounded-lg px-2 py-1"placeholder="specification" required ${isDirector ? 'disabled' : ''}>
+                class="w-full form-input rounded-lg px-2 py-1"placeholder="specification"${isDirector ? 'disabled' : ''}>
                     ${isDirector ? `
         <input type="hidden" 
             name="items[${index}][specification]" 
@@ -1153,7 +1153,7 @@
             <input type="text" 
                 name="items[${index}][qty]" 
                 value="${item?.qty ?? ''}"
-                class="qty w-full form-input rounded-lg px-2 py-1" required ${isDirector ? 'disabled' : ''}>
+                class="qty w-full form-input rounded-lg px-2 py-1"${isDirector ? 'disabled' : ''}>
                   ${isDirector ? `
         <input type="hidden" 
             name="items[${index}][qty]" 
@@ -1162,7 +1162,7 @@
         </td>
         <td class="p-2">
             <select name="items[${index}][uom]" 
-                class="select2-uom w-full form-input rounded-lg px-2 py-1" required ${isDirector ? 'disabled' : ''}>
+                class="select2-uom w-full form-input rounded-lg px-2 py-1"${isDirector ? 'disabled' : ''}>
                 ${uomOptions}
             </select>
               ${isDirector ? `
@@ -1175,7 +1175,7 @@
             <input type="text" 
                 name="items[${index}][price]" 
                 value="${item?.price ?? ''}"
-                class="price w-full form-input rounded-lg px-2 py-1" placeholder="price "required ${isDirector ? 'disabled' : ''}>
+                class="price w-full form-input rounded-lg px-2 py-1" placeholder="price "${isDirector ? 'disabled' : ''}>
            ${isDirector ? `
         <input type="hidden" 
             name="items[${index}][price]" 
@@ -1222,7 +1222,7 @@
             <input type="text" 
                 name="items[${index}][item_name]" 
                 value="${item?.item_name ?? ''}"
-                class="w-full form-input rounded-lg px-2 py-1" placeholder="item name" required ${disabledAttr}>
+                class="w-full form-input rounded-lg px-2 py-1" placeholder="item name"${disabledAttr}>
                    ${isDirector ? `
         <input type="hidden" 
             name="items[${index}][item_name]" 
@@ -1233,7 +1233,7 @@
             <input type="text" 
                 name="items[${index}][qty]" 
                 value="${item?.qty ?? ''}"
-                class="qty w-full form-input rounded-lg px-2 py-1" placeholder="qty"required ${disabledAttr}>
+                class="qty w-full form-input rounded-lg px-2 py-1" placeholder="qty"${disabledAttr}>
                    ${isDirector ? `
         <input type="hidden" 
             name="items[${index}][qty]" 
@@ -1286,7 +1286,7 @@
                 <input type="radio" 
                     name="items[${index}][selected_vendor]" 
                     value="${i}"
-                    ${item?.vendors?.[i]?.is_selected ? 'checked' : ''}required>
+                    ${item?.vendors?.[i]?.is_selected ? 'checked' : ''}>
                 Choose
             </label>
         </div>
