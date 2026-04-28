@@ -67,6 +67,7 @@ class Formrequest extends Model
         'notes',
         'notes_fa',
         'notes_dir',
+        'pic_capex_notes',
         'vendor_id',
         'destination',
         'assets',

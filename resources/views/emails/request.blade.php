@@ -342,7 +342,7 @@
                             <td class="iv">{{ $assetsLabel }}</td>
                         </tr>
                     @endif
-                    @if ($formrequest->requesttype->code === 'PAYREQ')
+                    @if ($formrequest->requesttype->code === 'PR')
                     @if(!empty($document_type_name))
                         <tr>
                             <td class="ik">Document Type</td>
@@ -378,6 +378,22 @@
                             </td>
                         </tr>
                     @endif
+                     @if ($formrequest->requesttype->code === 'CAPEX')
+                    @if(!empty($capex_approver))
+                        <tr>
+                           <td class="ik">Approved by PIC CAPEX</td>
+                            <td class="ic">:</td>
+                            <td class="iv">
+                                <span class="badge">
+                                    {{ $capex_approver }}
+                                    @if (!empty($capex_approver_at) && $capex_approver_at !== '-')
+                                        <br><small>{{ $capex_approver_at }}</small>
+                                    @endif
+                                </span>
+                            </td>
+                        </tr>
+                        @endif
+                    @endif
                 </table>
             </div>
 
@@ -388,7 +404,7 @@
                 @isset($formrequest->requesttype)
 
                     {{-- @if ($formrequest->requesttype->code === 'CA') --}}
-                    @if (in_array($formrequest->requesttype->code, ['CA', 'PR','RE']))
+                    @if (in_array($formrequest->requesttype->code, ['CA', 'PAYREQ','RE']))
                         <table class="items">
                             <thead>
                                 <tr>
@@ -434,7 +450,7 @@
                         </table>
                     @endif
 
-                    @if (in_array($formrequest->requesttype->code, ['CAPEX', 'PAYREQ']))
+                    @if (in_array($formrequest->requesttype->code, ['CAPEX', 'PR']))
 
                         <table class="items">
                             <thead>
@@ -500,7 +516,7 @@
 
         <!-- ══ FOOTER ══ -->
         <div class="footer">
-            &copy; {{ date('Y') }} PT Asian Bay Development &nbsp;&middot;&nbsp; Created by Edwin Sirait
+            &copy; {{ date('Y') }} Form Request &nbsp;&middot;&nbsp; PT Asian Bay Development &nbsp;&middot;&nbsp; Created by Edwin Sirait
         </div>
 
     </div>

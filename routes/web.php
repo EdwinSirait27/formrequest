@@ -14,7 +14,7 @@ Route::middleware('throttle:15,1', 'guest')->group(function () {
     Route::get('/', [AuthController::class, 'loginPage'])->name('login')->middleware('guest');
     Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 });
-Route::middleware(['throttle:20,1','auth','role:admin|finance|manager|director|user'])->group(function () {
+Route::middleware(['auth','role:admin|finance|manager|director|user'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'dashboardPage'])->name('dashboard');
     Route::get('/profile', [ProfileController::class, 'profile'])->name('profile');
     Route::post('/savesign', [AuthController::class, 'save'])->name('save.signature');
@@ -34,7 +34,7 @@ Route::middleware(['throttle:20,1','auth','role:admin|finance|manager|director|u
     Route::put('/updaterequest/{hash}', [RequestController::class, 'update'])->name('updaterequest');
     Route::post('/storerequest', [RequestController::class, 'store'])->name('storerequest');
 });
-Route::middleware(['throttle:20,1','auth', 'role:admin|finance'])->group(function () {
+Route::middleware(['auth', 'role:admin|finance'])->group(function () {
     Route::get('/vendor', [VendorController::class, 'index'])->name('vendor');
     Route::get('/createvendor', [VendorController::class, 'create'])->name('createvendor');
     Route::get('/vendors/data', [VendorController::class, 'getVendors'])
@@ -45,7 +45,7 @@ Route::middleware(['throttle:20,1','auth', 'role:admin|finance'])->group(functio
     Route::post('/storevendor', [VendorController::class, 'store'])->name('storevendor');
     // Request Type
 });
-Route::middleware(['throttle:20,1','auth', 'role:admin'])->group(function () {
+Route::middleware(['auth', 'role:admin'])->group(function () {
     // users
     Route::get('/users', [UserController::class, 'users'])->name('users');
     Route::match(['GET', 'POST'], '/users/users', [UserController::class, 'getUsers'])->name('users.users');

@@ -923,6 +923,14 @@
             margin-bottom: 10px;
         }
 
+        .fa-box3 {
+            border: 1px solid #bbb;
+            padding: 5px 7px;
+            min-height: 42px;
+            font-size: 8.5px;
+            margin-bottom: 10px;
+        }
+
         /* ── FOOTER ── */
         .footer-note {
             border-top: 0.75px solid #ccc;
@@ -1075,19 +1083,19 @@
                             <td class="col">:</td>
                             <td class="val">{{ $request->vendor->bank_name ?? 'Need Approval' }}</td>
                         </tr>
-                         @isset($request->requesttype)
+                        @isset($request->requesttype)
                             @if ($request->requesttype->code === 'CAPEX')
-                        <tr>
-                            <td class="lbl">Capex Type</td>
-                            <td class="col">:</td>
-                            <td class="val">{{ $request->capextype->code ?? 'Need Approval' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="lbl">Assets</td>
-                            <td class="col">:</td>
-                            <td class="val">{{ $request->assets ?? 'Need Approval' }}</td>
-                        </tr>
-                           @endif
+                                <tr>
+                                    <td class="lbl">Capex Type</td>
+                                    <td class="col">:</td>
+                                    <td class="val">{{ $request->capextype->code ?? 'Need Approval' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="lbl">Assets</td>
+                                    <td class="col">:</td>
+                                    <td class="val">{{ $request->assets ?? 'Need Approval' }}</td>
+                                </tr>
+                            @endif
                         @endisset
                         @isset($request->requesttype)
                             @if ($request->requesttype->code === 'CA')
@@ -1095,6 +1103,20 @@
                                     <td class="lbl">CA No.</td>
                                     <td class="col">:</td>
                                     <td class="val">{{ $request->ca_number }}</td>
+                                </tr>
+                            @endif
+                        @endisset
+                        @isset($request->requesttype)
+                            @if ($request->requesttype->code === 'PR')
+                                <tr>
+                                    <td class="lbl">Payment Type</td>
+                                    <td class="col">:</td>
+                                    <td class="val">{{ $request->payment_type_payreq }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="lbl">Document Type</td>
+                                    <td class="col">:</td>
+                                    <td class="val">{{ $request->documenttype->document_type_name }}</td>
                                 </tr>
                             @endif
                         @endisset
@@ -1146,7 +1168,108 @@
                     </tfoot>
                 </table>
             @endif
+            @if ($request->requesttype->code === 'PAYREQ')
+                <table class="items-table">
+                    <colgroup>
+                        <col style="width:25px;">
+                        <col style="width:auto;">
+                        <col style="width:auto;">
+                        <col style="width:60px;">
+                        <col style="width:50px;">
+                        <col style="width:90px;">
+                        <col style="width:100px;">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th class="col-no">No.</th>
+                            <th>Items</th>
+                            <th>Specification</th>
+                            <th>Qty</th>
+                            <th>UOM</th>
+                            <th>Unit Price</th>
+                            <th>Total Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($request->items as $i => $item)
+                            <tr>
+                                <td class="col-no center">{{ $i + 1 }}</td>
+                                <td class="center">{{ $item->item_name }}</td>
+                                <td class="center">{{ $item->specification }}</td>
+                                <td class="center">{{ number_format($item->qty, 2, ',', '.') }}</td>
+                                <td class="center">{{ $item->uom }}</td>
+                                <td class="center">Rp {{ number_format($item->price, 2, ',', '.') }}</td>
+                                <td class="center">Rp {{ number_format($item->total_price, 2, ',', '.') }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="6" class="center" style="letter-spacing:1px;">GRAND TOTAL</td>
+                            <td class="right">Rp {{ number_format($total, 2, ',', '.') }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            @endif
             @if ($request->requesttype->code === 'CAPEX')
+                <table class="items-table">
+                    <colgroup>
+                        <col style="width:25px;">
+                        <col style="width:auto;">
+                        <col style="width:60px;">
+                        <col style="width:50px;">
+                        <col style="width:90px;">
+                        <col style="width:90px;">
+                        <col style="width:90px;">
+                        <col style="width:100px;">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th class="col-no">No.</th>
+                            <th>Items</th>
+                            <th>Qty</th>
+                            <th>UOM</th>
+                            <th>Vendor I</th>
+                            <th>Vendor II</th>
+                            <th>Vendor III</th>
+                            <th>Total Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($request->items as $i => $item)
+                            @php $vendors = $capexVendors[$item->id] ?? collect(); @endphp
+                            <tr>
+                                <td class="col-no center">{{ $i + 1 }}</td>
+                                <td class="center">{{ $item->item_name }}</td>
+                                <td class="center">{{ number_format($item->qty, 2, ',', '.') }}</td>
+                                <td class="center">{{ $item->uom }}</td>
+
+                                @for ($v = 0; $v < 3; $v++)
+                                    <td class="center">
+                                        @if (isset($vendors[$v]))
+                                            Rp {{ number_format($vendors[$v]['price'], 2, ',', '.') }}<br>
+                                            <small
+                                                @if ($vendors[$v]['is_selected']) style="color: #1a7f3c; font-weight: bold;" @endif>
+                                                {{ $vendors[$v]['vendor_name'] }}
+                                            </small>
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
+                                @endfor
+                                <td class="center">Rp {{ number_format($item->total_price, 2, ',', '.') }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="7" class="center" style="letter-spacing:1px;">GRAND TOTAL</td>
+                            <td class="right">Rp {{ number_format($total, 2, ',', '.') }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            @endif
+            @if ($request->requesttype->code === 'PR')
                 <table class="items-table">
                     <colgroup>
                         <col style="width:25px;">
@@ -1265,7 +1388,7 @@
                     </tr>
                 </table>
             @endif
-            @if ($request->requesttype->code === 'CAPEX')
+            {{-- @if ($request->requesttype->code === 'CAPEX')
                 <table class="approval-table">
                     <tr>
                         <td class="ap-head">Request by</td>
@@ -1307,14 +1430,72 @@
                         <td class="ap-pos"></td>
                     </tr>
                 </table>
+            @endif --}}
+            @if ($request->requesttype->code === 'CAPEX')
+<table class="approval-table">
+    <tr>
+        <td class="ap-head">Request by</td>
+        <td class="ap-head">Approver I</td>
+        <td class="ap-head">Approver II</td>
+        <td class="ap-head">Approver III</td>
+    </tr>
+    <tr>
+        <td class="ap-sign">
+            @if ($signatureBase64)
+                <img src="{{ $signatureBase64 }}" style="max-height:54px; max-width:88%;">
             @endif
+        </td>
+        <td class="ap-sign">
+            @if ($managerSignatureBase64)
+                <img src="{{ $managerSignatureBase64 }}" style="max-height:54px; max-width:88%;">
+            @endif
+        </td>
+        {{-- Approver II → PIC CAPEX --}}
+        <td class="ap-sign">
+            @if ($picCapexSignatureBase64)
+                <img src="{{ $picCapexSignatureBase64 }}" style="max-height:54px; max-width:88%;">
+            @endif
+        </td>
+        {{-- Approver III → Director --}}
+        <td class="ap-sign">
+            @if ($signatories['approver2']['signature'])
+                <img src="{{ $signatories['approver2']['signature'] }}" style="max-height:54px; max-width:88%;">
+            @endif
+        </td>
+    </tr>
+    <tr>
+        <td class="ap-name">{{ optional($request->user->employee)->employee_name }}</td>
+        <td class="ap-name">{{ $managerName ?? 'Manager Applicant / Department' }}</td>
+        {{-- Approver II → PIC CAPEX --}}
+        <td class="ap-name">{{ $picCapexName ?? 'PIC CAPEX' }}</td>
+        {{-- Approver III → Director --}}
+        <td class="ap-name">{{ $signatories['approver2']['name'] ?? 'Manager FAT / Head of FAT' }}</td>
+    </tr>
+    <tr>
+        <td class="ap-pos">{{ optional($request->user->employee->position)->name }}</td>
+        <td class="ap-pos">{{ $positionName ?? 'Manager Department' }}</td>
+        {{-- Approver II → PIC CAPEX --}}
+        <td class="ap-pos">{{ 'PIC CAPEX' }}</td>
+        {{-- Approver III → Director --}}
+        <td class="ap-pos">{{ $signatories['approver2']['position'] ?? 'Manager FAT / Head of FAT' }}</td>
+    </tr>
+</table>
+@endif
         @endisset
         <br>
         <div class="fa-box">
             <span class="notes-lbl">FAT Notes : {{ $request->notes_fa }}</span>
         </div>
-        <div class="fa-box2">
-            <span class="notes-lbl2">Diretor Notes : {{ $request->notes_fa }}</span>
+        @isset($request->requesttype)
+            @if ($request->requesttype->code === 'CAPEX')
+                <div class="fa-box2">
+                    <span class="notes-lbl2">PIC CAPEX Notes : {{ $request->pic_capex_notes }}</span>
+                </div>
+            @endif
+        @endisset
+
+        <div class="fa-box3">
+            <span class="notes-lbl2">Diretor Notes : {{ $request->notes_dir }}</span>
         </div>
         @if ($request->links && $request->links->count())
             <div style="margin-top:10px;">

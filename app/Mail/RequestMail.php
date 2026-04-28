@@ -60,9 +60,13 @@ $document_type_name = $formrequest->documenttype?->document_type_name ?? null;
 $payment_type_payreq = $formrequest->payment_type_payreq;
 
 $approver1 = $approval?->approver1User?->employee?->employee_name ?? 'Not Approved yet';
+$capex_approver = $approval?->capexApprover?->employee?->employee_name ?? 'Not Approved yet';
 
 $approver1_at = $approval?->approver1_at 
     ? Carbon::parse($approval->approver1_at)->format('d M Y H:i:s') 
+    : '-';
+$capex_approver_at = $approval?->capex_approver_at 
+    ? Carbon::parse($approval->capex_approver_at)->format('d M Y H:i:s') 
     : '-';
         $assetsOptions = Formrequest::getAssetOptions();
         return new Content(
@@ -74,6 +78,8 @@ $approver1_at = $approval?->approver1_at
                 'deadline'    => Carbon::parse($this->formrequest->deadline)->format('d M Y'),
               'approver1' => $approver1,
 'approver1_at' => $approver1_at,
+              'capex_approver' => $capex_approver,
+'capex_approver_at' => $capex_approver_at,
                 'capexpayreqVendors' => $capexpayreqVendors,
                 'document_type_name' => $document_type_name,
                 'payment_type_payreq' => $payment_type_payreq,

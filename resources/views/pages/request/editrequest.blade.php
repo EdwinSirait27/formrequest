@@ -368,7 +368,7 @@
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label for="request_date" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
+                    {{-- <label for="request_date" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
                         <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
                             viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -379,6 +379,30 @@
                     <input type="date" id="request_date" name="request_date"
                         class="form-input w-full px-4 py-3 rounded-xl"
                         value="{{ old('request_date', optional($request->request_date)->format('Y-m-d')) }}" required{{ $isDirector ? 'disabled' : '' }}>
+                         @if($isDirector)
+    <input type="hidden" name="request_date"
+        value="{{ old('request_date', $request->request_date) }}">
+@endif
+                    @error('request_date')
+                        <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                            {{ $message }}
+                        </p>
+                    @enderror --}}
+                     <label for="request_date" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
+                        <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                        </svg>
+                        Request Date
+                    </label>
+                    <input type="date" id="request_date" name="request_date" class="form-input w-full px-4 py-3 rounded-xl"
+                        value="{{ old('request_date', optional($request->request_date)->format('Y-m-d')) }}" required {{ $isDirector ? 'disabled' : '' }}>
                          @if($isDirector)
     <input type="hidden" name="request_date"
         value="{{ old('request_date', $request->request_date) }}">
@@ -427,10 +451,16 @@
                 </h3>
                 <div class="overflow-x-auto" id="table-container">
                 </div>
-                <button type="button" id="add-row"
+                {{-- <button type="button" id="add-row"
                     class="mt-3 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm">
                     + Add Item
-                </button>
+                </button> --}}
+                @if (!$isDirector)
+    <button type="button" id="add-row"
+        class="mt-3 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm">
+        + Add Item
+    </button>
+@endif
             </div>
            
             <div>
@@ -537,6 +567,34 @@
                     </p>
                 @enderror
             </div>
+                         {{-- @if($ispic) --}}
+                               @if (!empty($request->pic_capex_notes))
+
+
+            <div>
+                <label for="pic_capex_notes" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
+                    <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    PIC CAPEX
+                </label>
+                <textarea id="pic_capex_notes" name="pic_capex_notes" class="form-input w-full px-4 py-3 rounded-xl"
+                    placeholder="notes from PIC CAPEX" rows="4"{{ $isDirector ? 'disabled' : '' }}>{{ old('pic_capex_notes', $request->pic_capex_notes) }}</textarea>
+                     
+                @error('pic_capex_notes')
+                    <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        {{ $message }}
+                    </p>
+                @enderror
+            </div>
+            @endif
                          @if($isDirector)
 
             <div>
@@ -1283,10 +1341,12 @@
         <!-- Kanan: radio -->
         <div class="flex items-center mt-1">
             <label class="flex items-center gap-1 text-xs text-slate-400 whitespace-nowrap">
+              
                 <input type="radio" 
-                    name="items[${index}][selected_vendor]" 
-                    value="${i}"
-                    ${item?.vendors?.[i]?.is_selected ? 'checked' : ''}>
+    name="items[${index}][selected_vendor]" 
+    value="${i}"
+    ${item?.vendors?.[i]?.is_selected ? 'checked' : ''}
+    ${isDirector ? 'required' : ''}>
                 Choose
             </label>
         </div>

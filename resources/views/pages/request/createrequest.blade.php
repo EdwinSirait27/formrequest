@@ -641,15 +641,17 @@
         {{-- Item Name --}}
         <td class="p-2">
             <input type="text" placeholder="Item Name" 
-                name="items[${index}][item_name]" 
+                name="items[${index}][item_name]" required
                 class="w-full form-input rounded-lg px-2 py-1">
         </td>
         {{-- QTY --}}
+      
         <td class="p-2">
-            <input type="text" placeholder="5 / 0.5" 
-                name="items[${index}][qty]" 
-                class="qty w-full form-input rounded-lg px-2 py-1">
-        </td>
+    <input type="text" placeholder="5 / 0.5" 
+        name="items[${index}][qty]" 
+        required
+        class="qty w-full form-input rounded-lg px-2 py-1">
+</td>
          <td class="p-2">
             <select name="items[${index}][uom]" 
                 class="select2-uom w-full form-input rounded-lg px-2 py-1">
@@ -1147,3 +1149,8 @@
         });
     </script>
 @endsection
+  {{-- // <td class="p-2">
+        //     <input type="text" placeholder="5 / 0.5" 
+        //         name="items[${index}][qty]" 
+        //         class="qty w-full form-input rounded-lg px-2 py-1">
+        // </td> --}}
