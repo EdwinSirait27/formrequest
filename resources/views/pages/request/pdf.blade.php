@@ -1057,7 +1057,7 @@
                         <tr>
                             <td class="lbl">From</td>
                             <td class="col">:</td>
-                            <td class="val">{{ $request->requestcompany }}</td>
+                            <td class="val">{{ $requestcompany }}</td>
                         </tr>
                     </table>
                 </td>
