@@ -1057,7 +1057,7 @@
                         <tr>
                             <td class="lbl">From</td>
                             <td class="col">:</td>
-                            <td class="val">{{ $request->addressed_to }}</td>
+                            <td class="val">{{ $request->requestcompany }}</td>
                         </tr>
                     </table>
                 </td>
@@ -1346,6 +1346,135 @@
         </table>
         @isset($request->requesttype)
             @if ($request->requesttype->code === 'CA')
+                <table class="approval-table">
+                    <tr>
+                        <td class="ap-head">Request by</td>
+                        <td class="ap-head">Approver I</td>
+                        <td class="ap-head">Approver II</td>
+                        <td class="ap-head">Approver III</td>
+                    </tr>
+                    <tr>
+                        <td class="ap-sign">
+                            @if ($signatureBase64)
+                                <img src="{{ $signatureBase64 }}" style="max-height:54px; max-width:88%;">
+                            @endif
+                        </td>
+                        <td class="ap-sign">
+                            @if ($managerSignatureBase64)
+                                <img src="{{ $managerSignatureBase64 }}" style="max-height:54px; max-width:88%;">
+                            @endif
+                        </td>
+                        <td class="ap-sign">
+                            @if ($signatories['approver2']['signature'])
+                                <img src="{{ $signatories['approver2']['signature'] }}"
+                                    style="max-height:54px; max-width:88%;"><br>
+                            @endif
+                        </td>
+                        <td class="ap-sign"></td>
+                    </tr>
+                    <tr>
+                        <td class="ap-name">{{ optional($request->user->employee)->employee_name }}</td>
+                        <td class="ap-name">{{ $managerName ?? 'Manager Applicant / Department' }}</td>
+                        <td class="ap-name">{{ $signatories['approver2']['name'] ?? 'Manager FAT / Head of FAT' }}
+                        </td>
+                        <td class="ap-name">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="ap-pos">{{ optional($request->user->employee->position)->name }}</td>
+                        <td class="ap-pos">{{ $positionName ?? 'Manager Department' }}</td>
+                        <td class="ap-pos">{{ $signatories['approver2']['position'] ?? 'Manager FAT / Head of FAT' }}</td>
+                        <td class="ap-pos"></td>
+                    </tr>
+                </table>
+            @endif
+            @if ($request->requesttype->code === 'PR')
+                <table class="approval-table">
+                    <tr>
+                        <td class="ap-head">Request by</td>
+                        <td class="ap-head">Approver I</td>
+                        <td class="ap-head">Approver II</td>
+                        <td class="ap-head">Approver III</td>
+                    </tr>
+                    <tr>
+                        <td class="ap-sign">
+                            @if ($signatureBase64)
+                                <img src="{{ $signatureBase64 }}" style="max-height:54px; max-width:88%;">
+                            @endif
+                        </td>
+                        <td class="ap-sign">
+                            @if ($managerSignatureBase64)
+                                <img src="{{ $managerSignatureBase64 }}" style="max-height:54px; max-width:88%;">
+                            @endif
+                        </td>
+                        <td class="ap-sign">
+                            @if ($signatories['approver2']['signature'])
+                                <img src="{{ $signatories['approver2']['signature'] }}"
+                                    style="max-height:54px; max-width:88%;"><br>
+                            @endif
+                        </td>
+                        <td class="ap-sign"></td>
+                    </tr>
+                    <tr>
+                        <td class="ap-name">{{ optional($request->user->employee)->employee_name }}</td>
+                        <td class="ap-name">{{ $managerName ?? 'Manager Applicant / Department' }}</td>
+                        <td class="ap-name">{{ $signatories['approver2']['name'] ?? 'Manager FAT / Head of FAT' }}
+                        </td>
+                        <td class="ap-name">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="ap-pos">{{ optional($request->user->employee->position)->name }}</td>
+                        <td class="ap-pos">{{ $positionName ?? 'Manager Department' }}</td>
+                        <td class="ap-pos">{{ $signatories['approver2']['position'] ?? 'Manager FAT / Head of FAT' }}</td>
+                        <td class="ap-pos"></td>
+                    </tr>
+                </table>
+            @endif
+            @if ($request->requesttype->code === 'PAYREQ')
+                <table class="approval-table">
+                    <tr>
+                        <td class="ap-head">Request by</td>
+                        <td class="ap-head">Approver I</td>
+                        <td class="ap-head">Approver II</td>
+                        <td class="ap-head">Approver III</td>
+                    </tr>
+                    <tr>
+                        <td class="ap-sign">
+                            @if ($signatureBase64)
+                                <img src="{{ $signatureBase64 }}" style="max-height:54px; max-width:88%;">
+                            @endif
+                        </td>
+                        <td class="ap-sign">
+                            @if ($managerSignatureBase64)
+                                <img src="{{ $managerSignatureBase64 }}" style="max-height:54px; max-width:88%;">
+                            @endif
+                        </td>
+                        <td class="ap-sign">
+                            @if ($signatories['approver2']['signature'])
+                                <img src="{{ $signatories['approver2']['signature'] }}"
+                                    style="max-height:54px; max-width:88%;"><br>
+                            @endif
+                        </td>
+                        <td class="ap-sign"></td>
+                    </tr>
+                    <tr>
+                        <td class="ap-name">{{ optional($request->user->employee)->employee_name }}</td>
+                        <td class="ap-name">{{ $managerName ?? 'Manager Applicant / Department' }}</td>
+                        <td class="ap-name">{{ $signatories['approver2']['name'] ?? 'Manager FAT / Head of FAT' }}
+                        </td>
+                        <td class="ap-name">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="ap-pos">{{ optional($request->user->employee->position)->name }}</td>
+                        <td class="ap-pos">{{ $positionName ?? 'Manager Department' }}</td>
+                        <td class="ap-pos">{{ $signatories['approver2']['position'] ?? 'Manager FAT / Head of FAT' }}</td>
+                        <td class="ap-pos"></td>
+                    </tr>
+                </table>
+            @endif
+            @if ($request->requesttype->code === 'RE')
                 <table class="approval-table">
                     <tr>
                         <td class="ap-head">Request by</td>

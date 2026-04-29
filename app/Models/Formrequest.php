@@ -70,6 +70,7 @@ class Formrequest extends Model
         'pic_capex_notes',
         'vendor_id',
         'destination',
+        'transfer',
         'assets',
         'document_type_id',
         'payment_method',

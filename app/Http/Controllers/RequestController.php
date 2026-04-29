@@ -1489,6 +1489,7 @@ elseif ($user->hasRole('manager')) {
         });
 
         $employee    = $request->user?->employee;
+        $requestcompany    = $request->request;
         $companymail = $employee->company_email;
         $requestDate = $request->request_date
             ->timezone('Asia/Makassar')
@@ -1620,6 +1621,7 @@ if ($picEmployee) {
         // ── Render PDF ───────────────────────────────────────────────
         $viewData = [
             'request'                => $request,
+            'requestcompany'                => $requestcompany,
             'companymail'                => $companymail,
             'logoBase64'             => $logoBase64,
             'signatureBase64'        => $signatureBase64,
@@ -1806,7 +1808,7 @@ $isPayreq    = $requestType?->code === 'PAYREQ';
                 'user_id'         => Auth::id(),
                 'request_date'    => $validated['request_date'],
                 'company_id'      => $validated['company_id'] ?? null,
-                'addressed_to'    => $companyName,
+                'transfer'    => $companyName,
                 'document_type_id' => $validated['document_type_id'] ?? null,
                 'payment_type_payreq' => $validated['payment_type_payreq'] ?? null,
                 'transfer'        => $companyName,
@@ -2217,7 +2219,7 @@ if (!empty($validated['company_id'])) {
             'ca_number'           => $validated['ca_number'] ?? null,
             'notes'               => $validated['notes'] ?? null,
             'notes_fa'            => $validated['notes_fa'] ?? null,
-            'addressed_to'        => $companyName,
+            'transfer'        => $companyName,
             'notes_dir'           => $validated['notes_dir'] ?? null, // ✅ fix
             'pic_capex_notes'           => $validated['pic_capex_notes'] ?? null, // ✅ fix
             'destination'         => $validated['destination'] ?? null,
