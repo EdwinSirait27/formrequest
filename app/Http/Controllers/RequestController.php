@@ -2046,33 +2046,7 @@ private function sendToPositionEmployees($formrequest): void
                 ]);
             }
 
-            // foreach ($validated['items'] ?? [] as $index => $item) {
-            //     $selectedVendorIndex = isset($item['selected_vendor']) ? (int) $item['selected_vendor'] : null;
-            //     $requestItem         = $formrequest->items->get($index);
-
-            //     if (!$requestItem) continue;
-
-            //     if (!empty($item['vendors'])) {
-            //         foreach ($item['vendors'] as $vIdx => $vendorData) {
-            //             ItemVendorQuotation::where('request_item_id', $requestItem->id)
-            //                 ->where('vendor_id', $vendorData['vendor_id'])
-            //                 ->update([
-            //                     'is_selected' => ($selectedVendorIndex !== null && $vIdx == $selectedVendorIndex),
-            //                 ]);
-            //         }
-            //     }
-
-            //     if ($selectedVendorIndex !== null && isset($item['vendors'][$selectedVendorIndex])) {
-            //         $selectedPrice = $parsePrice($item['vendors'][$selectedVendorIndex]['price'] ?? '0');
-            //         $qty           = $requestItem->qty;
-
-            //         $requestItem->update([
-            //             'selected_vendor' => $selectedVendorIndex,
-            //             'price'           => $selectedPrice,
-            //             'total_price'     => round($qty * $selectedPrice, 2),
-            //         ]);
-            //     }
-            // }
+            
             foreach ($validated['items'] ?? [] as $index => $item) {
     $selectedVendorIndex = isset($item['selected_vendor']) ? (int) $item['selected_vendor'] : null;
     $requestItem         = $formrequest->items->get($index);
@@ -2211,7 +2185,13 @@ private function sendToPositionEmployees($formrequest): void
         }
         return $parseQty($item['qty']) * $parsePrice($item['price'] ?? '0');
     });
+$companyName = null;
 
+if (!empty($validated['company_id'])) {
+    $companyName = Company::on('hrx')
+        ->where('id', $validated['company_id'])
+        ->value('name');
+}
     // ============================================================
     // 7. UPDATE DATABASE
     // ============================================================
@@ -2226,6 +2206,7 @@ private function sendToPositionEmployees($formrequest): void
             'ca_number'           => $validated['ca_number'] ?? null,
             'notes'               => $validated['notes'] ?? null,
             'notes_fa'            => $validated['notes_fa'] ?? null,
+            'addressed_to'        => $companyName,
             'notes_dir'           => $validated['notes_dir'] ?? null, // ✅ fix
             'pic_capex_notes'           => $validated['pic_capex_notes'] ?? null, // ✅ fix
             'destination'         => $validated['destination'] ?? null,
