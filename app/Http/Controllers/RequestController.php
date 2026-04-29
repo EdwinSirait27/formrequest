@@ -1489,7 +1489,7 @@ elseif ($user->hasRole('manager')) {
         });
 
         $employee    = $request->user?->employee;
-        $requestcompany    = $request->request;
+        $requestcompany    = $request->transfer;
         $companymail = $employee->company_email;
         $requestDate = $request->request_date
             ->timezone('Asia/Makassar')
