@@ -1736,9 +1736,12 @@ if ($picEmployee) {
         $typesNeedMultiVendorPR = [
             '019d3986-b0e4-706c-a809-08564111507b',
         ];
+        $requestType = Requesttype::find($request->request_type_id);
+$isPayreq    = $requestType?->code === 'PAYREQ';
         $isMultiVendorCapex = in_array($request->request_type_id, $typesNeedMultiVendorCapex);
         $isMultiVendorPR    = in_array($request->request_type_id, $typesNeedMultiVendorPR);
         $isMultivendor      = $isMultiVendorCapex || $isMultiVendorPR;
+        
         $validated = $request->validate([
             'request_type_id' => ['required', 'exists:request_type,id'],
             'company_id'      => ['nullable', 'exists:hrx.company_tables,id'],
@@ -1750,8 +1753,9 @@ if ($picEmployee) {
             'title'           => ['required', 'string', 'max:255'],
             'notes'           => ['nullable', 'string'],
             'capex_type_id' => [$isMultiVendorCapex ? 'required' : 'nullable'],
-            'document_type_id' => [$isMultiVendorPR ? 'required' : 'nullable'],
-            'payment_type_payreq' => [$isMultiVendorPR ? 'required' : 'nullable'],
+            // ✅ required hanya untuk PAYREQ, bukan PR
+'document_type_id'    => [$isPayreq ? 'required' : 'nullable'],
+'payment_type_payreq' => [$isPayreq ? 'required' : 'nullable'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.item_name' => ['required', 'string'],
             'items.*.specification' => ['nullable', 'string'],
@@ -2103,6 +2107,8 @@ private function sendToPositionEmployees($formrequest): void
     $requestType   = RequestType::find($request->input('request_type_id') ?? $formrequest->request_type_id);
     $isCAPEX       = $requestType?->code === 'CAPEX';
     $isPR          = $requestType?->code === 'PR';
+    $isPayreq      = $requestType?->code === 'PAYREQ'; // ✅ tambah
+
     $isMultiVendor = $isCAPEX || $isPR;
 
     // ============================================================
@@ -2127,12 +2133,17 @@ private function sendToPositionEmployees($formrequest): void
 
         'capex_type_id' => [$isCAPEX ? 'required' : 'nullable'],
 
-        'document_type_id' => [$isPR ? 'required' : 'nullable'],
+        // 'document_type_id' => [$isPR ? 'required' : 'nullable'],
 
-        'payment_type_payreq' => $isPR
-            ? ['required', Rule::in(Formrequest::getPROptions())]
-            : ['nullable', Rule::in(Formrequest::getPROptions())],
+        // 'payment_type_payreq' => $isPR
+        //     ? ['required', Rule::in(Formrequest::getPROptions())]
+        //     : ['nullable', Rule::in(Formrequest::getPROptions())],
+// ✅ required hanya untuk PAYREQ
+'document_type_id'    => [$isPayreq ? 'required' : 'nullable'],
 
+'payment_type_payreq' => $isPayreq
+    ? ['required', Rule::in(Formrequest::getPROptions())]
+    : ['nullable', Rule::in(Formrequest::getPROptions())],
         'ca_number' => [
             Rule::requiredIf(auth()->user()->hasRole('finance') && $request->isMethod('put')),
             'nullable',
@@ -2216,9 +2227,13 @@ if (!empty($validated['company_id'])) {
             'document_type_id'    => $isPR
                 ? $validated['document_type_id']
                 : ($validated['document_type_id'] ?? $formrequest->document_type_id),
-            'payment_type_payreq' => $isPR
-                ? $validated['payment_type_payreq']
-                : ($validated['payment_type_payreq'] ?? $formrequest->payment_type_payreq),
+            'document_type_id'    => $isPayreq
+    ? $validated['document_type_id']
+    : ($validated['document_type_id'] ?? $formrequest->document_type_id),
+
+'payment_type_payreq' => $isPayreq
+    ? $validated['payment_type_payreq']
+    : ($validated['payment_type_payreq'] ?? $formrequest->payment_type_payreq),
             'capex_type_id'       => $isCAPEX
                 ? $validated['capex_type_id']
                 : ($validated['capex_type_id'] ?? $formrequest->capex_type_id),
