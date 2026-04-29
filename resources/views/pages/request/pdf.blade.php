@@ -1057,7 +1057,7 @@
                         <tr>
                             <td class="lbl">From</td>
                             <td class="col">:</td>
-                            <td class="val">{{ $request->transfer }}</td>
+                            <td class="val">{{ $request->addressed_to }}</td>
                         </tr>
                     </table>
                 </td>

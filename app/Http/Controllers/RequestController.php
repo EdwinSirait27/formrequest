@@ -1802,7 +1802,7 @@ if ($picEmployee) {
                 'user_id'         => Auth::id(),
                 'request_date'    => $validated['request_date'],
                 'company_id'      => $validated['company_id'] ?? null,
-                'addressed_to'    => $validated['addressed_to'] ?? null,
+                'addressed_to'    => $companyName,
                 'document_type_id' => $validated['document_type_id'] ?? null,
                 'payment_type_payreq' => $validated['payment_type_payreq'] ?? null,
                 'transfer'        => $companyName,
