@@ -1071,7 +1071,7 @@
         });
         document.addEventListener('DOMContentLoaded', function() {
             const paymenttyperequestWrapper = document.getElementById('payment_type_payreq_wrapper');
-            const hidePaymenttyperequests = ['CA', 'CAPEX', 'PAYREQ', 'RE'];
+            const hidePaymenttyperequests = ['CA', 'CAPEX', 'PR', 'RE'];
 
             function togglePaymenttyperequests() {
                 const selected = $('#request_type_id').find(':selected');
@@ -1089,7 +1089,7 @@
         });
         document.addEventListener('DOMContentLoaded', function() {
             const documenttypeWrapper = document.getElementById('document_type_wrapper');
-            const hideDocumenttypes = ['CA', 'CAPEX', 'PAYREQ', 'RE'];
+            const hideDocumenttypes = ['CA', 'CAPEX', 'PR', 'RE'];
 
             function toggleDocumenttypes() {
                 const selected = $('#request_type_id').find(':selected');
