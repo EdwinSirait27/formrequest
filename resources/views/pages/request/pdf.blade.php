@@ -1107,7 +1107,7 @@
                             @endif
                         @endisset
                         @isset($request->requesttype)
-                            @if ($request->requesttype->code === 'PAYRREQ')
+                            @if ($request->requesttype->code === 'PAYREQ')
                                 <tr>
                                     <td class="lbl">Payment Type</td>
                                     <td class="col">:</td>
