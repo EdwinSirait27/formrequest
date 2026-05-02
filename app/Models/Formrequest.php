@@ -100,13 +100,15 @@ class Formrequest extends Model
         'Machine & Equipment' => 'Machine & Equipment'
     ];
 }
-    public static function getPROptions()
+    public static function getPAYREQOptions()
+    // public static function getPROptions()
 {
     return [
         'Monthly' => 'Monthly',
         'Quarterly' => 'Quarterly',
         'Semiannual' => 'Semiannual',
-        'Annually' => 'Annually'
+        'Annually' => 'Annually',
+        'On Demand' => 'On Demand'
     ];
 }
  public function setTitleAttribute($value)

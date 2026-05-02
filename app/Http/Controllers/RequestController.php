@@ -491,7 +491,7 @@ $lockRules = [
         ->select('id', 'user_id', 'code')
         ->get();
     $documenttypes = Documenttype::select('id', 'document_type_name')->get();
-    $paymenttypeprs = Formrequest::getPROptions();
+    $paymenttypeprs = Formrequest::getPRAYREQptions();
 
     $userCompanyName = optional($user->employee->company)->name;
     $userCompanyId   = optional($user->employee)->company_id;
@@ -930,7 +930,7 @@ elseif ($user->hasRole('manager')) {
             ->select('id', 'user_id', 'code')
             ->get();
         $documenttypes = Documenttype::select('id', 'document_type_name')->get();
-        $paymenttypeprs = Formrequest::getPROptions();
+        $paymenttypeprs = Formrequest::getPAYREQOptions();
 
         $user = auth()->user();
         $userCompanyName = optional($user->employee->company)->name;
@@ -1708,7 +1708,7 @@ if ($picEmployee) {
         ];
         $uoms = Requestitem::getUomOptions();
         $assets = Formrequest::getAssetOptions();
-        $paymenttypeprs = Formrequest::getPROptions();
+        $paymenttypeprs = Formrequest::getPAYREQOptions();
         return view('pages.request.createrequest', compact(
             'companies',
             'userCompanyId',
@@ -2144,8 +2144,8 @@ private function sendToPositionEmployees($formrequest): void
 'document_type_id'    => [$isPayreq ? 'required' : 'nullable'],
 
 'payment_type_payreq' => $isPayreq
-    ? ['required', Rule::in(Formrequest::getPROptions())]
-    : ['nullable', Rule::in(Formrequest::getPROptions())],
+    ? ['required', Rule::in(Formrequest::getPAYREQOptions())]
+    : ['nullable', Rule::in(Formrequest::getPAYREQOptions())],
         'ca_number' => [
             Rule::requiredIf(auth()->user()->hasRole('finance') && $request->isMethod('put')),
             'nullable',

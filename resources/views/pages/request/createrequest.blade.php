@@ -1090,7 +1090,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             const documenttypeWrapper = document.getElementById('document_type_wrapper');
             const hideDocumenttypes = ['CA', 'CAPEX', 'PR', 'RE'];
-
             function toggleDocumenttypes() {
                 const selected = $('#request_type_id').find(':selected');
                 const code = selected.data('code');
