@@ -491,7 +491,7 @@ $lockRules = [
         ->select('id', 'user_id', 'code')
         ->get();
     $documenttypes = Documenttype::select('id', 'document_type_name')->get();
-    $paymenttypeprs = Formrequest::getPRAYREQptions();
+    $paymenttypeprs = Formrequest::getPAYREQptions();
 
     $userCompanyName = optional($user->employee->company)->name;
     $userCompanyId   = optional($user->employee)->company_id;
