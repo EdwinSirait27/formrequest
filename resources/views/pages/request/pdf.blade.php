@@ -1111,12 +1111,12 @@
                                 <tr>
                                     <td class="lbl">Payment Type</td>
                                     <td class="col">:</td>
-                                    <td class="val">{{ $request->payment_type_payreq }}</td>
+                                    <td class="val">{{ $paymenttypes }}</td>
                                 </tr>
                                 <tr>
                                     <td class="lbl">Document Type</td>
                                     <td class="col">:</td>
-                                    <td class="val">{{ $request->documenttype->document_type_name }}</td>
+                                    <td class="val">{{ $documenttypes }}</td>
                                 </tr>
                             @endif
                         @endisset

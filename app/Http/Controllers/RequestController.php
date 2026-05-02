@@ -1489,6 +1489,8 @@ elseif ($user->hasRole('manager')) {
         });
 
         $employee    = $request->user?->employee;
+        $paymenttypes = $request->payment_type_payreq;
+        $documenttypes = $request->documenttype->document_type_name;
         $requestcompany    = $request->transfer;
         $companymail = $employee->company_email;
         $requestDate = $request->request_date
@@ -1639,6 +1641,8 @@ if ($picEmployee) {
     'picCapexPosition'        => $picCapexPosition,        // ✅ tambah
     'picCapexSignatureBase64' => $picCapexSignatureBase64, // ✅ tambah
     'picCapexNotes'           => $request->pic_capex_notes, // ✅ tambah
+    'paymenttypes'           => $paymenttypes, // ✅ tambah
+    'documenttypes'           => $documenttypes, // ✅ tambah
         ];
         
 
