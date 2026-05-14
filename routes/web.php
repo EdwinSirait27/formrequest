@@ -17,7 +17,7 @@ Route::middleware('throttle:15,1', 'guest')->group(function () {
 Route::middleware(['auth','role:admin|finance|manager|director|user'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'dashboardPage'])->name('dashboard');
     Route::get('/profile', [ProfileController::class, 'profile'])->name('profile');
-    Route::post('/savesign', [AuthController::class, 'save'])->name('save.signature');
+    // Route::post('/savesign', [AuthController::class, 'save'])->name('save.signature');
     Route::put('/profile/update-role', [ProfileController::class, 'updateRole'])
         ->name('profile.updateRole');
          Route::post('/updateroles', [ProfileController::class, 'updateActiveRole'])
