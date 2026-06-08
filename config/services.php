@@ -35,4 +35,10 @@ return [
     'manager_api_local' => [
     'url' => env('HRX_API_Manager'),
 ],
+'whatsapp' => [
+        'enabled'  => env('WHATSAPP_ENABLED', false),
+    'bot_url'  => env('WA_BOT_URL', 'http://192.168.10.125:3000'),
+    'group_id' => env('WHATSAPP_GROUP_ID', '120363407518928977@g.us'), // ← sesuaikan dengan .env
+],
+    
 ];

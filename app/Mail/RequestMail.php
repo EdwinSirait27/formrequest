@@ -44,6 +44,9 @@ class RequestMail extends Mailable implements ShouldQueue
             'items.vendors.vendor',
             'approval',
             'approval.approver1User.employee',
+            'approval.capexApprover.employee',
+                'approval.prApprover.employee',     // ← tambah
+
         ]);
 
         $capexpayreqVendors = $formrequest->items->mapWithKeys(function ($item) {
@@ -61,12 +64,16 @@ $payment_type_payreq = $formrequest->payment_type_payreq;
 
 $approver1 = $approval?->approver1User?->employee?->employee_name ?? 'Not Approved yet';
 $capex_approver = $approval?->capexApprover?->employee?->employee_name ?? 'Not Approved yet';
+$pr_approver = $approval?->prApprover?->employee?->employee_name ?? 'Not Approved yet';
 
 $approver1_at = $approval?->approver1_at 
     ? Carbon::parse($approval->approver1_at)->format('d M Y H:i:s') 
     : '-';
 $capex_approver_at = $approval?->capex_approver_at 
     ? Carbon::parse($approval->capex_approver_at)->format('d M Y H:i:s') 
+    : '-';
+$pr_approver_at = $approval?->pr_approver_at 
+    ? Carbon::parse($approval->pr_approver_at)->format('d M Y H:i:s') 
     : '-';
         $assetsOptions = Formrequest::getAssetOptions();
         return new Content(
@@ -79,12 +86,14 @@ $capex_approver_at = $approval?->capex_approver_at
               'approver1' => $approver1,
 'approver1_at' => $approver1_at,
               'capex_approver' => $capex_approver,
+              'pr_approver' => $pr_approver,
 'capex_approver_at' => $capex_approver_at,
+'pr_approver_at' => $pr_approver_at,
                 'capexpayreqVendors' => $capexpayreqVendors,
                 'document_type_name' => $document_type_name,
                 'payment_type_payreq' => $payment_type_payreq,
                 'detailUrl'   => route('editrequest', [
-                    'hash' => substr(hash('sha256', $this->formrequest->id . env('APP_KEY')), 0, 8)
+                    'hash' => substr(hash('sha256', $this->formrequest->id . config('app.key')), 0, 8)
                 ]),
             ]
         );

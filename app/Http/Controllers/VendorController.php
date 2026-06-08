@@ -67,7 +67,7 @@ class VendorController extends Controller
         return DataTables::eloquent($query)
             ->addIndexColumn()
             ->addColumn('action', function ($vendor) {
-                $idHashed = substr(hash('sha256', $vendor->id . env('APP_KEY')), 0, 8);
+                $idHashed = substr(hash('sha256', $vendor->id . config('app.key')), 0, 8);
                 {
                     $editBtn = '
             <a href="' . route('editvendor', $idHashed) . '"
@@ -122,7 +122,7 @@ public function edit($hash)
         ->with('error', 'Anda tidak boleh mengakses halaman ini!');
 }
     $vendor = Vendor::get()->first(function ($u) use ($hash) {
-        return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
+        return substr(hash('sha256', $u->id . config('app.key')), 0, 8) === $hash;
     });
     if (!$vendor) {
         return redirect()
@@ -134,7 +134,7 @@ public function edit($hash)
     public function show($hash)
     {
         $vendor = Vendor::all()->first(function ($u) use ($hash) {
-            return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
+            return substr(hash('sha256', $u->id . config('app.key')), 0, 8) === $hash;
         });
         abort_if(!$vendor, 404);
         return view('pages.vendor.showvendor', compact('vendor'));

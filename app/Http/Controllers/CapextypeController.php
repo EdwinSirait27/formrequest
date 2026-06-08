@@ -26,7 +26,7 @@ class CapextypeController extends Controller
                 $query->whereHas('user.employee', fn($q) => $q->where('employee_name', 'like', "%{$keyword}%"));
             })
             ->addColumn('action', function ($capextype) {
-                $idHashed = substr(hash('sha256', $capextype->id . env('APP_KEY')), 0, 8);
+                $idHashed = substr(hash('sha256', $capextype->id . config('app.key')), 0, 8);
                 {
                     $editBtn = '
             <a href="' . route('editcapextype', $idHashed) . '"
@@ -77,7 +77,7 @@ class CapextypeController extends Controller
     public function edit($hash)
     {
         $capextype = Capextype::with('user.employee')->all()->first(function ($u) use ($hash) {
-            return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
+            return substr(hash('sha256', $u->id . config('app.key')), 0, 8) === $hash;
         });
    $users = User::whereHas('employee', function ($q) {
         $q->where('status', 'Active');
@@ -90,7 +90,7 @@ class CapextypeController extends Controller
     public function show($hash)
     {
         $capextype = Capextype::with('user.employee')->all()->first(function ($u) use ($hash) {
-            return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
+            return substr(hash('sha256', $u->id . config('app.key')), 0, 8) === $hash;
         });
       $users = User::whereHas('employee', function ($q) {
         $q->where('status', 'Active');

@@ -10,7 +10,8 @@ class ProfileController extends Controller
 {
     public function profile()
     {
-        
+        /** @var \App\Models\User|null $user */
+
         $user = Auth::user();
         $roles = $user->getRoleNames();
         return view('pages.profile',compact('roles','user'));
@@ -20,6 +21,7 @@ class ProfileController extends Controller
     $request->validate([
         'role' => 'required|string',
     ]);
+    
     $user = auth()->user();
 
     // validasi dari all_roles_bdtix, bukan Spatie

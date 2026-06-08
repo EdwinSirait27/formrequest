@@ -22,7 +22,7 @@ class RequestTypeController extends Controller
         return DataTables::eloquent($query)
             ->addIndexColumn()
             ->addColumn('action', function ($requesttype) {
-                $idHashed = substr(hash('sha256', $requesttype->id . env('APP_KEY')), 0, 8);
+                $idHashed = substr(hash('sha256', $requesttype->id . config('app.key')), 0, 8);
                 {
                     $editBtn = '
             <a href="' . route('editrequesttype', $idHashed) . '"
@@ -73,7 +73,7 @@ class RequestTypeController extends Controller
     public function edit($hash)
     {
         $requesttype = Requesttype::all()->first(function ($u) use ($hash) {
-            return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
+            return substr(hash('sha256', $u->id . config('app.key')), 0, 8) === $hash;
         });
         abort_if(!$requesttype, 404);
         return view('pages.requesttype.editrequesttype', compact('requesttype'));
@@ -81,7 +81,7 @@ class RequestTypeController extends Controller
     public function show($hash)
     {
         $requesttype = Requesttype::all()->first(function ($u) use ($hash) {
-            return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
+            return substr(hash('sha256', $u->id . config('app.key')), 0, 8) === $hash;
         });
         abort_if(!$requesttype, 404);
         return view('pages.requesttype.showrequesttype', compact('requesttype'));

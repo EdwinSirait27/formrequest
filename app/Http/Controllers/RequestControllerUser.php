@@ -227,7 +227,7 @@ class RequestControllerUser extends Controller
     public function edit($hash)
     {
         $request = Formrequest::with('items')->get()->first(function ($u) use ($hash) {
-            return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
+            return substr(hash('sha256', $u->id . config('app.key')), 0, 8) === $hash;
         });
         abort_if(!$request, 404);
         $vendors = Vendor::where('status', 'Active')->pluck('vendor_name', 'id');
@@ -256,7 +256,7 @@ class RequestControllerUser extends Controller
     public function show($hash)
     {
         $request = Formrequest::with('items')->get()->first(function ($u) use ($hash) {
-            return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
+            return substr(hash('sha256', $u->id . config('app.key')), 0, 8) === $hash;
         });
         abort_if(!$request, 404);
         $vendors = Vendor::where('status', 'Active')->pluck('vendor_name', 'id');
@@ -561,7 +561,7 @@ class RequestControllerUser extends Controller
     {
         // $formrequest = Formrequest::findOrFail($id);
         $formrequest = Formrequest::with('items')->get()->first(function ($u) use ($hash) {
-            return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
+            return substr(hash('sha256', $u->id . config('app.key')), 0, 8) === $hash;
         });
 
         $request->merge([

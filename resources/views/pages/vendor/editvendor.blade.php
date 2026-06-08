@@ -529,11 +529,7 @@
                         </svg>
                         Vendor Name <span class="text-red-400">*</span>
                     </label>
-                    {{-- <input type="text" id="vendor_name" name="vendor_name" required
-                    placeholder="Example: PT. Abadi"
-                    class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500
-                           focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-200"
-                    value="{{ old('vendor_name', $vendor->vendor_name) }}"> --}}
+                  
                     <input type="text"
                         class="form-input w-full px-4 py-3 rounded-xl"value="{{ old('vendor_name', $vendor->vendor_name) }}"
                         required>

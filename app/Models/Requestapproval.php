@@ -19,7 +19,7 @@ class Requestapproval extends Model
         });
     }
      protected $fillable = [
-        'request_id','approver1','approver2','approver1_at','approver2_at','capex_approver_at','capex_approver'];
+        'request_id','approver1','approver2','approver1_at','approver2_at','pr_approver','pr_approver_at','capex_approver_at','capex_approver'];
     public function request()
         {
             return $this->belongsTo(Formrequest::class, 'request_id','id');
@@ -37,5 +37,9 @@ class Requestapproval extends Model
     public function capexApprover()
         {
             return $this->belongsTo(User::class, 'capex_approver','id');
+        }
+    public function prApprover()
+        {
+            return $this->belongsTo(User::class, 'pr_approver','id');
         }
     }

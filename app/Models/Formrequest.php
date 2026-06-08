@@ -45,7 +45,10 @@ class Formrequest extends Model
             $newStatus = $model->status;
             $rejectedStatuses = [
                 'Rejected Manager',
-                'Rejected Director'
+                'Rejected Director',
+                'Rejected IT',
+                'Rejected BD',
+                'Rejected GA'
             ];
             if ($originalStatus !== $newStatus && in_array($newStatus, $rejectedStatuses)) {
                 $model->revision_number = ($model->revision_number ?? 0) + 1;
@@ -59,6 +62,7 @@ class Formrequest extends Model
         'request_date',
         'user_id',
         'company_id',
+        'store_id',
         'user_id',
         'total_amount',
         'title',
@@ -67,6 +71,7 @@ class Formrequest extends Model
         'notes',
         'notes_fa',
         'notes_dir',
+        'notes_ga',
         'pic_capex_notes',
         'vendor_id',
         'destination',
@@ -162,5 +167,9 @@ class Formrequest extends Model
     public function company()
     {
         return $this->belongsTo(Company::class, 'company_id');
+    }
+    public function store()
+    {
+        return $this->belongsTo(Store::class, 'store_id');
     }
 }

@@ -1,5 +1,7 @@
 <?php
+
 namespace App\Http\Controllers;
+
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 use App\Models\Requesttype;
@@ -9,21 +11,25 @@ use App\Models\Formrequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Models\Employee;
+use App\Models\User;
 use App\Models\Requestapproval;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\RequestMail;
 use App\Models\Capextype;
-use App\Models\User;
 use App\Models\ItemVendorQuotation;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Documenttype;
 use App\Models\Requestlink;
 use Illuminate\Validation\Rule;
 use App\Models\Structuresnew;
 use App\Models\Vendor;
 use App\Models\Company;
+use App\Models\Store;
+use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Client\Response;
+
 class RequestController extends Controller
 {
     public function formpage()
@@ -183,7 +189,48 @@ class RequestController extends Controller
                 'Approved Director',
                 'Rejected Director'
             ]);
-        } elseif ($user->hasRole('user')) {
+        } 
+//         elseif ($user->hasRole('ga')) {
+//     $query->where(function ($q) {
+//         // Non-PR: tidak ditampilkan sama sekali untuk GA
+//         $q->whereHas('requesttype', function ($rt) {
+//             $rt->where('code', 'PR');
+//         })
+//         ->whereIn('status', [
+//             'Submitted',
+//             'Approved GA',
+//             'Rejected GA',
+//             'Approved Director',
+//             'Rejected Director',
+//         ]);
+//     });
+// } 
+elseif ($user->hasRole('ga')) {
+    $query->where(function ($q) use ($user) {
+        // PR dengan status tertentu — semua bisa lihat
+        $q->where(function ($q1) {
+            $q1->whereHas('requesttype', function ($rt) {
+                $rt->where('code', 'PR');
+            })
+            ->whereIn('status', [
+                'Submitted',
+                'Approved GA',
+                'Rejected GA',
+                'Approved Director',
+                'Rejected Director',
+            ]);
+        })
+        // Draft — hanya milik GA sendiri
+        ->orWhere(function ($q2) use ($user) {
+            $q2->whereHas('requesttype', function ($rt) {
+                $rt->where('code', 'PR');
+            })
+            ->where('status', 'Draft')
+            ->where('user_id', $user->id);
+        });
+    });
+}
+elseif ($user->hasRole('user')) {
             $query->where('user_id', $user->id);
         }
         return DataTables::eloquent($query)
@@ -231,15 +278,29 @@ class RequestController extends Controller
                 $capextype = $row->capextype ?? null;
                 $isManagerPIC = $capextype && $capextype->user_id === $user->id;
 
+                // $isLocked =
+                //     ($row->status === 'Submitted'        && $user->hasRole('user'))     ||
+                //     ($row->status === 'Approved Manager' && $user->hasRole('user'))     ||
+                //     ($row->status === 'Approved IT'      && $user->hasRole('user'))     ||
+                //     ($row->status === 'Approved BD'      && $user->hasRole('user'))     ||
+                //     ($row->status === 'Approved Director' && $user->hasRole('user'))    ||
+                //     ($row->status === 'Approved Manager' && $user->hasRole('manager') && !$isManagerPIC) || // ← fix
+                //     ($row->status === 'Approved Director' && $user->hasRole('manager')) ||
+                //     ($row->status === 'Approved Director' && $user->hasRole('director'));
                 $isLocked =
-                    ($row->status === 'Submitted'        && $user->hasRole('user'))     ||
-                    ($row->status === 'Approved Manager' && $user->hasRole('user'))     ||
-                    ($row->status === 'Approved IT'      && $user->hasRole('user'))     ||
-                    ($row->status === 'Approved BD'      && $user->hasRole('user'))     ||
-                    ($row->status === 'Approved Director' && $user->hasRole('user'))    ||
-                    ($row->status === 'Approved Manager' && $user->hasRole('manager') && !$isManagerPIC) || // ← fix
-                    ($row->status === 'Approved Director' && $user->hasRole('manager')) ||
-                    ($row->status === 'Approved Director' && $user->hasRole('director'));
+    ($row->status === 'Submitted'         && $user->hasRole('user'))     ||
+    ($row->status === 'Approved Manager'  && $user->hasRole('user'))     ||
+    ($row->status === 'Approved IT'       && $user->hasRole('user'))     ||
+    ($row->status === 'Approved BD'       && $user->hasRole('user'))     ||
+    ($row->status === 'Approved Director' && $user->hasRole('user'))     ||
+    ($row->status === 'Approved Manager'  && $user->hasRole('manager') && !$isManagerPIC) ||
+    ($row->status === 'Approved Director' && $user->hasRole('manager')) ||
+    ($row->status === 'Approved Director' && $user->hasRole('director')) ||
+    // GA — locked kecuali Draft milik sendiri, Submitted, dan Rejected GA
+    ($user->hasRole('ga') && $row->status === 'Draft'         && $row->user_id !== $user->id) ||
+    ($user->hasRole('ga') && $row->status === 'Approved GA')  ||
+    ($user->hasRole('ga') && $row->status === 'Approved Director') ||
+    ($user->hasRole('ga') && $row->status === 'Rejected Director');
                 $idHashed = substr(hash('sha256', $row->id . config('app.key')), 0, 8);
                 $id = $row->id;
                 if ($isLocked) {
@@ -349,175 +410,347 @@ class RequestController extends Controller
             ->rawColumns(['action'])
             ->make(true);
     }
-    public function edit($hash)
-    {
-        $request = Formrequest::with('items', 'items.vendors', 'capextype')->get()->first(function ($u) use ($hash) {
-            return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
-        });
-        abort_if(!$request, 404);
+//     public function edit($hash)
+//     {
+//         // dd($hash);
+//         $request = Formrequest::with('items', 'items.vendors', 'capextype')->get()->first(function ($u) use ($hash) {
+//             return substr(hash('sha256', $u->id . config('app.key')), 0, 8) === $hash;
+//         });
+//         abort_if(!$request, 404);
+//         // ✅ $user hanya di-assign sekali
+//         $user= auth()->user();
+//         if ($user->hasRole('user') && $request->user_id !== $user->id) {
+//             return redirect()->route('request')
+//                 ->with('error', 'you account doesnt have access to edit this request.');
+//         }
 
-        // ✅ $user hanya di-assign sekali
-        $user = auth()->user();
+//         if (!$user->hasRole('admin')) {
+// // draft itu yang tidak bisa akses
+//             $lockRules = [
+//                 'Draft'             => ['finance', 'manager', 'director','ga'],
+//             'Submitted'         => ['user', 'finance', 'director'],
+//                 'Approved Manager'  => ['user', 'finance','ga','manager'],              // ← hapus 'manager'
+//                 'Rejected Manager'  => ['director','ga','finance'],
+//                 'Approved Director' => ['user', 'manager', 'director','ga'],
+//                 'Rejected Director' => ['finance', 'user','manager'],
+//                 'Done'              => ['user', 'manager', 'director'],
+//                 'Approved Finance'  => ['user', 'manager', 'director'],
+//                 'Rejected Finance'  => ['user', 'manager', 'director'],
+//                 'Approved IT' => ['user', 'finance'], 
+//                 'Approved BD' => ['user', 'finance'], 
+//                 'Rejected IT'       => ['user', 'finance', 'director'],
+//                 'Rejected BD'       => ['user', 'finance', 'director'],
+//                 'Rejected GA'       => ['finance','director','manager'],
+//                 'Approved GA'       => ['finance','director','manager','user'],
+//             ];
+//             $lockedRoles = $lockRules[$request->status] ?? [];
+//             $isLocked = collect($lockedRoles)
+//                 ->contains(fn($role) => $user->hasRole($role));
+//             if ($isLocked) {
+//                 return redirect()->route('request')
+//                     ->with('error', "Request with status '{$request->status}' can't be edited.");
+//             }
+//         } elseif ($user->hasRole('finance')) {
+//             $statuses = [
+//                 'Approved Finance' => 'Approved Finance',
+//                 'Rejected Finance' => 'Rejected Finance',
+//                 'Done'             => 'Done',
+//             ];
+//         }
+//         // ✅ Manager scope check dipindah ke sini, sebelum query berat
+//         if ($user->hasRole('manager')) {
+//             $employee = $user->employee;
+//             if ($employee && $employee->structure_id) {
+//                 $structure = Structuresnew::with('allChildren')
+//                     ->find($employee->structure_id);
+//                 if ($structure) {
+//                     $structureIds = $structure->getAllIds();
+//                     $employeeIds = Employee::whereIn('structure_id', $structureIds)
+//                         ->pluck('id');
+//                     $userIds = User::whereIn('employee_id', $employeeIds)
+//                         ->pluck('id')
+//                         ->toArray();
+//                     $userIds[] = $user->id;
+//                     if (!in_array($request->user_id, $userIds)) {
+//                         return redirect()->route('request')
+//                             ->with('error', 'you can edit your own request only or your anak buah.');
+//                     }
+//                 }
+//             }
+//         }
 
-        if ($user->hasRole('user') && $request->user_id !== $user->id) {
-            return redirect()->route('request')
-                ->with('error', 'you account doesnt have access to edit this request.');
-        }
+//         // Query berat dijalankan setelah semua validasi lolos
+//         $vendors = Vendor::where('status', 'Active')->pluck('vendor_name', 'id');
+//         $locations = Store::pluck('name', 'id');
+//         $requesttypes = Requesttype::select('id', 'request_type_name', 'code')->get();
+//         $capextypes = Capextype::with('user.employee')
+//             ->select('id', 'user_id', 'code')
+//             ->get();
+//         $documenttypes = Documenttype::select('id', 'document_type_name')->get();
+//         $paymenttypeprs = Formrequest::getPAYREQOptions();
+//         // $locations = Store::select('id', 'name')->get();
 
-        if (!$user->hasRole('admin')) {
+//         $userCompanyName = optional($user->employee->company)->name;
+//         $userCompanyId   = optional($user->employee)->company_id;
+//         if (!$userCompanyId) {
+//             return redirect()->route('request')
+//                 ->with('error', 'user doesnt have company .');
+//         }
+//         $mainCompany = config('app.main_company_id');
+//         $isMainCompany = $userCompanyId === $mainCompany;
+//         if ($isMainCompany) {
+//             $companies = Company::on('hrx')->pluck('name', 'id');
+//         } else {
+//             $companies = Company::on('hrx')
+//                 ->where('id', $userCompanyId)
+//                 ->pluck('name', 'id');
+//         }
 
-            $lockRules = [
-                'Draft'             => ['finance', 'manager', 'director'],
-                'Submitted'         => ['user', 'finance', 'director'],
-                'Approved Manager'  => ['user', 'finance'],              // ← hapus 'manager'
-                'Rejected Manager'  => ['director', 'manager', 'finance'],
-                'Approved Director' => ['user', 'manager', 'director'],
-                'Rejected Director' => ['finance', 'user'],
-                'Done'              => ['user', 'manager', 'director'],
-                'Approved Finance'  => ['user', 'manager', 'director'],
-                'Rejected Finance'  => ['user', 'manager', 'director'],
-                'Approved IT' => ['user', 'finance'], // ✅ hapus 'director'
-                'Approved BD' => ['user', 'finance'], // ✅ hapus 'director'
-                'Rejected IT'       => ['user', 'finance', 'director'],
-                'Rejected BD'       => ['user', 'finance', 'director'],
-            ];
-            $lockedRoles = $lockRules[$request->status] ?? [];
-            $isLocked = collect($lockedRoles)
-                ->contains(fn($role) => $user->hasRole($role));
-            if ($isLocked) {
-                return redirect()->route('request')
-                    ->with('error', "Request with status '{$request->status}' can't be edited.");
-            }
-        } elseif ($user->hasRole('finance')) {
-            $statuses = [
-                'Approved Finance' => 'Approved Finance',
-                'Rejected Finance' => 'Rejected Finance',
-                'Done'             => 'Done',
-            ];
-        }
-        // ✅ Manager scope check dipindah ke sini, sebelum query berat
-        if ($user->hasRole('manager')) {
-            $employee = $user->employee;
-            if ($employee && $employee->structure_id) {
-                $structure = Structuresnew::with('allChildren')
-                    ->find($employee->structure_id);
-                if ($structure) {
-                    $structureIds = $structure->getAllIds();
-                    $employeeIds = Employee::whereIn('structure_id', $structureIds)
-                        ->pluck('id');
-                    $userIds = User::whereIn('employee_id', $employeeIds)
-                        ->pluck('id')
-                        ->toArray();
-                    $userIds[] = $user->id;
-                    if (!in_array($request->user_id, $userIds)) {
-                        return redirect()->route('request')
-                            ->with('error', 'you can edit your own request only or your anak buah.');
-                    }
-                }
-            }
-        }
+//         $statuses = [];
+//         if ($user->hasRole('admin')) {
+//             $statuses = [
+//                 'Draft'             => 'Draft',
+//                 'Submitted'         => 'Submitted',
+//                 'Approved Manager'  => 'Approved Manager',
+//                 'Rejected Manager'  => 'Rejected Manager',
+//                 'Approved Finance'  => 'Approved Finance',
+//                 'Rejected Finance'  => 'Rejected Finance',
+//                 'Rejected Director' => 'Rejected Director',
+//                 'Approved Director' => 'Approved Director',
+//                 'Done'              => 'Done',
+//             ];
+//         } elseif ($user->hasRole('manager')) {
+//             $capextype = $request->capextype ?? null;
+//             $statuses = [
+//                 'Approved Manager' => 'Approved Manager',
+//                 'Rejected Manager' => 'Rejected Manager',
+//             ];
 
-        // Query berat dijalankan setelah semua validasi lolos
-        $vendors = Vendor::where('status', 'Active')->pluck('vendor_name', 'id');
-        $requesttypes = Requesttype::select('id', 'request_type_name', 'code')->get();
-        $capextypes = Capextype::with('user.employee')
-            ->select('id', 'user_id', 'code')
-            ->get();
-        $documenttypes = Documenttype::select('id', 'document_type_name')->get();
-        $paymenttypeprs = Formrequest::getPAYREQOptions();
+//             if ($capextype && $capextype->user_id === $user->id) {
+//                 // ✅ Hanya tampilkan opsi IT/BD jika status sudah Approved Manager
+//                 if (in_array($request->status, ['Approved Manager', 'Approved IT', 'Rejected IT', 'Approved BD', 'Rejected BD'])) {
+//                     if ($capextype->code === 'IT') {
+//                         $statuses['Approved IT'] = 'Approved IT';
+//                         $statuses['Rejected IT'] = 'Rejected IT';
+//                     }
+//                     if ($capextype->code === 'BD') {
+//                         $statuses['Approved BD'] = 'Approved BD';
+//                         $statuses['Rejected BD'] = 'Rejected BD';
+//                     }
+//                 }
+//             }
+//         } elseif ($user->hasRole('user')) {
+//             $statuses = [
+//                 'Draft'     => 'Draft',
+//                 'Submitted' => 'Submitted',
+//             ];
+//         } elseif ($user->hasRole('ga')) {
+//             $statuses = [
+//                 'Approved GA'     => 'Approved GA',
+//                 'Rejected GA' => 'Rejected GA',
+//             ];
+//         }elseif ($user->hasRole('finance')) {
+//             $statuses = [
+//                 'Approved Finance' => 'Approved Finance',
+//                 'Rejected Finance' => 'Rejected Finance',
+//             ];
+//         } elseif ($user->hasRole('director')) {
+//             $statuses = [
+//                 'Approved Director' => 'Approved Director',
+//                 'Rejected Director' => 'Rejected Director',
+//             ];
+//         } else {
+//             abort(403, 'Unauthorized');
+//         }
 
-        $userCompanyName = optional($user->employee->company)->name;
-        $userCompanyId   = optional($user->employee)->company_id;
-        if (!$userCompanyId) {
-            return redirect()->route('request')
-                ->with('error', 'user doesnt have company .');
-        }
-        $mainCompany = config('app.main_company_id');
-        $isMainCompany = $userCompanyId === $mainCompany;
-        if ($isMainCompany) {
-            $companies = Company::on('hrx')->pluck('name', 'id');
-        } else {
-            $companies = Company::on('hrx')
-                ->where('id', $userCompanyId)
-                ->pluck('name', 'id');
-        }
+//         $uoms = Requestitem::getUomOptions();
+//         $assets = Formrequest::getAssetOptions();
+//         $isDirector = $user->hasRole('director');
 
-        $statuses = [];
-        if ($user->hasRole('admin')) {
-            $statuses = [
-                'Draft'             => 'Draft',
-                'Submitted'         => 'Submitted',
-                'Approved Manager'  => 'Approved Manager',
-                'Rejected Manager'  => 'Rejected Manager',
-                'Approved Finance'  => 'Approved Finance',
-                'Rejected Finance'  => 'Rejected Finance',
-                'Rejected Director' => 'Rejected Director',
-                'Approved Director' => 'Approved Director',
-                'Done'              => 'Done',
-            ];
-        } elseif ($user->hasRole('manager')) {
-            $capextype = $request->capextype ?? null;
-            $statuses = [
-                'Approved Manager' => 'Approved Manager',
-                'Rejected Manager' => 'Rejected Manager',
-            ];
+//         return view('pages.request.editrequest', compact(
+//             'request',
+//             'companies',
+//             'vendors',
+//             'capextypes',
+//             'requesttypes',
+//             'statuses',
+//             'uoms',
+//             'locations',
+//             'documenttypes',
+//             'paymenttypeprs',
+//             'assets',
+//             'isDirector',
+//             'userCompanyId',
+//             'userCompanyName'
+//         ));
+//     }
+public function edit($hash)
+{
+    $request = Formrequest::with('items', 'items.vendors', 'capextype')->get()->first(function ($u) use ($hash) {
+        return substr(hash('sha256', $u->id . config('app.key')), 0, 8) === $hash;
+    });
+    abort_if(!$request, 404);
 
-            if ($capextype && $capextype->user_id === $user->id) {
-                // ✅ Hanya tampilkan opsi IT/BD jika status sudah Approved Manager
-                if (in_array($request->status, ['Approved Manager', 'Approved IT', 'Rejected IT', 'Approved BD', 'Rejected BD'])) {
-                    if ($capextype->code === 'IT') {
-                        $statuses['Approved IT'] = 'Approved IT';
-                        $statuses['Rejected IT'] = 'Rejected IT';
-                    }
-                    if ($capextype->code === 'BD') {
-                        $statuses['Approved BD'] = 'Approved BD';
-                        $statuses['Rejected BD'] = 'Rejected BD';
-                    }
-                }
-            }
-        } elseif ($user->hasRole('user')) {
-            $statuses = [
-                'Draft'     => 'Draft',
-                'Submitted' => 'Submitted',
-            ];
-        } elseif ($user->hasRole('finance')) {
-            $statuses = [
-                'Approved Finance' => 'Approved Finance',
-                'Rejected Finance' => 'Rejected Finance',
-            ];
-        } elseif ($user->hasRole('director')) {
-            $statuses = [
-                'Approved Director' => 'Approved Director',
-                'Rejected Director' => 'Rejected Director',
-            ];
-        } else {
-            abort(403, 'Unauthorized');
-        }
+    $user = auth()->user();
 
-        $uoms = Requestitem::getUomOptions();
-        $assets = Formrequest::getAssetOptions();
-        $isDirector = $user->hasRole('director');
-
-        return view('pages.request.editrequest', compact(
-            'request',
-            'companies',
-            'vendors',
-            'capextypes',
-            'requesttypes',
-            'statuses',
-            'uoms',
-            'documenttypes',
-            'paymenttypeprs',
-            'assets',
-            'isDirector',
-            'userCompanyId',
-            'userCompanyName'
-        ));
+    // Ownership check — user biasa
+    if ($user->hasRole('user') && $request->user_id !== $user->id) {
+        return redirect()->route('request')
+            ->with('error', 'You don\'t have access to edit this request.');
     }
+
+    // Ownership check — GA hanya boleh edit Draft miliknya sendiri
+    if ($user->hasRole('ga') && $request->status === 'Draft' && $request->user_id !== $user->id) {
+        return redirect()->route('request')
+            ->with('error', 'You can only edit your own draft request.');
+    }
+
+    // Lock rules
+    if (!$user->hasRole('admin')) {
+        $lockRules = [
+            'Draft'             => ['finance', 'manager', 'director'],
+            'Submitted'         => ['user', 'finance', 'director'],
+            'Approved Manager'  => ['user', 'finance', 'ga', 'manager'],
+            'Rejected Manager'  => ['director', 'ga', 'finance'],
+            'Approved Director' => ['user', 'manager', 'director', 'ga'],
+            'Rejected Director' => ['finance', 'user', 'manager'],
+            'Done'              => ['user', 'manager', 'director'],
+            'Approved Finance'  => ['user', 'manager', 'director'],
+            'Rejected Finance'  => ['user', 'manager', 'director'],
+            'Approved IT'       => ['user', 'finance'],
+            'Approved BD'       => ['user', 'finance'],
+            'Rejected IT'       => ['user', 'finance', 'director'],
+            'Rejected BD'       => ['user', 'finance', 'director'],
+            'Rejected GA'       => ['finance', 'director', 'manager'],
+            'Approved GA'       => ['finance', 'director', 'manager', 'user'],
+        ];
+
+        $lockedRoles = $lockRules[$request->status] ?? [];
+        $isLocked = collect($lockedRoles)
+            ->contains(fn($role) => $user->hasRole($role));
+
+        if ($isLocked) {
+            return redirect()->route('request')
+                ->with('error', "Request with status '{$request->status}' can't be edited.");
+        }
+    }
+
+    // Manager scope check
+    if ($user->hasRole('manager')) {
+        $employee = $user->employee;
+        if ($employee && $employee->structure_id) {
+            $structure = Structuresnew::with('allChildren')->find($employee->structure_id);
+            if ($structure) {
+                $structureIds = $structure->getAllIds();
+                $employeeIds  = Employee::whereIn('structure_id', $structureIds)->pluck('id');
+                $userIds      = User::whereIn('employee_id', $employeeIds)->pluck('id')->toArray();
+                $userIds[]    = $user->id;
+
+                if (!in_array($request->user_id, $userIds)) {
+                    return redirect()->route('request')
+                        ->with('error', 'You can only edit your own request or your subordinates.');
+                }
+            }
+        }
+    }
+
+    // Query berat setelah semua validasi lolos
+    $vendors       = Vendor::where('status', 'Active')->pluck('vendor_name', 'id');
+    $locations     = Store::pluck('name', 'id');
+    $requesttypes  = Requesttype::select('id', 'request_type_name', 'code')->get();
+    $capextypes    = Capextype::with('user.employee')->select('id', 'user_id', 'code')->get();
+    $documenttypes = Documenttype::select('id', 'document_type_name')->get();
+    $paymenttypeprs = Formrequest::getPAYREQOptions();
+
+    $userCompanyName = optional($user->employee->company)->name;
+    $userCompanyId   = optional($user->employee)->company_id;
+
+    if (!$userCompanyId) {
+        return redirect()->route('request')->with('error', 'User doesn\'t have a company.');
+    }
+
+    // Company scope — fix GA
+    $mainCompany   = config('app.main_company_id');
+    $isMainCompany = $userCompanyId === $mainCompany;
+
+    if ($user->hasRole('admin') || $user->hasRole('ga') || $isMainCompany) {
+        $companies = Company::on('hrx')->pluck('name', 'id');
+    } else {
+        $companies = Company::on('hrx')->where('id', $userCompanyId)->pluck('name', 'id');
+    }
+
+    // Status dropdown per role
+    $statuses = [];
+    if ($user->hasRole('admin')) {
+        $statuses = [
+            'Draft'             => 'Draft',
+            'Submitted'         => 'Submitted',
+            'Approved Manager'  => 'Approved Manager',
+            'Rejected Manager'  => 'Rejected Manager',
+            'Approved Finance'  => 'Approved Finance',
+            'Rejected Finance'  => 'Rejected Finance',
+            'Rejected Director' => 'Rejected Director',
+            'Approved Director' => 'Approved Director',
+            'Done'              => 'Done',
+        ];
+    } elseif ($user->hasRole('manager')) {
+        $capextype = $request->capextype ?? null;
+        $statuses  = [
+            'Approved Manager' => 'Approved Manager',
+            'Rejected Manager' => 'Rejected Manager',
+        ];
+        if ($capextype && $capextype->user_id === $user->id) {
+            if (in_array($request->status, ['Approved Manager', 'Approved IT', 'Rejected IT', 'Approved BD', 'Rejected BD'])) {
+                if ($capextype->code === 'IT') {
+                    $statuses['Approved IT'] = 'Approved IT';
+                    $statuses['Rejected IT'] = 'Rejected IT';
+                }
+                if ($capextype->code === 'BD') {
+                    $statuses['Approved BD'] = 'Approved BD';
+                    $statuses['Rejected BD'] = 'Rejected BD';
+                }
+            }
+        }
+    } elseif ($user->hasRole('user')) {
+        $statuses = [
+            'Draft'     => 'Draft',
+            'Submitted' => 'Submitted',
+        ];
+    } elseif ($user->hasRole('ga')) {
+        $statuses = [
+            'Approved GA' => 'Approved GA',
+            'Rejected GA' => 'Rejected GA',
+        ];
+    } elseif ($user->hasRole('finance')) {
+        $statuses = [
+            'Approved Finance' => 'Approved Finance',
+            'Rejected Finance' => 'Rejected Finance',
+        ];
+    } elseif ($user->hasRole('director')) {
+        $statuses = [
+            'Approved Director' => 'Approved Director',
+            'Rejected Director' => 'Rejected Director',
+        ];
+    } else {
+        abort(403, 'Unauthorized');
+    }
+
+    $uoms       = Requestitem::getUomOptions();
+    $assets     = Formrequest::getAssetOptions();
+    $isDirector = $user->hasRole('director');
+    $isGa = $user->hasRole('ga');
+
+    return view('pages.request.editrequest', compact(
+        'request', 'companies', 'vendors', 'capextypes',
+        'requesttypes', 'statuses', 'uoms', 'locations',
+        'documenttypes', 'paymenttypeprs', 'assets',
+        'isDirector','isGa','userCompanyId', 'userCompanyName'
+    ));
+}
     public function show($hash)
     {
-        $request = Formrequest::with('items.vendors', 'approval.approver1User.employee', 'approval.approver2User.employee', 'approval.capexApprover.employee', 'capextype')->get()->first(function ($u) use ($hash) {
-            return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
+        $request = Formrequest::with('items.vendors', 'approval.approver1User.employee', 'approval.approver2User.employee', 'approval.capexApprover.employee','approval.prApprover.employee','capextype')->get()->first(function ($u) use ($hash) {
+            return substr(hash('sha256', $u->id . config('app.key')), 0, 8) === $hash;
         });
         abort_if(!$request, 404);
         $user = auth()->user();
@@ -525,8 +758,10 @@ class RequestController extends Controller
             return redirect()->route('request')
                 ->with('error', 'you account doesnt have access to edit this request.');
         }
+        // $locations = Store::select('id', 'name')->get();
 
         $vendors = Vendor::where('status', 'Active')->pluck('vendor_name', 'id');
+        $locations = Store::pluck('name', 'id');
         $requesttypes = Requesttype::select('id', 'request_type_name', 'code')->get();
         $capextypes = Capextype::with('user.employee')
             ->select('id', 'user_id', 'code')
@@ -631,7 +866,25 @@ class RequestController extends Controller
                 'Rejected BD' => 'Rejected BD',
                 'Done' => 'Done',
             ];
-        } else {
+        } elseif ($user->hasRole('ga')) {
+            $statuses = [
+                'Draft' => 'Draft',
+                'Submitted' => 'Submitted',
+                'Approved Manager' => 'Approved Manager',
+                'Rejected Manager' => 'Rejected Manager',
+                'Approved Finance' => 'Approved Finance',
+                'Rejected Finance' => 'Rejected Finance',
+                'Rejected Director' => 'Rejected Director',
+                'Approved Director' => 'Approved Director',
+                'Approved IT' => 'Approved IT',
+                'Rejected IT' => 'Rejected IT',
+                'Approved GA' => 'Approved GA',
+                'Rejected GA' => 'Rejected GA',
+                'Approved BD' => 'Approved BD',
+                'Rejected BD' => 'Rejected BD',
+                'Done' => 'Done',
+            ];
+        }else {
             abort(403, 'Unauthorized');
         }
         $uoms = Requestitem::getUomOptions();
@@ -665,6 +918,7 @@ class RequestController extends Controller
             'requesttypes',
             'statuses',
             'uoms',
+            'locations',
             'documenttypes',
             'paymenttypeprs',
             'assets',
@@ -697,206 +951,434 @@ class RequestController extends Controller
         return $managerEmployee; // ?\App\Models\Employee ✅
     }
 
+    // public function pdfview($id)
+    // {
+    //     set_time_limit(120);
+    //     ini_set('memory_limit', '512M');
+
+    //     $request = Formrequest::with([
+    //         'vendor',
+    //         'requesttype',
+    //         'capextype',
+    //         'documenttype',
+    //         'capextype.user.employee',
+    //         'items',
+    //         'links',
+    //         'items.vendors',
+    //         'company:id',
+    //         'user.employee',
+    //         'items.vendors.vendor',
+    //         'user.employee.company',
+    //         'user.employee.position:id,name',
+    //         'user.employee.department:id,department_name',
+    //         'approval.approver2User.employee',
+    //         'approval.approver2User.employee.position:id,name',
+    //         'approval.capexApprover.employee.position:id,name',
+    //     ])->findOrFail($id);
+
+    //     $capexVendors = $request->items->mapWithKeys(function ($item) {
+    //         return [
+    //             $item->id => $item->vendors->values()->map(fn($v) => [
+    //                 'vendor_name' => $v->vendor?->vendor_name ?? 'Empty',
+    //                 'price'       => $v->price ?? 0,
+    //                 'is_selected' => (bool) $v->is_selected,
+    //             ])
+    //         ];
+    //     });
+
+    //     $employee    = $request->user?->employee;
+    //     $paymenttypes = $request->payment_type_payreq;
+    //     $documenttypes = $request->documenttype?->document_type_name;
+    //     $requestcompany    = $request->transfer;
+    //     $companymail = $employee->company_email;
+    //     $requestDate = $request->request_date
+    //         ->timezone('Asia/Makassar')
+    //         ->translatedFormat('d F Y');
+    //     $Deadline = $request->deadline
+    //         ->timezone('Asia/Makassar')
+    //         ->translatedFormat('d F Y');
+
+    //     // ── toBase64 helper ──────────────────────────────────────────
+    //     $cache    = [];
+    //     $toBase64 = static function (string $localPath) use (&$cache): ?string {
+    //         if (isset($cache[$localPath])) return $cache[$localPath];
+    //         if (!is_file($localPath))      return $cache[$localPath] = null;
+    //         $image = @file_get_contents($localPath);
+    //         if ($image === false)          return $cache[$localPath] = null;
+    //         $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    //         $mime  = finfo_buffer($finfo, $image);
+    //         finfo_close($finfo);
+    //         return $cache[$localPath] = 'data:' . $mime . ';base64,' . base64_encode($image);
+    //     };
+    //     $showManagerSignature = in_array($request->status, ['Approved Manager', 'Approved Director']);
+    //     // ── Logo ─────────────────────────────────────────────────────
+    //     $logoBase64   = null;
+    //     $companyId    = $request->company?->id;
+    //     // $internalBase = rtrim(config('services.hrx.internal_url', env('HRX_INTERNAL_URL', 'http://127.0.0.1:8001')), '/');
+    //     $internalBase = rtrim(config('services.manager_api.url', 'http://127.0.0.1:8001'), '/');
+    //     if ($companyId) {
+    //         try {
+    //             $apiResponse = Http::withoutVerifying()->timeout(8)->get("{$internalBase}/api/company/{$companyId}");
+    //             Log::info('API RESPONSE DEBUG', [
+    //                 'url'        => "{$internalBase}/api/company/{$companyId}",
+    //                 'status'     => $apiResponse->status(),
+    //                 'logo_url'   => $apiResponse->json('logo_url'),
+    //                 'body'       => $apiResponse->json(),
+    //             ]);
+    //             if ($apiResponse->successful()) {
+    //                 $logoUrl = $apiResponse->json('logo_url');
+    //                 if ($logoUrl) {
+    //                     $logoUrlInternal = preg_replace(
+    //                         '#^https?://hrx\.asianbay\.co\.id#',
+    //                         $internalBase,
+    //                         $logoUrl
+    //                     );
+    //                     Log::info('IMG FETCH DEBUG', [
+    //                         'logoUrlInternal' => $logoUrlInternal,
+    //                     ]);
+    //                     $imgResponse = Http::withoutVerifying()->timeout(5)->get($logoUrlInternal);
+    //                     Log::info('IMG RESPONSE DEBUG', [
+    //                         'status' => $imgResponse->status(),
+    //                         'size'   => strlen($imgResponse->body()),
+    //                     ]);
+    //                     if ($imgResponse->successful()) {
+    //                         $body       = $imgResponse->body();
+    //                         $finfo      = finfo_open(FILEINFO_MIME_TYPE);
+    //                         $mime       = finfo_buffer($finfo, $body);
+    //                         finfo_close($finfo);
+    //                         $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($body);
+    //                     }
+    //                 }
+    //             }
+    //         } catch (\Exception $e) {
+    //             Log::error('Logo fetch error: ' . $e->getMessage());
+    //         }
+    //     }
+
+    //     // ── Signatures ───────────────────────────────────────────────
+    //     $managerName            = null;
+    //     $positionName           = null;
+    //     $managerSignatureBase64 = null;
+
+    //     if ($employee && $showManagerSignature) {
+    //         $manager = $this->resolveManager($employee);
+
+    //         if ($manager) {
+    //             $managerName  = $manager->employee_name;
+    //             $positionName = optional(
+    //                 optional($manager->structuresnew?->submissionposition)
+    //                     ->positionRelation
+    //             )->name ?? null;
+
+    //             if ($manager->signature) {
+    //                 $managerSignatureBase64 = $toBase64(
+    //                     public_path('storage/' . $manager->signature)
+    //                 );
+    //             }
+    //         }
+    //     }
+
+    //     $signatureBase64 = $employee?->signature
+    //         ? $toBase64(public_path('storage/' . $employee->signature))
+    //         : null;
+
+    //     $approver2   = $request->approval?->approver2User?->employee;
+    //     $signatories = [
+    //         'approver2' => [
+    //             'name'      => $approver2?->employee_name,
+    //             'position'  => $approver2?->position?->name,
+    //             'signature' => $approver2?->signature
+    //                 ? $toBase64(public_path('storage/' . $approver2->signature))
+    //                 : null,
+    //         ],
+    //     ];
+    //     // ── PIC CAPEX Signature ───────────────────────────────────────
+    //     $picCapexName            = null;
+    //     $picCapexPosition        = null;
+    //     $picCapexSignatureBase64 = null;
+
+    //     $picEmployee = $request->approval?->capexApprover?->employee;
+    //     if ($picEmployee) {
+    //         $picCapexName     = $picEmployee->employee_name;
+    //         $picCapexPosition = optional($picEmployee->position)->name;
+
+    //         if ($picEmployee->signature) {
+    //             $picCapexSignatureBase64 = $toBase64(
+    //                 public_path('storage/' . $picEmployee->signature)
+    //             );
+    //         }
+    //     }
+    //     $viewData = [
+    //         'request'                => $request,
+    //         'requestcompany'                => $requestcompany,
+    //         'companymail'                => $companymail,
+    //         'logoBase64'             => $logoBase64,
+    //         'signatureBase64'        => $signatureBase64,
+    //         'managerSignatureBase64' => $managerSignatureBase64,
+    //         'managerName'            => $managerName,
+    //         'positionName'           => $positionName,
+    //         'signatories'            => $signatories,
+    //         'total'                  => $request->items->sum('total_price'),
+    //         'Deadline'               => $Deadline,
+    //         'requestDate'            => $requestDate,
+    //         'itemCount'              => $request->items->count(),
+    //         'showSignature'          => $showManagerSignature,
+    //         'capexVendors'           => $capexVendors,
+    //         'picCapexName'            => $picCapexName,
+    //         'picCapexPosition'        => $picCapexPosition,
+    //         'picCapexSignatureBase64' => $picCapexSignatureBase64,
+    //         'picCapexNotes'           => $request->pic_capex_notes,
+    //         'paymenttypes'           => $paymenttypes,
+    //         'documenttypes'           => $documenttypes,
+    //     ];
+
+
+    //     return Pdf::loadView('pages.request.pdf', $viewData)
+    //         ->setPaper('A4')
+    //         ->setOptions([
+    //             'isRemoteEnabled'      => false,
+    //             'isHtml5ParserEnabled' => true,
+    //             'isPhpEnabled'         => false,
+    //             'defaultFont'          => 'sans-serif',
+    //         ])
+    //         ->download('request-' . $request->document_number . '.pdf');
+    // }
     public function pdfview($id)
-    {
-        set_time_limit(120);
-        ini_set('memory_limit', '512M');
+{
+    set_time_limit(120);
+    ini_set('memory_limit', '512M');
 
-        $request = Formrequest::with([
-            'vendor',
-            'requesttype',
-            'capextype',
-            'documenttype',
-            'capextype.user.employee',
-            'items',
-            'links',
-            'items.vendors',
-            'company:id',
-            'user.employee',
-            'items.vendors.vendor',
-            'user.employee.company',
-            'user.employee.position:id,name',
-            'user.employee.department:id,department_name',
-            'approval.approver2User.employee',
-            'approval.approver2User.employee.position:id,name',
-            'approval.capexApprover.employee.position:id,name',
-        ])->findOrFail($id);
+    $request = Formrequest::with([
+        'vendor',
+        'requesttype',
+        'capextype',
+        'documenttype',
+        'capextype.user.employee',
+        'items',
+        'links',
+        'items.vendors',
+        'company:id',
+        'user.employee',
+        'items.vendors.vendor',
+        'user.employee.company',
+        'user.employee.position:id,name',
+        'user.employee.department:id,department_name',
+        'approval.approver2User.employee',
+        'approval.approver2User.employee.position:id,name',
+        'approval.capexApprover.employee.position:id,name',
+        'approval.prApprover.employee',                      // ← tambah
+    'approval.prApprover.employee.position:id,name',
+    ])->findOrFail($id);
 
-        $capexVendors = $request->items->mapWithKeys(function ($item) {
-            return [
-                $item->id => $item->vendors->values()->map(fn($v) => [
-                    'vendor_name' => $v->vendor?->vendor_name ?? 'Empty',
-                    'price'       => $v->price ?? 0,
-                    'is_selected' => (bool) $v->is_selected,
-                ])
-            ];
-        });
+    $capexVendors = $request->items->mapWithKeys(function ($item) {
+        return [
+            $item->id => $item->vendors->values()->map(fn($v) => [
+                'vendor_name' => $v->vendor?->vendor_name ?? 'Empty',
+                'price'       => $v->price ?? 0,
+                'is_selected' => (bool) $v->is_selected,
+            ])
+        ];
+    });
 
-        $employee    = $request->user?->employee;
-        $paymenttypes = $request->payment_type_payreq;
-        $documenttypes = $request->documenttype?->document_type_name;
-        $requestcompany    = $request->transfer;
-        $companymail = $employee->company_email;
-        $requestDate = $request->request_date
-            ->timezone('Asia/Makassar')
-            ->translatedFormat('d F Y');
-        $Deadline = $request->deadline
-            ->timezone('Asia/Makassar')
-            ->translatedFormat('d F Y');
+    $employee      = $request->user?->employee;
+    $store      = $request->store?->name;
+    $paymenttypes  = $request->payment_type_payreq;
+    $documenttypes = $request->documenttype?->document_type_name;
+    $requestcompany = $request->transfer;
+    $companymail   = $employee->company_email;
+    $requestDate   = $request->request_date
+        ->timezone('Asia/Makassar')
+        ->translatedFormat('d F Y');
+    $Deadline      = $request->deadline
+        ->timezone('Asia/Makassar')
+        ->translatedFormat('d F Y');
 
-        // ── toBase64 helper ──────────────────────────────────────────
-        $cache    = [];
-        $toBase64 = static function (string $localPath) use (&$cache): ?string {
-            if (isset($cache[$localPath])) return $cache[$localPath];
-            if (!is_file($localPath))      return $cache[$localPath] = null;
-            $image = @file_get_contents($localPath);
-            if ($image === false)          return $cache[$localPath] = null;
+    // ── toBase64 helper (dari S3) ────────────────────────────────────
+    $cache    = [];
+    $toBase64 = static function (string $s3Path) use (&$cache): ?string {
+        if (isset($cache[$s3Path])) return $cache[$s3Path];
+        try {
+            if (!Storage::disk('s3')->exists($s3Path)) {
+                return $cache[$s3Path] = null;
+            }
+            $image = Storage::disk('s3')->get($s3Path);
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
             $mime  = finfo_buffer($finfo, $image);
             finfo_close($finfo);
-            return $cache[$localPath] = 'data:' . $mime . ';base64,' . base64_encode($image);
-        };
-        $showManagerSignature = in_array($request->status, ['Approved Manager', 'Approved Director']);
-        // ── Logo ─────────────────────────────────────────────────────
-        $logoBase64   = null;
-        $companyId    = $request->company?->id;
-        // $internalBase = rtrim(config('services.hrx.internal_url', env('HRX_INTERNAL_URL', 'http://127.0.0.1:8001')), '/');
-        $internalBase = rtrim(config('services.manager_api.url', 'http://127.0.0.1:8001'), '/');
-        if ($companyId) {
-            try {
-                $apiResponse = Http::withoutVerifying()->timeout(8)->get("{$internalBase}/api/company/{$companyId}");
-                Log::info('API RESPONSE DEBUG', [
-                    'url'        => "{$internalBase}/api/company/{$companyId}",
-                    'status'     => $apiResponse->status(),
-                    'logo_url'   => $apiResponse->json('logo_url'),
-                    'body'       => $apiResponse->json(),
-                ]);
-                if ($apiResponse->successful()) {
-                    $logoUrl = $apiResponse->json('logo_url');
-                    if ($logoUrl) {
-                        $logoUrlInternal = preg_replace(
-                            '#^https?://hrx\.asianbay\.co\.id#',
-                            $internalBase,
-                            $logoUrl
-                        );
-                        Log::info('IMG FETCH DEBUG', [
-                            'logoUrlInternal' => $logoUrlInternal,
-                        ]);
-                        $imgResponse = Http::withoutVerifying()->timeout(5)->get($logoUrlInternal);
-                        Log::info('IMG RESPONSE DEBUG', [
-                            'status' => $imgResponse->status(),
-                            'size'   => strlen($imgResponse->body()),
-                        ]);
-                        if ($imgResponse->successful()) {
-                            $body       = $imgResponse->body();
-                            $finfo      = finfo_open(FILEINFO_MIME_TYPE);
-                            $mime       = finfo_buffer($finfo, $body);
-                            finfo_close($finfo);
-                            $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($body);
-                        }
+            return $cache[$s3Path] = 'data:' . $mime . ';base64,' . base64_encode($image);
+        } catch (\Exception $e) {
+            Log::error('S3 toBase64 error: ' . $e->getMessage(), ['path' => $s3Path]);
+            return $cache[$s3Path] = null;
+        }
+    };
+
+    $showManagerSignature = in_array($request->status, ['Approved Manager', 'Approved Director']);
+$showGASignature      = in_array($request->status, ['Approved GA', 'Approved Director']); // ← tambah
+
+    // ── Logo ─────────────────────────────────────────────────────────
+    $logoBase64  = null;
+    $companyId   = $request->company?->id;
+    $internalBase = rtrim(config('services.manager_api.url', 'http://127.0.0.1:8001'), '/');
+
+    if ($companyId) {
+        try {
+            $apiResponse = Http::withoutVerifying()->timeout(8)->get("{$internalBase}/api/company/{$companyId}");
+            Log::info('API RESPONSE DEBUG', [
+                'url'      => "{$internalBase}/api/company/{$companyId}",
+                'status'   => $apiResponse->status(),
+                'logo_url' => $apiResponse->json('logo_url'),
+                'body'     => $apiResponse->json(),
+            ]);
+
+            if ($apiResponse->successful()) {
+                $logoUrl = $apiResponse->json('logo_url');
+                if ($logoUrl) {
+                    $logoUrlInternal = preg_replace(
+                        '#^https?://hrx\.asianbay\.co\.id#',
+                        $internalBase,
+                        $logoUrl
+                    );
+                    Log::info('IMG FETCH DEBUG', ['logoUrlInternal' => $logoUrlInternal]);
+
+                    $imgResponse = Http::withoutVerifying()->timeout(5)->get($logoUrlInternal);
+                    Log::info('IMG RESPONSE DEBUG', [
+                        'status' => $imgResponse->status(),
+                        'size'   => strlen($imgResponse->body()),
+                    ]);
+
+                    if ($imgResponse->successful()) {
+                        $body       = $imgResponse->body();
+                        $finfo      = finfo_open(FILEINFO_MIME_TYPE);
+                        $mime       = finfo_buffer($finfo, $body);
+                        finfo_close($finfo);
+                        $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($body);
                     }
                 }
-            } catch (\Exception $e) {
-                Log::error('Logo fetch error: ' . $e->getMessage());
             }
+        } catch (\Exception $e) {
+            Log::error('Logo fetch error: ' . $e->getMessage());
         }
-
-        // ── Signatures ───────────────────────────────────────────────
-        $managerName            = null;
-        $positionName           = null;
-        $managerSignatureBase64 = null;
-
-        if ($employee && $showManagerSignature) {
-            $manager = $this->resolveManager($employee);
-
-            if ($manager) {
-                $managerName  = $manager->employee_name;
-                $positionName = optional(
-                    optional($manager->structuresnew?->submissionposition)
-                        ->positionRelation
-                )->name ?? null;
-
-                if ($manager->signature) {
-                    $managerSignatureBase64 = $toBase64(
-                        public_path('storage/' . $manager->signature)
-                    );
-                }
-            }
-        }
-
-        $signatureBase64 = $employee?->signature
-            ? $toBase64(public_path('storage/' . $employee->signature))
-            : null;
-
-        $approver2   = $request->approval?->approver2User?->employee;
-        $signatories = [
-            'approver2' => [
-                'name'      => $approver2?->employee_name,
-                'position'  => $approver2?->position?->name,
-                'signature' => $approver2?->signature
-                    ? $toBase64(public_path('storage/' . $approver2->signature))
-                    : null,
-            ],
-        ];
-        // ── PIC CAPEX Signature ───────────────────────────────────────
-        $picCapexName            = null;
-        $picCapexPosition        = null;
-        $picCapexSignatureBase64 = null;
-
-        $picEmployee = $request->approval?->capexApprover?->employee;
-        if ($picEmployee) {
-            $picCapexName     = $picEmployee->employee_name;
-            $picCapexPosition = optional($picEmployee->position)->name;
-
-            if ($picEmployee->signature) {
-                $picCapexSignatureBase64 = $toBase64(
-                    public_path('storage/' . $picEmployee->signature)
-                );
-            }
-        }
-        $viewData = [
-            'request'                => $request,
-            'requestcompany'                => $requestcompany,
-            'companymail'                => $companymail,
-            'logoBase64'             => $logoBase64,
-            'signatureBase64'        => $signatureBase64,
-            'managerSignatureBase64' => $managerSignatureBase64,
-            'managerName'            => $managerName,
-            'positionName'           => $positionName,
-            'signatories'            => $signatories,
-            'total'                  => $request->items->sum('total_price'),
-            'Deadline'               => $Deadline,
-            'requestDate'            => $requestDate,
-            'itemCount'              => $request->items->count(),
-            'showSignature'          => $showManagerSignature,
-            'capexVendors'           => $capexVendors,
-            'picCapexName'            => $picCapexName,            
-            'picCapexPosition'        => $picCapexPosition,        
-            'picCapexSignatureBase64' => $picCapexSignatureBase64, 
-            'picCapexNotes'           => $request->pic_capex_notes, 
-            'paymenttypes'           => $paymenttypes, 
-            'documenttypes'           => $documenttypes, 
-        ];
-
-
-        return Pdf::loadView('pages.request.pdf', $viewData)
-            ->setPaper('A4')
-            ->setOptions([
-                'isRemoteEnabled'      => false,
-                'isHtml5ParserEnabled' => true,
-                'isPhpEnabled'         => false,
-                'defaultFont'          => 'sans-serif',
-            ])
-            ->download('request-' . $request->document_number . '.pdf');
     }
+
+    // ── Signatures ───────────────────────────────────────────────────
+    $managerName            = null;
+    $positionName           = null;
+    $managerSignatureBase64 = null;
+
+    if ($employee && $showManagerSignature) {
+        $manager = $this->resolveManager($employee);
+
+        if ($manager) {
+            $managerName  = $manager->employee_name;
+            $positionName = optional(
+                optional($manager->structuresnew?->submissionposition)
+                    ->positionRelation
+            )->name ?? null;
+
+            if ($manager->signature) {
+                $managerSignatureBase64 = $toBase64($manager->signature);
+            }
+        }
+    }
+
+    $signatureBase64 = $employee?->signature
+        ? $toBase64($employee->signature)
+        : null;
+
+    $approver2   = $request->approval?->approver2User?->employee;
+    $signatories = [
+        'approver2' => [
+            'name'      => $approver2?->employee_name,
+            'position'  => $approver2?->position?->name,
+            'signature' => $approver2?->signature
+                ? $toBase64($approver2->signature)
+                : null,
+        ],
+    ];
+
+    // ── PIC CAPEX Signature ───────────────────────────────────────────
+    $picCapexName            = null;
+    $picCapexPosition        = null;
+    $picCapexSignatureBase64 = null;
+
+    $picEmployee = $request->approval?->capexApprover?->employee;
+    if ($picEmployee) {
+        $picCapexName     = $picEmployee->employee_name;
+        $picCapexPosition = optional($picEmployee->position)->name;
+
+        if ($picEmployee->signature) {
+            $picCapexSignatureBase64 = $toBase64($picEmployee->signature);
+        }
+    }
+
+    // ── PR Approver (GA) Signature ────────────────────────────────────
+$prApproverName            = null;
+$prApproverPosition        = null;
+$prApproverSignatureBase64 = null;
+
+$prApproverEmployee = $request->approval?->prApprover?->employee;
+if ($prApproverEmployee && $showGASignature) {
+    $prApproverName     = $prApproverEmployee->employee_name;
+    $prApproverPosition = optional($prApproverEmployee->position)->name;
+
+    if ($prApproverEmployee->signature) {
+        $prApproverSignatureBase64 = $toBase64($prApproverEmployee->signature);
+    }
+}
+
+    $viewData = [
+        'request'                => $request,
+        'requestcompany'         => $requestcompany,
+        'companymail'            => $companymail,
+        'store'            => $store,
+        'logoBase64'             => $logoBase64,
+        'signatureBase64'        => $signatureBase64,
+        'managerSignatureBase64' => $managerSignatureBase64,
+        'managerName'            => $managerName,
+        'positionName'           => $positionName,
+        'signatories'            => $signatories,
+        'total'                  => $request->items->sum('total_price'),
+        'Deadline'               => $Deadline,
+        'requestDate'            => $requestDate,
+        'itemCount'              => $request->items->count(),
+        'showSignature'          => $showManagerSignature,
+        'capexVendors'           => $capexVendors,
+        'picCapexName'           => $picCapexName,
+        'picCapexPosition'       => $picCapexPosition,
+        'picCapexSignatureBase64' => $picCapexSignatureBase64,
+        'picCapexNotes'          => $request->pic_capex_notes,
+        'paymenttypes'           => $paymenttypes,
+        'documenttypes'          => $documenttypes,
+        'prApproverName'            => $prApproverName,
+    'prApproverPosition'        => $prApproverPosition,
+    'prApproverSignatureBase64' => $prApproverSignatureBase64,
+    'showGASignature'           => $showGASignature,
+    'prApproverAt'              => $request->approval?->pr_approver_at
+        ? Carbon::parse($request->approval->pr_approver_at)
+            ->timezone('Asia/Makassar')
+            ->translatedFormat('d F Y')
+        : null,
+    ];
+
+    return Pdf::loadView('pages.request.pdf', $viewData)
+        ->setPaper('A4')
+        ->setOptions([
+            'isRemoteEnabled'      => false,
+            'isHtml5ParserEnabled' => true,
+            'isPhpEnabled'         => false,
+            'defaultFont'          => 'sans-serif',
+        ])
+        ->download('request-' . $request->document_number . '.pdf');
+}
 
     public function create()
     {
         $user = auth()->user();
-        if (!$user->hasRole(['user', 'admin', 'manager', 'finance', 'director'])) {
+        if (!$user->hasRole(['user', 'admin', 'manager', 'finance', 'director','ga'])) {
             abort(403, 'Tidak memiliki akses');
         }
         $vendors = Vendor::where('status', 'Active')->pluck('vendor_name', 'id');
+        $locations = Store::pluck('name', 'id');
 
         // Ambil departemen user
         $userDepartment = optional($user->employee->department)->department_name;
@@ -914,6 +1396,8 @@ class RequestController extends Controller
             })
             ->values();
         $request = Requesttype::select('id', 'code')->get();
+        // $locations = Store::select('id', 'name')->get();
+        
         $capextypes = Capextype::with('user.employee')
             ->select('id', 'user_id', 'code')
             ->get();
@@ -923,15 +1407,19 @@ class RequestController extends Controller
         if (!$userCompanyId) {
             abort(403, 'User doesnt have company');
         }
+       
         $mainCompany = config('app.main_company_id');
-        $isMainCompany = $userCompanyId === $mainCompany;
-        if ($isMainCompany) {
-            $companies = Company::on('hrx')->pluck('name', 'id');
-        } else {
-            $companies = Company::on('hrx')
-                ->where('id', $userCompanyId)
-                ->pluck('name', 'id');
-        }
+$isMainCompany = $userCompanyId === $mainCompany;
+
+if ($user->hasRole('admin') || $user->hasRole('ga')) {
+    $companies = Company::on('hrx')->pluck('name', 'id');
+} elseif ($isMainCompany) {
+    $companies = Company::on('hrx')->pluck('name', 'id');
+} else {
+    $companies = Company::on('hrx')
+        ->where('id', $userCompanyId)
+        ->pluck('name', 'id');
+}
         $statuses = [
             'Draft' => 'Draft',
             'Submitted' => 'Submitted',
@@ -946,6 +1434,7 @@ class RequestController extends Controller
         $uoms = Requestitem::getUomOptions();
         $assets = Formrequest::getAssetOptions();
         $paymenttypeprs = Formrequest::getPAYREQOptions();
+        $canSelectCompany = $user->hasRole('admin') || $user->hasRole('ga') || $isMainCompany;
         return view('pages.request.createrequest', compact(
             'companies',
             'userCompanyId',
@@ -958,10 +1447,20 @@ class RequestController extends Controller
             'requesttypes',
             'documenttypes',
             'paymenttypeprs',
+            'canSelectCompany',
+            'locations',
             'statuses'
         ));
     }
-
+ // $mainCompany = config('app.main_company_id');
+        // $isMainCompany = $userCompanyId === $mainCompany;
+        // if ($isMainCompany) {
+        //     $companies = Company::on('hrx')->pluck('name', 'id');
+        // } else {
+        //     $companies = Company::on('hrx')
+        //         ->where('id', $userCompanyId)
+        //         ->pluck('name', 'id');
+        // }
     public function store(Request $request)
     {
         // dd($request->all());
@@ -969,6 +1468,8 @@ class RequestController extends Controller
             'payload' => $request->all(),
             'user_id' => Auth::id()
         ]);
+        $user = auth()->user();
+
         $typesNeedMultiVendorCapex = [
             '019d3986-699d-7328-a43c-8e730fc4a691',
         ];
@@ -977,6 +1478,7 @@ class RequestController extends Controller
         ];
         $requestType = Requesttype::find($request->request_type_id);
         $isPayreq    = $requestType?->code === 'PAYREQ';
+        $isPR    = $requestType?->code === 'PR';
         $isMultiVendorCapex = in_array($request->request_type_id, $typesNeedMultiVendorCapex);
         $isMultiVendorPR    = in_array($request->request_type_id, $typesNeedMultiVendorPR);
         $isMultivendor      = $isMultiVendorCapex || $isMultiVendorPR;
@@ -993,6 +1495,12 @@ class RequestController extends Controller
             'notes'           => ['nullable', 'string'],
             'capex_type_id' => [$isMultiVendorCapex ? 'required' : 'nullable'],
             // ✅ required hanya untuk PAYREQ, bukan PR
+            // 'store_id'    => [$isPR ? 'required' : 'nullable'],
+          'store_id' => [
+    ($isPR && !$user->hasAnyRole(['finance', 'user', 'manager', 'director']))
+        ? 'required'
+        : 'nullable'
+],
             'document_type_id'    => [$isPayreq ? 'required' : 'nullable'],
             'payment_type_payreq' => [$isPayreq ? 'required' : 'nullable'],
             'items' => ['required', 'array', 'min:1'],
@@ -1046,6 +1554,7 @@ class RequestController extends Controller
                 'request_date'    => $validated['request_date'],
                 'company_id'      => $validated['company_id'] ?? null,
                 'transfer'    => $companyName,
+                'store_id' => $validated['store_id'] ?? null,
                 'document_type_id' => $validated['document_type_id'] ?? null,
                 'payment_type_payreq' => $validated['payment_type_payreq'] ?? null,
                 'transfer'        => $companyName,
@@ -1163,22 +1672,42 @@ class RequestController extends Controller
     }
 
     // ✅ Extract helper agar tidak duplikasi kode
-    private function sendToPositionEmployees($formrequest): void
-    {
-        $employees = Employee::whereHas('position', function ($query) {
-            $query->whereIn('id', [
-                '01973a06-74e2-706d-97fe-097c12788c59',
-                '01992267-3466-724e-93b3-46350f7e9094',
-                '01973e38-9ae7-7343-9058-1094c2a8606b',
-            ]);
-        })->get();
+    // private function sendToPositionEmployees($formrequest): void
+    // {
+    //     $employees = Employee::whereHas('position', function ($query) {
+    //         $query->whereIn('id', [
+    //             '01973a06-74e2-706d-97fe-097c12788c59',
+    //             '01992267-3466-724e-93b3-46350f7e9094',
+    //             '01973e38-9ae7-7343-9058-1094c2a8606b',
+    //         ]);
+    //     })->get();
 
-        foreach ($employees as $employee) {
-            if ($employee->company_email) {
-                Mail::to($employee->company_email)->queue(new RequestMail($formrequest));
-            }
+    //     foreach ($employees as $employee) {
+    //         if ($employee->company_email) {
+    //             Mail::to($employee->company_email)->queue(new RequestMail($formrequest));
+    //         }
+    //     }
+    // }
+    private function sendToPositionEmployees($formrequest): void
+{
+    $employees = Employee::whereHas('position', function ($query) {
+        $query->whereIn('id', [
+            '01973a06-74e2-706d-97fe-097c12788c59',
+            '01992267-3466-724e-93b3-46350f7e9094',
+            '01973e38-9ae7-7343-9058-1094c2a8606b',
+        ]);
+    })->get();
+
+    Log::info('DEBUG sendToPositionEmployees', [
+        'employee_count' => $employees->count(),
+        'emails' => $employees->pluck('company_email')->toArray(),
+    ]);
+    foreach ($employees as $employee) {
+        if ($employee->company_email) {
+            Mail::to($employee->company_email)->queue(new RequestMail($formrequest));
         }
     }
+}
     public function update(Request $request, $hash)
     {
         // ============================================================
@@ -1186,7 +1715,7 @@ class RequestController extends Controller
         // ============================================================
         $formrequest = null;
         foreach (Formrequest::select('id')->cursor() as $u) {
-            if (substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash) {
+            if (substr(hash('sha256', $u->id . config('app.key')), 0, 8) === $hash) {
                 $formrequest = Formrequest::find($u->id);
                 break;
             }
@@ -1289,6 +1818,10 @@ class RequestController extends Controller
                 ]);
 
                 DB::commit();
+                if (in_array($validated['status'], ['Approved Director', 'Rejected Director'])) {
+    app(\App\Services\WhatsappService::class)
+        ->notifyRequestStatus($validated['status'], $formrequest);
+}
 
                 $this->dispatchEmails($validated['status'], $previousStatus, $formrequest);
 
@@ -1299,6 +1832,7 @@ class RequestController extends Controller
                 return back()->withInput()->with('error', 'Failed: ' . $e->getMessage());
             }
         }
+       
 
         // ============================================================
         // 4. DETEKSI TIPE REQUEST
@@ -1309,7 +1843,7 @@ class RequestController extends Controller
         $isPayreq      = $requestType?->code === 'PAYREQ'; // ✅ tambah
 
         $isMultiVendor = $isCAPEX || $isPR;
-
+$user= auth()->user();
         // ============================================================
         // 5. VALIDASI UMUM
         // ============================================================
@@ -1323,6 +1857,7 @@ class RequestController extends Controller
             'notes'               => ['nullable', 'string'],
             'notes_fa'            => ['nullable', 'string'],
             'notes_dir'           => ['nullable', 'string'], // ✅ fix: ditambahkan
+            'notes_ga' => ['nullable', 'string'],
             'pic_capex_notes'           => ['nullable', 'string'], // ✅ fix: ditambahkan
             'destination'         => ['nullable', 'string', 'max:255'],
 
@@ -1332,12 +1867,12 @@ class RequestController extends Controller
 
             'capex_type_id' => [$isCAPEX ? 'required' : 'nullable'],
 
-            // 'document_type_id' => [$isPR ? 'required' : 'nullable'],
-
-            // 'payment_type_payreq' => $isPR
-            //     ? ['required', Rule::in(Formrequest::getPROptions())]
-            //     : ['nullable', Rule::in(Formrequest::getPROptions())],
-            // ✅ required hanya untuk PAYREQ
+           
+             'store_id' => [
+    ($isPR && !$user->hasAnyRole(['finance', 'user', 'manager', 'director']))
+        ? 'required'
+        : 'nullable'
+],
             'document_type_id'    => [$isPayreq ? 'required' : 'nullable'],
 
             'payment_type_payreq' => $isPayreq
@@ -1358,9 +1893,11 @@ class RequestController extends Controller
                 'Approved Finance',
                 'Approved IT',
                 'Approved BD',
+                'Approved GA',
                 'Rejected Finance',
                 'Rejected IT',
                 'Rejected BD',
+                'Rejected GA',
                 'Approved Director',
                 'Rejected Director',
                 'Done',
@@ -1418,14 +1955,15 @@ class RequestController extends Controller
                 'notes_fa'            => $validated['notes_fa'] ?? null,
                 'transfer'        => $companyName,
                 'notes_dir'           => $validated['notes_dir'] ?? null, // ✅ fix
+                     'notes_ga' => $validated['notes_ga'] ?? null,
                 'pic_capex_notes'           => $validated['pic_capex_notes'] ?? null, // ✅ fix
                 'destination'         => $validated['destination'] ?? null,
                 'assets'              => $isCAPEX
                     ? $validated['assets']
                     : ($validated['assets'] ?? $formrequest->assets),
-                'document_type_id'    => $isPR
-                    ? $validated['document_type_id']
-                    : ($validated['document_type_id'] ?? $formrequest->document_type_id),
+                'store_id'    => $isPR
+                    ? $validated['store_id']
+                    : ($validated['store_id'] ?? $formrequest->store_id),
                 'document_type_id'    => $isPayreq
                     ? $validated['document_type_id']
                     : ($validated['document_type_id'] ?? $formrequest->document_type_id),
@@ -1440,7 +1978,114 @@ class RequestController extends Controller
                 'status'              => $validated['status'],
             ]);
 
-            // ============================================================
+    //         // ============================================================
+    //         // 8. APPROVAL LOGIC
+    //         // ============================================================
+    //         $approval = Requestapproval::firstOrCreate(['request_id' => $formrequest->id]);
+
+    //         if ($validated['status'] === 'Approved Manager' && $previousStatus !== 'Approved Manager') {
+    //             if (!empty($formrequest->capex_type_id)) {
+    //                 $approval->update([
+    //                     'approver1'         => auth()->id(),
+    //                     'approver1_at'      => now(),
+    //                     'capex_approver'    => auth()->id(),
+    //                     'capex_approver_at' => now(),
+    //                 ]);
+    //             } else {
+    //                 $approval->update([
+    //                     'approver1'    => auth()->id(),
+    //                     'approver1_at' => now(),
+    //                 ]);
+    //             }
+    //         }
+
+    //         if ($validated['status'] === 'Approved Director' && $previousStatus !== 'Approved Director') {       
+    //         $approval->update([
+    //                 'approver2'    => auth()->id(),
+    //                 'approver2_at' => now(),
+    //             ]);
+    //         }
+    //         if ($validated['status'] === 'Approved GA' && $previousStatus !== 'Approved GA') {       
+    //         $approval->update([
+    //                 'pr_approver'    => auth()->id(),
+    //                 'pr_approver_at' => now(),
+    //             ]);
+    //              if ($isPR) {
+    //     $this->sendToPositionEmployees($formrequest);
+    // }
+    //         }
+
+    //         // ============================================================
+    //         // 9. HAPUS & RECREATE ITEMS, VENDORS, LINKS
+    //         // ============================================================
+    //         $existingItemIds = Requestitem::where('request_id', $formrequest->id)->pluck('id');
+    //         ItemVendorQuotation::whereIn('request_item_id', $existingItemIds)->delete();
+    //         Requestitem::where('request_id', $formrequest->id)->delete();
+    //         Requestlink::where('request_id', $formrequest->id)->delete();
+
+    //         foreach ($validated['items'] as $item) {
+    //             $qty   = $parseQty($item['qty']);
+    //             $price = $isMultiVendor ? 0 : $parsePrice($item['price'] ?? '0');
+
+    //             $newItem = Requestitem::create([
+    //                 'request_id'    => $formrequest->id,
+    //                 'item_name'     => $item['item_name'],
+    //                 'specification' => $item['specification'] ?? null,
+    //                 'qty'           => $qty,
+    //                 'uom'           => $item['uom'],
+    //                 'price'         => $price,
+    //                 'total_price'   => $isMultiVendor ? 0 : round($qty * $price, 2),
+    //             ]);
+
+    //             if ($isMultiVendor && !empty($item['vendors'])) {
+    //                 $selectedVendorIndex = isset($item['selected_vendor']) ? (int) $item['selected_vendor'] : null;
+
+    //                 foreach ($item['vendors'] as $vIdx => $vendorData) {
+    //                     if (empty($vendorData['vendor_id'])) continue;
+
+    //                     ItemVendorQuotation::create([
+    //                         'request_item_id' => $newItem->id,
+    //                         'vendor_id'       => $vendorData['vendor_id'],
+    //                         'price'           => $parsePrice($vendorData['price'] ?? '0'),
+    //                         'is_selected'     => ($selectedVendorIndex !== null && $vIdx == $selectedVendorIndex),
+    //                     ]);
+    //                 }
+
+    //                 if ($selectedVendorIndex !== null && isset($item['vendors'][$selectedVendorIndex])) {
+    //                     $selectedPrice    = $parsePrice($item['vendors'][$selectedVendorIndex]['price'] ?? '0');
+    //                     $selectedVendorId = $item['vendors'][$selectedVendorIndex]['vendor_id'] ?? null;
+
+    //                     $newItem->update([
+    //                         'price'       => $selectedPrice,
+    //                         'total_price' => round($qty * $selectedPrice, 2),
+    //                     ]);
+
+    //                     if ($selectedVendorId) {
+    //                         $formrequest->update(['vendor_id' => $selectedVendorId]);
+    //                     }
+    //                 }
+    //             }
+    //         }
+
+    //         if (!empty($validated['links'])) {
+    //             foreach ($validated['links'] as $link) {
+    //                 if (empty($link['link'])) continue;
+    //                 $formrequest->links()->create(['link' => $link['link']]);
+    //             }
+    //         }
+
+    //         DB::commit();
+
+    //         $this->dispatchEmails($validated['status'], $previousStatus, $formrequest);
+
+    //         return redirect()->route('request')->with('success', 'Request updated successfully.');
+    //     } catch (\Throwable $e) {
+    //         DB::rollBack();
+    //         Log::error('UPDATE ERROR', ['message' => $e->getMessage()]);
+    //         return back()->withInput()->with('error', 'Failed: ' . $e->getMessage());
+    //     }
+    // }
+    // ============================================================
             // 8. APPROVAL LOGIC
             // ============================================================
             $approval = Requestapproval::firstOrCreate(['request_id' => $formrequest->id]);
@@ -1465,6 +2110,14 @@ class RequestController extends Controller
                 $approval->update([
                     'approver2'    => auth()->id(),
                     'approver2_at' => now(),
+                ]);
+            }
+
+            // ← hapus sendToPositionEmployees dari sini
+            if ($validated['status'] === 'Approved GA' && $previousStatus !== 'Approved GA') {
+                $approval->update([
+                    'pr_approver'    => auth()->id(),
+                    'pr_approver_at' => now(),
                 ]);
             }
 
@@ -1529,9 +2182,35 @@ class RequestController extends Controller
 
             DB::commit();
 
-            $this->dispatchEmails($validated['status'], $previousStatus, $formrequest);
+            // ← pindah ke sini, setelah commit
+            // if ($isPR && $validated['status'] === 'Approved GA' && $previousStatus !== 'Approved GA') {
+            //     $this->sendToPositionEmployees($formrequest);
+            // }
+
+            // $this->dispatchEmails($validated['status'], $previousStatus, $formrequest);
+            $waStatuses = [
+    'Submitted', 'Approved Manager', 'Rejected Manager',
+    'Approved BD', 'Rejected BD', 'Approved IT', 'Rejected IT',
+    'Approved GA', 'Rejected GA', 'Approved Director', 'Rejected Director',
+];
+if (in_array($validated['status'], $waStatuses) && $validated['status'] !== $previousStatus) {
+    app(\App\Services\WhatsappService::class)
+        ->notifyRequestStatus($validated['status'], $formrequest);
+}
+
+            Log::info('DEBUG APPROVED GA', [
+    'isPR'           => $isPR,
+    'status'         => $validated['status'],
+    'previousStatus' => $previousStatus,
+]);
+
+if ($isPR && $validated['status'] === 'Approved GA' && $previousStatus !== 'Approved GA') {
+    Log::info('DEBUG: masuk sendToPositionEmployees');
+    $this->sendToPositionEmployees($formrequest);
+}
 
             return redirect()->route('request')->with('success', 'Request updated successfully.');
+
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('UPDATE ERROR', ['message' => $e->getMessage()]);

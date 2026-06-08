@@ -63,7 +63,7 @@ class RoleController extends Controller
         })
 
         ->addColumn('action', function ($role) {
-            $idHashed = substr(hash('sha256', $role->id . env('APP_KEY')), 0, 8);
+            $idHashed = substr(hash('sha256', $role->id . config('app.key')), 0, 8);
 
             $editBtn = '
             <a href="' . route('editroles', $idHashed) . '"
@@ -95,7 +95,7 @@ class RoleController extends Controller
      public function edit($hash)
     {
         $role = Role::with('permissions')->get()->first(function ($u) use ($hash) {
-            return substr(hash('sha256', $u->id . env('APP_KEY')), 0, 8) === $hash;
+            return substr(hash('sha256', $u->id . config('app.key')), 0, 8) === $hash;
         });
         $permissions = Permission::all();
         $rolePermissions = $role->permissions->pluck('id')->toArray();

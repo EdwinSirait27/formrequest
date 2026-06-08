@@ -306,11 +306,7 @@
                         <td class="ic">:</td>
                         <td class="iv">{{ $formrequest->user->employee->department->department_name ?? '-' }}</td>
                     </tr>
-                    {{-- <tr>
-                    <td class="ik">Location</td>
-                    <td class="ic">:</td>
-                    <td class="iv">{{ $formrequest->user->employee->store->name ?? '-' }}</td>
-                </tr> --}}
+                    
                     <tr>
                         <td class="ik">Request Date</td>
                         <td class="ic">:</td>
@@ -342,7 +338,7 @@
                             <td class="iv">{{ $assetsLabel }}</td>
                         </tr>
                     @endif
-                    @if ($formrequest->requesttype->code === 'PR')
+                    @if ($formrequest->requesttype->code === 'PAYRER')
                     @if(!empty($document_type_name))
                         <tr>
                             <td class="ik">Document Type</td>
@@ -358,11 +354,21 @@
                         </tr>
                         @endif
                     @endif
+                    @if ($formrequest->requesttype->code === 'PR')
+                    @if(!empty($store))
+                        <tr>
+                            <td class="ik">Location</td>
+                            <td class="ic">:</td>
+                            <td class="iv">{{ $store }}</td>
+                        </tr>
+                        @endif
+                    @endif
                     <tr>
                         <td class="ik">Status</td>
                         <td class="ic">:</td>
                         <td class="iv"><span class="badge">{{ $formrequest->status }}</span></td>
                     </tr>
+                    @if (in_array($formrequest->requesttype->code, ['CA', 'PAYREQ','RE','CAPEX']))
                    
                     @if (!empty($approver1) && $approver1 !== 'Not Approved yet' && $approver1 !== '-')
                         <tr>
@@ -377,6 +383,24 @@
                                 </span>
                             </td>
                         </tr>
+                    @endif
+                    @endif
+                     @if ($formrequest->requesttype->code === 'PR')
+                   
+                    @if (!empty($pr_approver) && $pr_approver !== 'Not Approved yet' && $pr_approver !== '-')
+                        <tr>
+                            <td class="ik">Approved by GA</td>
+                            <td class="ic">:</td>
+                            <td class="iv">
+                                <span class="badge">
+                                    {{ $pr_approver }}
+                                    @if (!empty($pr_approver_at) && $pr_approver_at !== '-')
+                                        <br><small>{{ $pr_approver_at }}</small>
+                                    @endif
+                                </span>
+                            </td>
+                        </tr>
+                    @endif
                     @endif
                      @if ($formrequest->requesttype->code === 'CAPEX')
                     @if(!empty($capex_approver))

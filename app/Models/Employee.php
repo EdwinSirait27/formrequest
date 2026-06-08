@@ -35,6 +35,10 @@ class Employee extends Model
     {
         return $this->belongsTo(Company::class, 'company_id');
     }
+    public function grading()
+    {
+        return $this->belongsTo(Grading::class, 'grading_id');
+    }
     public function store()
     {
         return $this->belongsTo(Store::class, 'store_id');

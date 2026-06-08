@@ -10,22 +10,27 @@
             height: 50px;
             border-radius: 12px;
         }
+
         .select2-selection__rendered {
             color: #1e293b !important;
             line-height: 50px !important;
         }
+
         .select2-selection__arrow {
             height: 50px !important;
         }
+
         .select2-dropdown {
             background-color: #ffffff;
             border: 1px solid #cbd5e1;
             color: #1e293b;
         }
+
         .dark .select2-container--default .select2-selection--single {
             background-color: #1e293b;
             border: 1px solid #334155;
         }
+
         .dark .select2-selection__rendered {
             color: #ffffff !important;
         }
@@ -72,7 +77,8 @@
                         </svg>
                         Company Name<span class="text-red-400">*</span>
                     </label>
-                    @if ($isMainCompany)
+
+                    @if ($canSelectCompany)
                         <select id="company_id" name="company_id"
                             class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
                             <option value="">Choose Companies</option>
@@ -86,7 +92,6 @@
                     @else
                         <input type="text" class="form-input w-full px-4 py-3 rounded-xl"
                             value="{{ $companies[$userCompanyId] ?? '-' }}" readonly>
-
                         <input type="hidden" name="company_id" value="{{ $userCompanyId }}">
                     @endif
                     @error('company_id')
@@ -186,6 +191,40 @@
                         @enderror
                     </div>
                 </div>
+                @if (auth()->user()->hasRole('ga'))
+                    <div id="location_wrapper">
+                        <div>
+                            <label for="store_id"
+                                class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
+                                <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                                </svg>
+                                Location<span class="text-red-400">*</span>
+                            </label>
+                            <select id="store_id" name="store_id"
+                                class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
+                                <option value="">Choose Location</option>
+                                @foreach ($locations as $id => $name)
+                                    <option value="{{ $id }}" {{ old('store_id') == $id ? 'selected' : '' }}>
+                                        {{ $name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('store_id')
+                                <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                    {{ $message }}
+                                </p>
+                            @enderror
+                        </div>
+                    </div>
+                @endif
             </div>
             <div id="assets_wrapper">
                 <div>
@@ -220,7 +259,8 @@
             </div>
             <div id="payment_type_payreq_wrapper">
                 <div>
-                    <label for="payment_type_payreq" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
+                    <label for="payment_type_payreq"
+                        class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
                         <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
                             viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -232,7 +272,8 @@
                         class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
                         <option value="">Choose Payment Type</option>
                         @foreach ($paymenttypeprs as $key => $value)
-                            <option value="{{ $key }}" {{ old('payment_type_payreq') == $key ? 'selected' : '' }}>
+                            <option value="{{ $key }}"
+                                {{ old('payment_type_payreq') == $key ? 'selected' : '' }}>
                                 {{ $value }}
                             </option>
                         @endforeach
@@ -251,7 +292,8 @@
             </div>
             <div id="document_type_wrapper">
                 <div>
-                    <label for="document_type_id" class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
+                    <label for="document_type_id"
+                        class="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2">
                         <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor"
                             viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -259,16 +301,16 @@
                         </svg>
                         Document Type<span class="text-red-400">*</span>
                     </label>
-                   <select id="document_type_id" name="document_type_id"
-                            class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
-                            <option value="">Choose Document Type</option>
-                           @foreach ($documenttypes as $document)
-                        <option value="{{ $document->id }}"
-                            {{ old('document_type_id') == $document->id ? 'selected' : '' }}>
-                            {{ $document->document_type_name }}
-                        </option>
-                    @endforeach
-                        </select>
+                    <select id="document_type_id" name="document_type_id"
+                        class="select2 w-full sm:w-40 px-3 py-2 border rounded-lg text-sm">
+                        <option value="">Choose Document Type</option>
+                        @foreach ($documenttypes as $document)
+                            <option value="{{ $document->id }}"
+                                {{ old('document_type_id') == $document->id ? 'selected' : '' }}>
+                                {{ $document->document_type_name }}
+                            </option>
+                        @endforeach
+                    </select>
                     @error('document_type_id')
                         <p class="mt-1.5 text-xs text-red-400 flex items-center gap-1">
                             <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -500,8 +542,7 @@
                 <tbody id="items-table"></tbody>
             </table>
         `);
-            } 
-            else if (code === 'CAPEX') {
+            } else if (code === 'CAPEX') {
                 $('#table-container').html(`
             <table class="w-full text-sm text-left border border-slate-700 rounded-xl">
                 <thead>
@@ -518,8 +559,7 @@
                 <tbody id="items-table"></tbody>
             </table>
         `);
-         } 
-            else if (code === 'PAYREQ') {
+            } else if (code === 'PAYREQ') {
                 $('#table-container').html(`
             <table class="w-full text-sm text-left border border-slate-700 rounded-xl">
                 <thead>
@@ -537,7 +577,7 @@
             </table>
         `);
             } else if (code === 'PR') {
-                 $('#table-container').html(`
+                $('#table-container').html(`
             <table class="w-full text-sm text-left border border-slate-700 rounded-xl">
                 <thead>
                     <tr>
@@ -626,7 +666,7 @@
     `;
         }
 
-         function createRowPR() {
+        function createRowPR() {
             const options = Object.entries(vendors)
                 .map(([id, name]) => `<option value="${id}">${name}</option>`)
                 .join('');
@@ -910,26 +950,21 @@
         $('#add-row').click(function() {
             let code = getCurrentCode();
             if (!code) {
-    toastr.error('Pilih request type dulu ya!');
-    return;
-}
+                toastr.error('Pilih request type dulu ya!');
+                return;
+            }
             let row = '';
             if (code === 'CA') {
                 row = createRowCA();
-            } 
-            else if (code === 'CAPEX') {
+            } else if (code === 'CAPEX') {
                 row = createRowCAPEX();
-            } 
-            else if (code === 'PAYREQ') {
+            } else if (code === 'PAYREQ') {
                 row = createRowPAYREQ();
-            } 
-            else if (code === 'PR') {
+            } else if (code === 'PR') {
                 row = createRowPR();
-            } 
-            else if (code === 'RE') {
+            } else if (code === 'RE') {
                 row = createRowRE();
-            } 
-            else {
+            } else {
                 alert('Type tidak dikenali');
                 return;
             }
@@ -989,16 +1024,23 @@
         }
     </script>
     <script>
+        // $(document).ready(function() {
+        //     $('#request_type_id').select2({
+        //         placeholder: "Choose request Types...",
+        //         allowClear: true,
+        //         width: '100%'
+        //     });
+        // });
         $(document).ready(function() {
-            $('#request_type_id').select2({
-                placeholder: "Choose request Types...",
+            $('#vendor_id').select2({
+                placeholder: "Choose Vendors...",
                 allowClear: true,
                 width: '100%'
             });
         });
         $(document).ready(function() {
-            $('#vendor_id').select2({
-                placeholder: "Choose Vendors...",
+            $('#store_id').select2({
+                placeholder: "Choose Location...",
                 allowClear: true,
                 width: '100%'
             });
@@ -1033,9 +1075,46 @@
         @endif
     </script>
     <script>
+        // document.addEventListener('DOMContentLoaded', function() {
+        //     const locationWrapper = document.getElementById('location_wrapper');
+        //     const hideLocation = ['CAPEX', 'PAYREQ', 'CA', 'RE', 'OT'];
+
+        //     function toggleLocation() {
+        //         const selected = $('#request_type_id').find(':selected');
+        //         const code = selected.data('code');
+        //         console.log('CODE:', code);
+        //         if (code && hideLocation.includes(code)) {
+        //             locationWrapper.style.display = 'none';
+        //             $('#store_id').val(null).trigger('change');
+        //         } else {
+        //             locationWrapper.style.display = 'block';
+        //         }
+        //     }
+        //     $('#request_type_id').on('change', toggleLocation);
+        //     toggleLocation();
+        // });
+        document.addEventListener('DOMContentLoaded', function() {
+    const locationWrapper = document.getElementById('location_wrapper');
+    const hideLocation = ['CAPEX', 'PAYREQ', 'CA', 'RE', 'OT'];
+
+    function toggleLocation() {
+        if (!locationWrapper) return; // ← tambah ini
+        const selected = $('#request_type_id').find(':selected');
+        const code = selected.data('code');
+        console.log('CODE:', code);
+        if (code && hideLocation.includes(code)) {
+            locationWrapper.style.display = 'none';
+            $('#store_id').val(null).trigger('change');
+        } else {
+            locationWrapper.style.display = 'block';
+        }
+    }
+    $('#request_type_id').on('change', toggleLocation);
+    toggleLocation();
+});
         document.addEventListener('DOMContentLoaded', function() {
             const vendorWrapper = document.getElementById('vendor_wrapper');
-            const hideVendorTypes = ['CAPEX','PR'];
+            const hideVendorTypes = ['CAPEX', 'PR'];
 
             function toggleVendor() {
                 const selected = $('#request_type_id').find(':selected');
@@ -1090,6 +1169,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             const documenttypeWrapper = document.getElementById('document_type_wrapper');
             const hideDocumenttypes = ['CA', 'CAPEX', 'PR', 'RE'];
+
             function toggleDocumenttypes() {
                 const selected = $('#request_type_id').find(':selected');
                 const code = selected.data('code');
@@ -1104,9 +1184,10 @@
             $('#request_type_id').on('change', toggleDocumenttypes);
             toggleDocumenttypes();
         });
-          document.addEventListener('DOMContentLoaded', function() {
-              const capextypeWrapper = document.getElementById('capex_type_wrapper');
-            const hideCapexTypes = ['PAYREQ', 'RE','CA','PR'];
+        document.addEventListener('DOMContentLoaded', function() {
+            const capextypeWrapper = document.getElementById('capex_type_wrapper');
+            const hideCapexTypes = ['PAYREQ', 'RE', 'CA', 'PR'];
+
             function toggleCapextype() {
                 const selected = $('#request_type_id').find(':selected');
                 const code = selected.data('code');
@@ -1148,7 +1229,7 @@
         });
     </script>
 @endsection
-  {{-- // <td class="p-2">
+{{-- // <td class="p-2">
         //     <input type="text" placeholder="5 / 0.5" 
         //         name="items[${index}][qty]" 
         //         class="qty w-full form-input rounded-lg px-2 py-1">

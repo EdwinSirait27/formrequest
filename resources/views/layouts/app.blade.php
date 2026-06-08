@@ -247,17 +247,6 @@ if (localStorage.getItem('theme') === 'light') {
         <p class="text-xs text-slate-500 dark:text-slate-400">Information System</p>
     </div>
 </div>
-            {{-- <div class="flex items-center gap-3 h-24 border-b border-slate-800">
-                <img src="{{ asset('img/AsianBaylogo.png') }}" class="block dark:hidden h-16 w-auto">
-
-                <img src="{{ asset('img/AsianBay.png') }}" class="hidden dark:block h-16 w-auto">
-
-                <div>
-                    <h2 class="text-base font-bold text-slate-700 dark:text-slate-400">Form Request</h2>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Information System</p>
-                </div>
-
-            </div> --}}
             <nav class="flex flex-1 flex-col">
                 <ul role="list" class="flex flex-1 flex-col gap-y-7">
                     <li>
@@ -327,6 +316,7 @@ if (localStorage.getItem('theme') === 'light') {
                             Capex Type
                         </a>
                     @endrole
+                   
                     <a href="{{ route('request') }}"
                         class="group flex gap-x-3 rounded-lg p-3 text-sm leading-6 font-semibold transition-all
                                           {{ request()->routeIs('request')

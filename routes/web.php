@@ -14,7 +14,7 @@ Route::middleware('throttle:15,1', 'guest')->group(function () {
     Route::get('/', [AuthController::class, 'loginPage'])->name('login')->middleware('guest');
     Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 });
-Route::middleware(['auth','role:admin|finance|manager|director|user'])->group(function () {
+Route::middleware(['auth','role:admin|finance|manager|director|user|ga'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'dashboardPage'])->name('dashboard');
     Route::get('/profile', [ProfileController::class, 'profile'])->name('profile');
     // Route::post('/savesign', [AuthController::class, 'save'])->name('save.signature');
