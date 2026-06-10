@@ -1622,73 +1622,540 @@ if ($user->hasRole('admin') || $user->hasRole('ga')) {
                 ->with('error', 'Failed: ' . $e->getMessage());
         }
     }
-    private function dispatchEmails(string $status, string $previousStatus, $formrequest): void
-    {
-        try {
-            // ✅ Submitted → kirim ke manager
-            if ($status === 'Submitted' && $previousStatus !== 'Submitted') {
-                $employee = auth()->user()->employee;
-                if ($employee) {
-                    $baseUrl = config('services.manager_api_local.url');
-                    $managerResponse = Http::timeout(5)->get("{$baseUrl}/api/manager/{$employee->id}");
-                    if ($managerResponse->successful()) {
-                        $managerEmail = data_get($managerResponse->json(), 'manager.company_email');
-                        if ($managerEmail) {
-                            Mail::to($managerEmail)->queue(new RequestMail($formrequest));
-                        }
-                    }
-                }
-            }
+//     private function dispatchEmails(string $status, string $previousStatus, $formrequest): void
+//     {
+//         try {
+//             // ✅ Submitted → kirim ke manager
+//             if ($status === 'Submitted' && $previousStatus !== 'Submitted') {
+//                 $employee = auth()->user()->employee;
+//                 if ($employee) {
+//                     $baseUrl = config('services.manager_api_local.url');
+//                     $managerResponse = Http::timeout(5)->get("{$baseUrl}/api/manager/{$employee->id}");
+//                     if ($managerResponse->successful()) {
+//                         $managerEmail = data_get($managerResponse->json(), 'manager.company_email');
+//                         if ($managerEmail) {
+//                             Mail::to($managerEmail)->queue(new RequestMail($formrequest));
+//                         }
+//                     }
+//                 }
+//             }
 
-            // ✅ Approved Manager
-            if ($status === 'Approved Manager' && $previousStatus !== 'Approved Manager') {
-                $isCAPEX = optional($formrequest->capextype)->code !== null;
+//             // ✅ Approved Manager
+//             if ($status === 'Approved Manager' && $previousStatus !== 'Approved Manager') {
+//                 $isCAPEX = optional($formrequest->capextype)->code !== null;
 
-                if ($isCAPEX) {
-                    // CAPEX → kirim ke PIC capextype (IT/BD)
-                    $capextype = $formrequest->capextype;
-                    if ($capextype && $capextype->user_id) {
-                        $picEmployee = \App\Models\User::find($capextype->user_id)?->employee;
-                        if ($picEmployee && $picEmployee->company_email) {
-                            Mail::to($picEmployee->company_email)->queue(new RequestMail($formrequest));
-                        }
-                    }
-                } else {
-                    // Non-CAPEX → kirim ke employees by position
+//                 if ($isCAPEX) {
+//                     // CAPEX → kirim ke PIC capextype (IT/BD)
+//                     $capextype = $formrequest->capextype;
+//                     if ($capextype && $capextype->user_id) {
+//                         $picEmployee = \App\Models\User::find($capextype->user_id)?->employee;
+//                         if ($picEmployee && $picEmployee->company_email) {
+//                             Mail::to($picEmployee->company_email)->queue(new RequestMail($formrequest));
+//                         }
+//                     }
+//                 } else {
+//                     // Non-CAPEX → kirim ke employees by position
+//                     $this->sendToPositionEmployees($formrequest);
+//                 }
+//             }
+
+//             // ✅ Approved IT / Approved BD → kirim ke employees by position
+//             if (
+//                 in_array($status, ['Approved IT', 'Approved BD']) &&
+//                 $previousStatus !== $status
+//             ) {
+//                 $this->sendToPositionEmployees($formrequest);
+//             }
+//         } catch (\Throwable $mailException) {
+//             Log::error('MAIL ERROR', ['message' => $mailException->getMessage()]);
+//         }
+//     }
+
+    
+//     private function sendToPositionEmployees($formrequest): void
+// {
+//     $employees = Employee::whereHas('position', function ($query) {
+//         $query->whereIn('id', [
+//             '01973a06-74e2-706d-97fe-097c12788c59',
+//             '01992267-3466-724e-93b3-46350f7e9094',
+//             '01973e38-9ae7-7343-9058-1094c2a8606b',
+//         ]);
+//     })->get();
+
+//     Log::info('DEBUG sendToPositionEmployees', [
+//         'employee_count' => $employees->count(),
+//         'emails' => $employees->pluck('company_email')->toArray(),
+//     ]);
+//     foreach ($employees as $employee) {
+//         if ($employee->company_email) {
+//             Mail::to($employee->company_email)->queue(new RequestMail($formrequest));
+//         }
+//     }
+// }
+//     public function update(Request $request, $hash)
+//     {
+//         // ============================================================
+//         // 1. RESOLVE FORMREQUEST (sekali saja)
+//         // ============================================================
+//         $formrequest = null;
+//         foreach (Formrequest::select('id')->cursor() as $u) {
+//             if (substr(hash('sha256', $u->id . config('app.key')), 0, 8) === $hash) {
+//                 $formrequest = Formrequest::find($u->id);
+//                 break;
+//             }
+//         }
+
+//         if (!$formrequest) {
+//             return back()->with('error', 'Data tidak ditemukan.');
+//         }
+
+//         // ============================================================
+//         // 2. HELPER FUNCTIONS (sekali saja, konsisten)
+//         // ============================================================
+//         $parsePrice = function ($v) {
+//             if (is_null($v) || $v === '') return 0.0;
+//             $v = trim(preg_replace('/[^\d,.]/', '', $v));
+//             if (preg_match('/^\d{1,3}(\.\d{3})+(,\d{1,4})?$/', $v)) {
+//                 $v = str_replace('.', '', $v);
+//                 $v = str_replace(',', '.', $v);
+//             } elseif (preg_match('/^\d{1,3}(,\d{3})+(\.\d{1,4})?$/', $v)) {
+//                 $v = str_replace(',', '', $v);
+//             } elseif (preg_match('/^\d+(,\d{1,4})?$/', $v)) {
+//                 $v = str_replace(',', '.', $v);
+//             }
+//             return (float) $v;
+//         };
+
+//         $parseQty = fn($v) => (float) str_replace(',', '.', $v ?? '0');
+
+//         // ============================================================
+//         // 3. BLOCK KHUSUS DIRECTOR
+//         // ============================================================
+//         if (auth()->user()->hasRole('director')) {
+//             $validated = $request->validate([
+//                 'notes_dir'                   => ['nullable', 'string'],
+//                 'status' => ['required', Rule::in([
+//                     'Approved Director',
+//                     'Rejected Director', // ✅ bukan Rejected BD/IT
+//                 ])],
+//                 'items'                       => ['nullable', 'array'],
+//                 'items.*.selected_vendor'     => ['nullable', 'integer'],
+//                 'items.*.vendors'             => ['nullable', 'array'],
+//                 'items.*.vendors.*.vendor_id' => ['nullable', 'exists:vendor,id'],
+//                 'items.*.vendors.*.price'     => ['nullable'],
+//             ]);
+
+//             DB::beginTransaction();
+//             try {
+//                 $previousStatus = $formrequest->status;
+
+//                 $formrequest->update([
+//                     'notes_dir' => $validated['notes_dir'] ?? $formrequest->notes_dir,
+//                     'status'    => $validated['status'],
+//                 ]);
+
+//                 if ($validated['status'] === 'Approved Director' && $previousStatus !== 'Approved Director') {
+//                     $approval = Requestapproval::firstOrCreate(['request_id' => $formrequest->id]);
+//                     $approval->update([
+//                         'approver2'    => auth()->id(),
+//                         'approver2_at' => now(),
+//                     ]);
+//                 }
+
+
+//                 foreach ($validated['items'] ?? [] as $index => $item) {
+//                     $selectedVendorIndex = isset($item['selected_vendor']) ? (int) $item['selected_vendor'] : null;
+//                     $requestItem         = $formrequest->items->get($index);
+
+//                     if (!$requestItem) continue;
+
+//                     if (!empty($item['vendors'])) {
+//                         foreach ($item['vendors'] as $vIdx => $vendorData) {
+//                             ItemVendorQuotation::where('request_item_id', $requestItem->id)
+//                                 ->where('vendor_id', $vendorData['vendor_id'])
+//                                 ->update([
+//                                     'is_selected' => ($selectedVendorIndex !== null && $vIdx == $selectedVendorIndex),
+//                                 ]);
+//                         }
+//                     }
+
+//                     if ($selectedVendorIndex !== null && isset($item['vendors'][$selectedVendorIndex])) {
+//                         $selectedPrice    = $parsePrice($item['vendors'][$selectedVendorIndex]['price'] ?? '0');
+//                         $selectedVendorId = $item['vendors'][$selectedVendorIndex]['vendor_id'] ?? null; // ✅ tambah
+//                         $qty              = $requestItem->qty;
+
+//                         $requestItem->update([
+//                             'selected_vendor' => $selectedVendorIndex,
+//                             'price'           => $selectedPrice,
+//                             'total_price'     => round($qty * $selectedPrice, 2),
+//                         ]);
+
+//                         // ✅ tambah ini
+//                         if ($selectedVendorId) {
+//                             $formrequest->update(['vendor_id' => $selectedVendorId]);
+//                         }
+//                     }
+//                 }
+
+//                 $formrequest->update([
+//                     'total_amount' => round($formrequest->items()->sum('total_price'), 2),
+//                 ]);
+
+//                 DB::commit();
+//                 if (in_array($validated['status'], ['Approved Director', 'Rejected Director'])) {
+//     app(\App\Services\WhatsappService::class)
+//         ->notifyRequestStatus($validated['status'], $formrequest);
+// }
+
+//                 $this->dispatchEmails($validated['status'], $previousStatus, $formrequest);
+
+//                 return redirect()->route('request')->with('success', 'Request updated successfully.');
+//             } catch (\Throwable $e) {
+//                 DB::rollBack();
+//                 Log::error('UPDATE ERROR DIRECTOR', ['message' => $e->getMessage()]);
+//                 return back()->withInput()->with('error', 'Failed: ' . $e->getMessage());
+//             }
+//         }
+       
+
+//         // ============================================================
+//         // 4. DETEKSI TIPE REQUEST
+//         // ============================================================
+//         $requestType   = RequestType::find($request->input('request_type_id') ?? $formrequest->request_type_id);
+//         $isCAPEX       = $requestType?->code === 'CAPEX';
+//         $isPR          = $requestType?->code === 'PR';
+//         $isPayreq      = $requestType?->code === 'PAYREQ'; // ✅ tambah
+
+//         $isMultiVendor = $isCAPEX || $isPR;
+// $user= auth()->user();
+//         // ============================================================
+//         // 5. VALIDASI UMUM
+//         // ============================================================
+//         $validated = $request->validate([
+//             'request_type_id'     => ['nullable', 'exists:request_type,id'],
+//             'vendor_id'           => ['nullable', 'exists:vendor,id'],
+//             'company_id'          => ['nullable', 'exists:hrx.company_tables,id'],
+//             'request_date'        => ['required', 'date'],
+//             'deadline'            => ['required', 'date', 'after_or_equal:request_date'],
+//             'title'               => ['required', 'string', 'max:255'],
+//             'notes'               => ['nullable', 'string'],
+//             'notes_fa'            => ['nullable', 'string'],
+//             'notes_dir'           => ['nullable', 'string'], // ✅ fix: ditambahkan
+//             'notes_ga' => ['nullable', 'string'],
+//             'pic_capex_notes'           => ['nullable', 'string'], // ✅ fix: ditambahkan
+//             'destination'         => ['nullable', 'string', 'max:255'],
+
+//             'assets' => $isCAPEX
+//                 ? ['required', Rule::in(Formrequest::getAssetOptions())]
+//                 : ['nullable', Rule::in(Formrequest::getAssetOptions())],
+
+//             'capex_type_id' => [$isCAPEX ? 'required' : 'nullable'],
+
+           
+//              'store_id' => [
+//     ($isPR && !$user->hasAnyRole(['finance', 'user', 'manager', 'director']))
+//         ? 'required'
+//         : 'nullable'
+// ],
+//             'document_type_id'    => [$isPayreq ? 'required' : 'nullable'],
+
+//             'payment_type_payreq' => $isPayreq
+//                 ? ['required', Rule::in(Formrequest::getPAYREQOptions())]
+//                 : ['nullable', Rule::in(Formrequest::getPAYREQOptions())],
+//             'ca_number' => [
+//                 Rule::requiredIf(auth()->user()->hasRole('finance') && $request->isMethod('put')),
+//                 'nullable',
+//                 'string',
+//                 'max:255',
+//             ],
+
+//             'status' => ['required', Rule::in([
+//                 'Draft',
+//                 'Submitted',
+//                 'Approved Manager',
+//                 'Rejected Manager',
+//                 'Approved Finance',
+//                 'Approved IT',
+//                 'Approved BD',
+//                 'Approved GA',
+//                 'Rejected Finance',
+//                 'Rejected IT',
+//                 'Rejected BD',
+//                 'Rejected GA',
+//                 'Approved Director',
+//                 'Rejected Director',
+//                 'Done',
+//             ])],
+
+//             'items'                       => ['required', 'array', 'min:1'],
+//             'items.*.item_name'           => ['required', 'string', 'max:255'],
+//             'items.*.specification'       => ['nullable', 'string'],
+//             'items.*.uom'                 => ['required', Rule::in(Requestitem::getUomOptions())],
+//             'items.*.qty'                 => ['required'],
+//             'items.*.price'               => $isMultiVendor ? ['nullable'] : ['required'],
+//             'items.*.vendors'             => $isMultiVendor ? ['nullable', 'array'] : ['prohibited'],
+//             'items.*.vendors.*.vendor_id' => $isMultiVendor ? ['nullable', 'exists:vendor,id'] : ['prohibited'],
+//             'items.*.vendors.*.price'     => $isMultiVendor ? ['nullable'] : ['prohibited'],
+//             'items.*.selected_vendor'     => $isMultiVendor ? ['nullable', 'integer'] : ['prohibited'],
+//             'links.*.link'                => ['nullable', 'max:255'],
+//         ]);
+
+//         // ============================================================
+//         // 6. HITUNG TOTAL AMOUNT
+//         // ============================================================
+//         $previousStatus = $formrequest->status;
+
+//         $totalAmount = collect($validated['items'])->sum(function ($item) use ($parseQty, $parsePrice, $isMultiVendor) {
+//             if ($isMultiVendor) {
+//                 $selectedVendorIndex = isset($item['selected_vendor']) ? (int) $item['selected_vendor'] : null;
+//                 $vendors             = $item['vendors'] ?? [];
+//                 $selectedPrice       = ($selectedVendorIndex !== null && isset($vendors[$selectedVendorIndex]))
+//                     ? $vendors[$selectedVendorIndex]['price'] ?? '0'
+//                     : '0';
+//                 return $parseQty($item['qty']) * $parsePrice($selectedPrice);
+//             }
+//             return $parseQty($item['qty']) * $parsePrice($item['price'] ?? '0');
+//         });
+//         $companyName = null;
+
+//         if (!empty($validated['company_id'])) {
+//             $companyName = Company::on('hrx')
+//                 ->where('id', $validated['company_id'])
+//                 ->value('name');
+//         }
+//         // ============================================================
+//         // 7. UPDATE DATABASE
+//         // ============================================================
+//         DB::beginTransaction();
+//         try {
+//             $formrequest->update([
+//                 'vendor_id'           => $validated['vendor_id'] ?? null,
+//                 'company_id'          => $validated['company_id'] ?? null,
+//                 'request_date'        => $validated['request_date'],
+//                 'deadline'            => $validated['deadline'],
+//                 'title'               => $validated['title'],
+//                 'ca_number'           => $validated['ca_number'] ?? null,
+//                 'notes'               => $validated['notes'] ?? null,
+//                 'notes_fa'            => $validated['notes_fa'] ?? null,
+//                 'transfer'        => $companyName,
+//                 'notes_dir'           => $validated['notes_dir'] ?? null, // ✅ fix
+//                      'notes_ga' => $validated['notes_ga'] ?? null,
+//                 'pic_capex_notes'           => $validated['pic_capex_notes'] ?? null, // ✅ fix
+//                 'destination'         => $validated['destination'] ?? null,
+//                 'assets'              => $isCAPEX
+//                     ? $validated['assets']
+//                     : ($validated['assets'] ?? $formrequest->assets),
+//                 'store_id'    => $isPR
+//                     ? $validated['store_id']
+//                     : ($validated['store_id'] ?? $formrequest->store_id),
+//                 'document_type_id'    => $isPayreq
+//                     ? $validated['document_type_id']
+//                     : ($validated['document_type_id'] ?? $formrequest->document_type_id),
+
+//                 'payment_type_payreq' => $isPayreq
+//                     ? $validated['payment_type_payreq']
+//                     : ($validated['payment_type_payreq'] ?? $formrequest->payment_type_payreq),
+//                 'capex_type_id'       => $isCAPEX
+//                     ? $validated['capex_type_id']
+//                     : ($validated['capex_type_id'] ?? $formrequest->capex_type_id),
+//                 'total_amount'        => round($totalAmount, 2),
+//                 'status'              => $validated['status'],
+//             ]);
+
+//     // ============================================================
+//             // 8. APPROVAL LOGIC
+//             // ============================================================
+//             $approval = Requestapproval::firstOrCreate(['request_id' => $formrequest->id]);
+
+//             if ($validated['status'] === 'Approved Manager' && $previousStatus !== 'Approved Manager') {
+//                 if (!empty($formrequest->capex_type_id)) {
+//                     $approval->update([
+//                         'approver1'         => auth()->id(),
+//                         'approver1_at'      => now(),
+//                         'capex_approver'    => auth()->id(),
+//                         'capex_approver_at' => now(),
+//                     ]);
+//                 } else {
+//                     $approval->update([
+//                         'approver1'    => auth()->id(),
+//                         'approver1_at' => now(),
+//                     ]);
+//                 }
+//             }
+
+//             if ($validated['status'] === 'Approved Director' && $previousStatus !== 'Approved Director') {
+//                 $approval->update([
+//                     'approver2'    => auth()->id(),
+//                     'approver2_at' => now(),
+//                 ]);
+//             }
+
+//             // ← hapus sendToPositionEmployees dari sini
+//             if ($validated['status'] === 'Approved GA' && $previousStatus !== 'Approved GA') {
+//                 $approval->update([
+//                     'pr_approver'    => auth()->id(),
+//                     'pr_approver_at' => now(),
+//                 ]);
+//             }
+
+//             // ============================================================
+//             // 9. HAPUS & RECREATE ITEMS, VENDORS, LINKS
+//             // ============================================================
+//             $existingItemIds = Requestitem::where('request_id', $formrequest->id)->pluck('id');
+//             ItemVendorQuotation::whereIn('request_item_id', $existingItemIds)->delete();
+//             Requestitem::where('request_id', $formrequest->id)->delete();
+//             Requestlink::where('request_id', $formrequest->id)->delete();
+
+//             foreach ($validated['items'] as $item) {
+//                 $qty   = $parseQty($item['qty']);
+//                 $price = $isMultiVendor ? 0 : $parsePrice($item['price'] ?? '0');
+
+//                 $newItem = Requestitem::create([
+//                     'request_id'    => $formrequest->id,
+//                     'item_name'     => $item['item_name'],
+//                     'specification' => $item['specification'] ?? null,
+//                     'qty'           => $qty,
+//                     'uom'           => $item['uom'],
+//                     'price'         => $price,
+//                     'total_price'   => $isMultiVendor ? 0 : round($qty * $price, 2),
+//                 ]);
+
+//                 if ($isMultiVendor && !empty($item['vendors'])) {
+//                     $selectedVendorIndex = isset($item['selected_vendor']) ? (int) $item['selected_vendor'] : null;
+
+//                     foreach ($item['vendors'] as $vIdx => $vendorData) {
+//                         if (empty($vendorData['vendor_id'])) continue;
+
+//                         ItemVendorQuotation::create([
+//                             'request_item_id' => $newItem->id,
+//                             'vendor_id'       => $vendorData['vendor_id'],
+//                             'price'           => $parsePrice($vendorData['price'] ?? '0'),
+//                             'is_selected'     => ($selectedVendorIndex !== null && $vIdx == $selectedVendorIndex),
+//                         ]);
+//                     }
+
+//                     if ($selectedVendorIndex !== null && isset($item['vendors'][$selectedVendorIndex])) {
+//                         $selectedPrice    = $parsePrice($item['vendors'][$selectedVendorIndex]['price'] ?? '0');
+//                         $selectedVendorId = $item['vendors'][$selectedVendorIndex]['vendor_id'] ?? null;
+
+//                         $newItem->update([
+//                             'price'       => $selectedPrice,
+//                             'total_price' => round($qty * $selectedPrice, 2),
+//                         ]);
+
+//                         if ($selectedVendorId) {
+//                             $formrequest->update(['vendor_id' => $selectedVendorId]);
+//                         }
+//                     }
+//                 }
+//             }
+
+//             if (!empty($validated['links'])) {
+//                 foreach ($validated['links'] as $link) {
+//                     if (empty($link['link'])) continue;
+//                     $formrequest->links()->create(['link' => $link['link']]);
+//                 }
+//             }
+
+//             DB::commit();
+
+            
+//             $waStatuses = [
+//     'Submitted', 'Approved Manager', 'Rejected Manager',
+//     'Approved BD', 'Rejected BD', 'Approved IT', 'Rejected IT',
+//     'Approved GA', 'Rejected GA', 'Approved Director', 'Rejected Director',
+// ];
+// if (in_array($validated['status'], $waStatuses) && $validated['status'] !== $previousStatus) {
+//     app(\App\Services\WhatsappService::class)
+//         ->notifyRequestStatus($validated['status'], $formrequest);
+// }
+
+//             Log::info('DEBUG APPROVED GA', [
+//     'isPR'           => $isPR,
+//     'status'         => $validated['status'],
+//     'previousStatus' => $previousStatus,
+// ]);
+
+// if ($isPR && $validated['status'] === 'Approved GA' && $previousStatus !== 'Approved GA') {
+//     Log::info('DEBUG: masuk sendToPositionEmployees');
+//     $this->sendToPositionEmployees($formrequest);
+// }
+
+//             return redirect()->route('request')->with('success', 'Request updated successfully.');
+
+//         } catch (\Throwable $e) {
+//             DB::rollBack();
+//             Log::error('UPDATE ERROR', ['message' => $e->getMessage()]);
+//             return back()->withInput()->with('error', 'Failed: ' . $e->getMessage());
+//         }
+//     }
+private function dispatchEmails(string $status, string $previousStatus, $formrequest): void
+{
+    try {
+        $formrequest->load(['capextype', 'requesttype', 'user.employee']);
+
+        $isPR    = $formrequest->requesttype?->code === 'PR';
+        $isCAPEX = $formrequest->requesttype?->code === 'CAPEX';
+
+        match(true) {
+
+            // ── Submitted ────────────────────────────────────────
+            $status === 'Submitted' && $previousStatus !== 'Submitted' => (function () use ($formrequest, $isPR) {
+                if ($isPR) {
                     $this->sendToPositionEmployees($formrequest);
+                    return;
                 }
-            }
+                $employee = $formrequest->user?->employee;
+                if (!$employee) return;
+                $baseUrl  = config('services.manager_api_local.url');
+                $response = Http::timeout(5)->get("{$baseUrl}/api/manager/{$employee->id}");
+                if ($response->successful()) {
+                    $email = data_get($response->json(), 'manager.company_email');
+                    if ($email) Mail::to($email)->queue(new RequestMail($formrequest));
+                }
+            })(),
 
-            // ✅ Approved IT / Approved BD → kirim ke employees by position
-            if (
-                in_array($status, ['Approved IT', 'Approved BD']) &&
-                $previousStatus !== $status
-            ) {
+            // ── Approved Manager ─────────────────────────────────
+            $status === 'Approved Manager' && $previousStatus !== 'Approved Manager' => (function () use ($formrequest, $isCAPEX) {
+                if ($isCAPEX) {
+                    $capextype = $formrequest->capextype;
+                    if ($capextype?->user_id) {
+                        $pic = \App\Models\User::find($capextype->user_id)?->employee;
+                        if ($pic?->company_email) {
+                            Mail::to($pic->company_email)->queue(new RequestMail($formrequest));
+                        }
+                    }
+                    return;
+                }
                 $this->sendToPositionEmployees($formrequest);
-            }
-        } catch (\Throwable $mailException) {
-            Log::error('MAIL ERROR', ['message' => $mailException->getMessage()]);
-        }
+            })(),
+
+            // ── Approved IT / BD ─────────────────────────────────
+            in_array($status, ['Approved IT', 'Approved BD']) && $previousStatus !== $status
+                => $this->sendToPositionEmployees($formrequest),
+
+            // ── Approved Director ────────────────────────────────
+            $status === 'Approved Director' && $previousStatus !== 'Approved Director' => (function () use ($formrequest) {
+                $requesterEmail = $formrequest->user?->employee?->company_email;
+                if ($requesterEmail) Mail::to($requesterEmail)->queue(new RequestMail($formrequest));
+                $this->sendToPositionEmployees($formrequest);
+            })(),
+
+            // ── Rejected (semua) ─────────────────────────────────
+            str_starts_with($status, 'Rejected') && $previousStatus !== $status => (function () use ($formrequest) {
+                $requesterEmail = $formrequest->user?->employee?->company_email;
+                if ($requesterEmail) Mail::to($requesterEmail)->queue(new RequestMail($formrequest));
+            })(),
+
+            default => null,
+        };
+
+    } catch (\Throwable $e) {
+        Log::error('MAIL ERROR', ['message' => $e->getMessage()]);
     }
+}
 
-    // ✅ Extract helper agar tidak duplikasi kode
-    // private function sendToPositionEmployees($formrequest): void
-    // {
-    //     $employees = Employee::whereHas('position', function ($query) {
-    //         $query->whereIn('id', [
-    //             '01973a06-74e2-706d-97fe-097c12788c59',
-    //             '01992267-3466-724e-93b3-46350f7e9094',
-    //             '01973e38-9ae7-7343-9058-1094c2a8606b',
-    //         ]);
-    //     })->get();
-
-    //     foreach ($employees as $employee) {
-    //         if ($employee->company_email) {
-    //             Mail::to($employee->company_email)->queue(new RequestMail($formrequest));
-    //         }
-    //     }
-    // }
-    private function sendToPositionEmployees($formrequest): void
+private function sendToPositionEmployees($formrequest): void
 {
     $employees = Employee::whereHas('position', function ($query) {
         $query->whereIn('id', [
@@ -1698,523 +2165,390 @@ if ($user->hasRole('admin') || $user->hasRole('ga')) {
         ]);
     })->get();
 
-    Log::info('DEBUG sendToPositionEmployees', [
-        'employee_count' => $employees->count(),
+    Log::info('sendToPositionEmployees', [
+        'count'  => $employees->count(),
         'emails' => $employees->pluck('company_email')->toArray(),
     ]);
+
     foreach ($employees as $employee) {
         if ($employee->company_email) {
             Mail::to($employee->company_email)->queue(new RequestMail($formrequest));
         }
     }
 }
-    public function update(Request $request, $hash)
-    {
-        // ============================================================
-        // 1. RESOLVE FORMREQUEST (sekali saja)
-        // ============================================================
-        $formrequest = null;
-        foreach (Formrequest::select('id')->cursor() as $u) {
-            if (substr(hash('sha256', $u->id . config('app.key')), 0, 8) === $hash) {
-                $formrequest = Formrequest::find($u->id);
-                break;
-            }
+
+public function update(Request $request, $hash)
+{
+    // ============================================================
+    // 1. RESOLVE FORMREQUEST
+    // ============================================================
+    $formrequest = null;
+    foreach (Formrequest::select('id')->cursor() as $u) {
+        if (substr(hash('sha256', $u->id . config('app.key')), 0, 8) === $hash) {
+            $formrequest = Formrequest::find($u->id);
+            break;
         }
+    }
 
-        if (!$formrequest) {
-            return back()->with('error', 'Data tidak ditemukan.');
+    if (!$formrequest) {
+        return back()->with('error', 'Data tidak ditemukan.');
+    }
+
+    // ============================================================
+    // 2. HELPER FUNCTIONS
+    // ============================================================
+    $parsePrice = function ($v) {
+        if (is_null($v) || $v === '') return 0.0;
+        $v = trim(preg_replace('/[^\d,.]/', '', $v));
+        if (preg_match('/^\d{1,3}(\.\d{3})+(,\d{1,4})?$/', $v)) {
+            $v = str_replace('.', '', $v);
+            $v = str_replace(',', '.', $v);
+        } elseif (preg_match('/^\d{1,3}(,\d{3})+(\.\d{1,4})?$/', $v)) {
+            $v = str_replace(',', '', $v);
+        } elseif (preg_match('/^\d+(,\d{1,4})?$/', $v)) {
+            $v = str_replace(',', '.', $v);
         }
+        return (float) $v;
+    };
 
-        // ============================================================
-        // 2. HELPER FUNCTIONS (sekali saja, konsisten)
-        // ============================================================
-        $parsePrice = function ($v) {
-            if (is_null($v) || $v === '') return 0.0;
-            $v = trim(preg_replace('/[^\d,.]/', '', $v));
-            if (preg_match('/^\d{1,3}(\.\d{3})+(,\d{1,4})?$/', $v)) {
-                $v = str_replace('.', '', $v);
-                $v = str_replace(',', '.', $v);
-            } elseif (preg_match('/^\d{1,3}(,\d{3})+(\.\d{1,4})?$/', $v)) {
-                $v = str_replace(',', '', $v);
-            } elseif (preg_match('/^\d+(,\d{1,4})?$/', $v)) {
-                $v = str_replace(',', '.', $v);
-            }
-            return (float) $v;
-        };
+    $parseQty = fn($v) => (float) str_replace(',', '.', $v ?? '0');
 
-        $parseQty = fn($v) => (float) str_replace(',', '.', $v ?? '0');
-
-        // ============================================================
-        // 3. BLOCK KHUSUS DIRECTOR
-        // ============================================================
-        if (auth()->user()->hasRole('director')) {
-            $validated = $request->validate([
-                'notes_dir'                   => ['nullable', 'string'],
-                'status' => ['required', Rule::in([
-                    'Approved Director',
-                    'Rejected Director', // ✅ bukan Rejected BD/IT
-                ])],
-                'items'                       => ['nullable', 'array'],
-                'items.*.selected_vendor'     => ['nullable', 'integer'],
-                'items.*.vendors'             => ['nullable', 'array'],
-                'items.*.vendors.*.vendor_id' => ['nullable', 'exists:vendor,id'],
-                'items.*.vendors.*.price'     => ['nullable'],
-            ]);
-
-            DB::beginTransaction();
-            try {
-                $previousStatus = $formrequest->status;
-
-                $formrequest->update([
-                    'notes_dir' => $validated['notes_dir'] ?? $formrequest->notes_dir,
-                    'status'    => $validated['status'],
-                ]);
-
-                if ($validated['status'] === 'Approved Director' && $previousStatus !== 'Approved Director') {
-                    $approval = Requestapproval::firstOrCreate(['request_id' => $formrequest->id]);
-                    $approval->update([
-                        'approver2'    => auth()->id(),
-                        'approver2_at' => now(),
-                    ]);
-                }
-
-
-                foreach ($validated['items'] ?? [] as $index => $item) {
-                    $selectedVendorIndex = isset($item['selected_vendor']) ? (int) $item['selected_vendor'] : null;
-                    $requestItem         = $formrequest->items->get($index);
-
-                    if (!$requestItem) continue;
-
-                    if (!empty($item['vendors'])) {
-                        foreach ($item['vendors'] as $vIdx => $vendorData) {
-                            ItemVendorQuotation::where('request_item_id', $requestItem->id)
-                                ->where('vendor_id', $vendorData['vendor_id'])
-                                ->update([
-                                    'is_selected' => ($selectedVendorIndex !== null && $vIdx == $selectedVendorIndex),
-                                ]);
-                        }
-                    }
-
-                    if ($selectedVendorIndex !== null && isset($item['vendors'][$selectedVendorIndex])) {
-                        $selectedPrice    = $parsePrice($item['vendors'][$selectedVendorIndex]['price'] ?? '0');
-                        $selectedVendorId = $item['vendors'][$selectedVendorIndex]['vendor_id'] ?? null; // ✅ tambah
-                        $qty              = $requestItem->qty;
-
-                        $requestItem->update([
-                            'selected_vendor' => $selectedVendorIndex,
-                            'price'           => $selectedPrice,
-                            'total_price'     => round($qty * $selectedPrice, 2),
-                        ]);
-
-                        // ✅ tambah ini
-                        if ($selectedVendorId) {
-                            $formrequest->update(['vendor_id' => $selectedVendorId]);
-                        }
-                    }
-                }
-
-                $formrequest->update([
-                    'total_amount' => round($formrequest->items()->sum('total_price'), 2),
-                ]);
-
-                DB::commit();
-                if (in_array($validated['status'], ['Approved Director', 'Rejected Director'])) {
-    app(\App\Services\WhatsappService::class)
-        ->notifyRequestStatus($validated['status'], $formrequest);
-}
-
-                $this->dispatchEmails($validated['status'], $previousStatus, $formrequest);
-
-                return redirect()->route('request')->with('success', 'Request updated successfully.');
-            } catch (\Throwable $e) {
-                DB::rollBack();
-                Log::error('UPDATE ERROR DIRECTOR', ['message' => $e->getMessage()]);
-                return back()->withInput()->with('error', 'Failed: ' . $e->getMessage());
-            }
-        }
-       
-
-        // ============================================================
-        // 4. DETEKSI TIPE REQUEST
-        // ============================================================
-        $requestType   = RequestType::find($request->input('request_type_id') ?? $formrequest->request_type_id);
-        $isCAPEX       = $requestType?->code === 'CAPEX';
-        $isPR          = $requestType?->code === 'PR';
-        $isPayreq      = $requestType?->code === 'PAYREQ'; // ✅ tambah
-
-        $isMultiVendor = $isCAPEX || $isPR;
-$user= auth()->user();
-        // ============================================================
-        // 5. VALIDASI UMUM
-        // ============================================================
+    // ============================================================
+    // 3. BLOCK KHUSUS DIRECTOR
+    // ============================================================
+    if (auth()->user()->hasRole('director')) {
         $validated = $request->validate([
-            'request_type_id'     => ['nullable', 'exists:request_type,id'],
-            'vendor_id'           => ['nullable', 'exists:vendor,id'],
-            'company_id'          => ['nullable', 'exists:hrx.company_tables,id'],
-            'request_date'        => ['required', 'date'],
-            'deadline'            => ['required', 'date', 'after_or_equal:request_date'],
-            'title'               => ['required', 'string', 'max:255'],
-            'notes'               => ['nullable', 'string'],
-            'notes_fa'            => ['nullable', 'string'],
-            'notes_dir'           => ['nullable', 'string'], // ✅ fix: ditambahkan
-            'notes_ga' => ['nullable', 'string'],
-            'pic_capex_notes'           => ['nullable', 'string'], // ✅ fix: ditambahkan
-            'destination'         => ['nullable', 'string', 'max:255'],
-
-            'assets' => $isCAPEX
-                ? ['required', Rule::in(Formrequest::getAssetOptions())]
-                : ['nullable', Rule::in(Formrequest::getAssetOptions())],
-
-            'capex_type_id' => [$isCAPEX ? 'required' : 'nullable'],
-
-           
-             'store_id' => [
-    ($isPR && !$user->hasAnyRole(['finance', 'user', 'manager', 'director']))
-        ? 'required'
-        : 'nullable'
-],
-            'document_type_id'    => [$isPayreq ? 'required' : 'nullable'],
-
-            'payment_type_payreq' => $isPayreq
-                ? ['required', Rule::in(Formrequest::getPAYREQOptions())]
-                : ['nullable', Rule::in(Formrequest::getPAYREQOptions())],
-            'ca_number' => [
-                Rule::requiredIf(auth()->user()->hasRole('finance') && $request->isMethod('put')),
-                'nullable',
-                'string',
-                'max:255',
-            ],
-
-            'status' => ['required', Rule::in([
-                'Draft',
-                'Submitted',
-                'Approved Manager',
-                'Rejected Manager',
-                'Approved Finance',
-                'Approved IT',
-                'Approved BD',
-                'Approved GA',
-                'Rejected Finance',
-                'Rejected IT',
-                'Rejected BD',
-                'Rejected GA',
-                'Approved Director',
-                'Rejected Director',
-                'Done',
-            ])],
-
-            'items'                       => ['required', 'array', 'min:1'],
-            'items.*.item_name'           => ['required', 'string', 'max:255'],
-            'items.*.specification'       => ['nullable', 'string'],
-            'items.*.uom'                 => ['required', Rule::in(Requestitem::getUomOptions())],
-            'items.*.qty'                 => ['required'],
-            'items.*.price'               => $isMultiVendor ? ['nullable'] : ['required'],
-            'items.*.vendors'             => $isMultiVendor ? ['nullable', 'array'] : ['prohibited'],
-            'items.*.vendors.*.vendor_id' => $isMultiVendor ? ['nullable', 'exists:vendor,id'] : ['prohibited'],
-            'items.*.vendors.*.price'     => $isMultiVendor ? ['nullable'] : ['prohibited'],
-            'items.*.selected_vendor'     => $isMultiVendor ? ['nullable', 'integer'] : ['prohibited'],
-            'links.*.link'                => ['nullable', 'max:255'],
+            'notes_dir'                   => ['nullable', 'string'],
+            'status'                      => ['required', Rule::in(['Approved Director', 'Rejected Director'])],
+            'items'                       => ['nullable', 'array'],
+            'items.*.selected_vendor'     => ['nullable', 'integer'],
+            'items.*.vendors'             => ['nullable', 'array'],
+            'items.*.vendors.*.vendor_id' => ['nullable', 'exists:vendor,id'],
+            'items.*.vendors.*.price'     => ['nullable'],
         ]);
 
-        // ============================================================
-        // 6. HITUNG TOTAL AMOUNT
-        // ============================================================
-        $previousStatus = $formrequest->status;
-
-        $totalAmount = collect($validated['items'])->sum(function ($item) use ($parseQty, $parsePrice, $isMultiVendor) {
-            if ($isMultiVendor) {
-                $selectedVendorIndex = isset($item['selected_vendor']) ? (int) $item['selected_vendor'] : null;
-                $vendors             = $item['vendors'] ?? [];
-                $selectedPrice       = ($selectedVendorIndex !== null && isset($vendors[$selectedVendorIndex]))
-                    ? $vendors[$selectedVendorIndex]['price'] ?? '0'
-                    : '0';
-                return $parseQty($item['qty']) * $parsePrice($selectedPrice);
-            }
-            return $parseQty($item['qty']) * $parsePrice($item['price'] ?? '0');
-        });
-        $companyName = null;
-
-        if (!empty($validated['company_id'])) {
-            $companyName = Company::on('hrx')
-                ->where('id', $validated['company_id'])
-                ->value('name');
-        }
-        // ============================================================
-        // 7. UPDATE DATABASE
-        // ============================================================
         DB::beginTransaction();
         try {
-            $formrequest->update([
-                'vendor_id'           => $validated['vendor_id'] ?? null,
-                'company_id'          => $validated['company_id'] ?? null,
-                'request_date'        => $validated['request_date'],
-                'deadline'            => $validated['deadline'],
-                'title'               => $validated['title'],
-                'ca_number'           => $validated['ca_number'] ?? null,
-                'notes'               => $validated['notes'] ?? null,
-                'notes_fa'            => $validated['notes_fa'] ?? null,
-                'transfer'        => $companyName,
-                'notes_dir'           => $validated['notes_dir'] ?? null, // ✅ fix
-                     'notes_ga' => $validated['notes_ga'] ?? null,
-                'pic_capex_notes'           => $validated['pic_capex_notes'] ?? null, // ✅ fix
-                'destination'         => $validated['destination'] ?? null,
-                'assets'              => $isCAPEX
-                    ? $validated['assets']
-                    : ($validated['assets'] ?? $formrequest->assets),
-                'store_id'    => $isPR
-                    ? $validated['store_id']
-                    : ($validated['store_id'] ?? $formrequest->store_id),
-                'document_type_id'    => $isPayreq
-                    ? $validated['document_type_id']
-                    : ($validated['document_type_id'] ?? $formrequest->document_type_id),
+            $previousStatus = $formrequest->status;
 
-                'payment_type_payreq' => $isPayreq
-                    ? $validated['payment_type_payreq']
-                    : ($validated['payment_type_payreq'] ?? $formrequest->payment_type_payreq),
-                'capex_type_id'       => $isCAPEX
-                    ? $validated['capex_type_id']
-                    : ($validated['capex_type_id'] ?? $formrequest->capex_type_id),
-                'total_amount'        => round($totalAmount, 2),
-                'status'              => $validated['status'],
+            $formrequest->update([
+                'notes_dir' => $validated['notes_dir'] ?? $formrequest->notes_dir,
+                'status'    => $validated['status'],
             ]);
 
-    //         // ============================================================
-    //         // 8. APPROVAL LOGIC
-    //         // ============================================================
-    //         $approval = Requestapproval::firstOrCreate(['request_id' => $formrequest->id]);
-
-    //         if ($validated['status'] === 'Approved Manager' && $previousStatus !== 'Approved Manager') {
-    //             if (!empty($formrequest->capex_type_id)) {
-    //                 $approval->update([
-    //                     'approver1'         => auth()->id(),
-    //                     'approver1_at'      => now(),
-    //                     'capex_approver'    => auth()->id(),
-    //                     'capex_approver_at' => now(),
-    //                 ]);
-    //             } else {
-    //                 $approval->update([
-    //                     'approver1'    => auth()->id(),
-    //                     'approver1_at' => now(),
-    //                 ]);
-    //             }
-    //         }
-
-    //         if ($validated['status'] === 'Approved Director' && $previousStatus !== 'Approved Director') {       
-    //         $approval->update([
-    //                 'approver2'    => auth()->id(),
-    //                 'approver2_at' => now(),
-    //             ]);
-    //         }
-    //         if ($validated['status'] === 'Approved GA' && $previousStatus !== 'Approved GA') {       
-    //         $approval->update([
-    //                 'pr_approver'    => auth()->id(),
-    //                 'pr_approver_at' => now(),
-    //             ]);
-    //              if ($isPR) {
-    //     $this->sendToPositionEmployees($formrequest);
-    // }
-    //         }
-
-    //         // ============================================================
-    //         // 9. HAPUS & RECREATE ITEMS, VENDORS, LINKS
-    //         // ============================================================
-    //         $existingItemIds = Requestitem::where('request_id', $formrequest->id)->pluck('id');
-    //         ItemVendorQuotation::whereIn('request_item_id', $existingItemIds)->delete();
-    //         Requestitem::where('request_id', $formrequest->id)->delete();
-    //         Requestlink::where('request_id', $formrequest->id)->delete();
-
-    //         foreach ($validated['items'] as $item) {
-    //             $qty   = $parseQty($item['qty']);
-    //             $price = $isMultiVendor ? 0 : $parsePrice($item['price'] ?? '0');
-
-    //             $newItem = Requestitem::create([
-    //                 'request_id'    => $formrequest->id,
-    //                 'item_name'     => $item['item_name'],
-    //                 'specification' => $item['specification'] ?? null,
-    //                 'qty'           => $qty,
-    //                 'uom'           => $item['uom'],
-    //                 'price'         => $price,
-    //                 'total_price'   => $isMultiVendor ? 0 : round($qty * $price, 2),
-    //             ]);
-
-    //             if ($isMultiVendor && !empty($item['vendors'])) {
-    //                 $selectedVendorIndex = isset($item['selected_vendor']) ? (int) $item['selected_vendor'] : null;
-
-    //                 foreach ($item['vendors'] as $vIdx => $vendorData) {
-    //                     if (empty($vendorData['vendor_id'])) continue;
-
-    //                     ItemVendorQuotation::create([
-    //                         'request_item_id' => $newItem->id,
-    //                         'vendor_id'       => $vendorData['vendor_id'],
-    //                         'price'           => $parsePrice($vendorData['price'] ?? '0'),
-    //                         'is_selected'     => ($selectedVendorIndex !== null && $vIdx == $selectedVendorIndex),
-    //                     ]);
-    //                 }
-
-    //                 if ($selectedVendorIndex !== null && isset($item['vendors'][$selectedVendorIndex])) {
-    //                     $selectedPrice    = $parsePrice($item['vendors'][$selectedVendorIndex]['price'] ?? '0');
-    //                     $selectedVendorId = $item['vendors'][$selectedVendorIndex]['vendor_id'] ?? null;
-
-    //                     $newItem->update([
-    //                         'price'       => $selectedPrice,
-    //                         'total_price' => round($qty * $selectedPrice, 2),
-    //                     ]);
-
-    //                     if ($selectedVendorId) {
-    //                         $formrequest->update(['vendor_id' => $selectedVendorId]);
-    //                     }
-    //                 }
-    //             }
-    //         }
-
-    //         if (!empty($validated['links'])) {
-    //             foreach ($validated['links'] as $link) {
-    //                 if (empty($link['link'])) continue;
-    //                 $formrequest->links()->create(['link' => $link['link']]);
-    //             }
-    //         }
-
-    //         DB::commit();
-
-    //         $this->dispatchEmails($validated['status'], $previousStatus, $formrequest);
-
-    //         return redirect()->route('request')->with('success', 'Request updated successfully.');
-    //     } catch (\Throwable $e) {
-    //         DB::rollBack();
-    //         Log::error('UPDATE ERROR', ['message' => $e->getMessage()]);
-    //         return back()->withInput()->with('error', 'Failed: ' . $e->getMessage());
-    //     }
-    // }
-    // ============================================================
-            // 8. APPROVAL LOGIC
-            // ============================================================
-            $approval = Requestapproval::firstOrCreate(['request_id' => $formrequest->id]);
-
-            if ($validated['status'] === 'Approved Manager' && $previousStatus !== 'Approved Manager') {
-                if (!empty($formrequest->capex_type_id)) {
-                    $approval->update([
-                        'approver1'         => auth()->id(),
-                        'approver1_at'      => now(),
-                        'capex_approver'    => auth()->id(),
-                        'capex_approver_at' => now(),
-                    ]);
-                } else {
-                    $approval->update([
-                        'approver1'    => auth()->id(),
-                        'approver1_at' => now(),
-                    ]);
-                }
-            }
-
             if ($validated['status'] === 'Approved Director' && $previousStatus !== 'Approved Director') {
+                $approval = Requestapproval::firstOrCreate(['request_id' => $formrequest->id]);
                 $approval->update([
                     'approver2'    => auth()->id(),
                     'approver2_at' => now(),
                 ]);
             }
 
-            // ← hapus sendToPositionEmployees dari sini
-            if ($validated['status'] === 'Approved GA' && $previousStatus !== 'Approved GA') {
-                $approval->update([
-                    'pr_approver'    => auth()->id(),
-                    'pr_approver_at' => now(),
-                ]);
-            }
+            foreach ($validated['items'] ?? [] as $index => $item) {
+                $selectedVendorIndex = isset($item['selected_vendor']) ? (int) $item['selected_vendor'] : null;
+                $requestItem         = $formrequest->items->get($index);
 
-            // ============================================================
-            // 9. HAPUS & RECREATE ITEMS, VENDORS, LINKS
-            // ============================================================
-            $existingItemIds = Requestitem::where('request_id', $formrequest->id)->pluck('id');
-            ItemVendorQuotation::whereIn('request_item_id', $existingItemIds)->delete();
-            Requestitem::where('request_id', $formrequest->id)->delete();
-            Requestlink::where('request_id', $formrequest->id)->delete();
+                if (!$requestItem) continue;
 
-            foreach ($validated['items'] as $item) {
-                $qty   = $parseQty($item['qty']);
-                $price = $isMultiVendor ? 0 : $parsePrice($item['price'] ?? '0');
-
-                $newItem = Requestitem::create([
-                    'request_id'    => $formrequest->id,
-                    'item_name'     => $item['item_name'],
-                    'specification' => $item['specification'] ?? null,
-                    'qty'           => $qty,
-                    'uom'           => $item['uom'],
-                    'price'         => $price,
-                    'total_price'   => $isMultiVendor ? 0 : round($qty * $price, 2),
-                ]);
-
-                if ($isMultiVendor && !empty($item['vendors'])) {
-                    $selectedVendorIndex = isset($item['selected_vendor']) ? (int) $item['selected_vendor'] : null;
-
+                if (!empty($item['vendors'])) {
                     foreach ($item['vendors'] as $vIdx => $vendorData) {
-                        if (empty($vendorData['vendor_id'])) continue;
-
-                        ItemVendorQuotation::create([
-                            'request_item_id' => $newItem->id,
-                            'vendor_id'       => $vendorData['vendor_id'],
-                            'price'           => $parsePrice($vendorData['price'] ?? '0'),
-                            'is_selected'     => ($selectedVendorIndex !== null && $vIdx == $selectedVendorIndex),
-                        ]);
+                        ItemVendorQuotation::where('request_item_id', $requestItem->id)
+                            ->where('vendor_id', $vendorData['vendor_id'])
+                            ->update([
+                                'is_selected' => ($selectedVendorIndex !== null && $vIdx == $selectedVendorIndex),
+                            ]);
                     }
+                }
 
-                    if ($selectedVendorIndex !== null && isset($item['vendors'][$selectedVendorIndex])) {
-                        $selectedPrice    = $parsePrice($item['vendors'][$selectedVendorIndex]['price'] ?? '0');
-                        $selectedVendorId = $item['vendors'][$selectedVendorIndex]['vendor_id'] ?? null;
+                if ($selectedVendorIndex !== null && isset($item['vendors'][$selectedVendorIndex])) {
+                    $selectedPrice    = $parsePrice($item['vendors'][$selectedVendorIndex]['price'] ?? '0');
+                    $selectedVendorId = $item['vendors'][$selectedVendorIndex]['vendor_id'] ?? null;
+                    $qty              = $requestItem->qty;
 
-                        $newItem->update([
-                            'price'       => $selectedPrice,
-                            'total_price' => round($qty * $selectedPrice, 2),
-                        ]);
+                    $requestItem->update([
+                        'selected_vendor' => $selectedVendorIndex,
+                        'price'           => $selectedPrice,
+                        'total_price'     => round($qty * $selectedPrice, 2),
+                    ]);
 
-                        if ($selectedVendorId) {
-                            $formrequest->update(['vendor_id' => $selectedVendorId]);
-                        }
+                    if ($selectedVendorId) {
+                        $formrequest->update(['vendor_id' => $selectedVendorId]);
                     }
                 }
             }
 
-            if (!empty($validated['links'])) {
-                foreach ($validated['links'] as $link) {
-                    if (empty($link['link'])) continue;
-                    $formrequest->links()->create(['link' => $link['link']]);
-                }
-            }
+            $formrequest->update([
+                'total_amount' => round($formrequest->items()->sum('total_price'), 2),
+            ]);
 
             DB::commit();
 
-            // ← pindah ke sini, setelah commit
-            // if ($isPR && $validated['status'] === 'Approved GA' && $previousStatus !== 'Approved GA') {
-            //     $this->sendToPositionEmployees($formrequest);
-            // }
+            app(\App\Services\WhatsappService::class)
+                ->notifyRequestStatus($validated['status'], $formrequest);
 
-            // $this->dispatchEmails($validated['status'], $previousStatus, $formrequest);
-            $waStatuses = [
-    'Submitted', 'Approved Manager', 'Rejected Manager',
-    'Approved BD', 'Rejected BD', 'Approved IT', 'Rejected IT',
-    'Approved GA', 'Rejected GA', 'Approved Director', 'Rejected Director',
-];
-if (in_array($validated['status'], $waStatuses) && $validated['status'] !== $previousStatus) {
-    app(\App\Services\WhatsappService::class)
-        ->notifyRequestStatus($validated['status'], $formrequest);
-}
-
-            Log::info('DEBUG APPROVED GA', [
-    'isPR'           => $isPR,
-    'status'         => $validated['status'],
-    'previousStatus' => $previousStatus,
-]);
-
-if ($isPR && $validated['status'] === 'Approved GA' && $previousStatus !== 'Approved GA') {
-    Log::info('DEBUG: masuk sendToPositionEmployees');
-    $this->sendToPositionEmployees($formrequest);
-}
+            $this->dispatchEmails($validated['status'], $previousStatus, $formrequest);
 
             return redirect()->route('request')->with('success', 'Request updated successfully.');
 
         } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('UPDATE ERROR', ['message' => $e->getMessage()]);
+            Log::error('UPDATE ERROR DIRECTOR', ['message' => $e->getMessage()]);
             return back()->withInput()->with('error', 'Failed: ' . $e->getMessage());
         }
     }
+
+    // ============================================================
+    // 4. DETEKSI TIPE REQUEST
+    // ============================================================
+    $requestType   = RequestType::find($request->input('request_type_id') ?? $formrequest->request_type_id);
+    $isCAPEX       = $requestType?->code === 'CAPEX';
+    $isPR          = $requestType?->code === 'PR';
+    $isPayreq      = $requestType?->code === 'PAYREQ';
+    $isMultiVendor = $isCAPEX || $isPR;
+    $user          = auth()->user();
+
+    // ============================================================
+    // 5. VALIDASI UMUM
+    // ============================================================
+    $validated = $request->validate([
+        'request_type_id'     => ['nullable', 'exists:request_type,id'],
+        'vendor_id'           => ['nullable', 'exists:vendor,id'],
+        'company_id'          => ['nullable', 'exists:hrx.company_tables,id'],
+        'request_date'        => ['required', 'date'],
+        'deadline'            => ['required', 'date', 'after_or_equal:request_date'],
+        'title'               => ['required', 'string', 'max:255'],
+        'notes'               => ['nullable', 'string'],
+        'notes_fa'            => ['nullable', 'string'],
+        'notes_dir'           => ['nullable', 'string'],
+        'notes_ga'            => ['nullable', 'string'],
+        'pic_capex_notes'     => ['nullable', 'string'],
+        'destination'         => ['nullable', 'string', 'max:255'],
+
+        'assets' => $isCAPEX
+            ? ['required', Rule::in(Formrequest::getAssetOptions())]
+            : ['nullable', Rule::in(Formrequest::getAssetOptions())],
+
+        'capex_type_id' => [$isCAPEX ? 'required' : 'nullable'],
+
+        'store_id' => [
+            ($isPR && !$user->hasAnyRole(['finance', 'user', 'manager', 'director']))
+                ? 'required'
+                : 'nullable'
+        ],
+
+        'document_type_id'    => [$isPayreq ? 'required' : 'nullable'],
+
+        'payment_type_payreq' => $isPayreq
+            ? ['required', Rule::in(Formrequest::getPAYREQOptions())]
+            : ['nullable', Rule::in(Formrequest::getPAYREQOptions())],
+
+        'ca_number' => [
+            Rule::requiredIf($user->hasRole('finance') && $request->isMethod('put')),
+            'nullable', 'string', 'max:255',
+        ],
+
+        'status' => ['required', Rule::in([
+            'Draft', 'Submitted',
+            'Approved Manager', 'Rejected Manager',
+            'Approved Finance', 'Rejected Finance',
+            'Approved IT', 'Rejected IT',
+            'Approved BD', 'Rejected BD',
+            'Approved GA', 'Rejected GA',
+            'Approved Director', 'Rejected Director',
+            'Done',
+        ])],
+
+        'items'                       => ['required', 'array', 'min:1'],
+        'items.*.item_name'           => ['required', 'string', 'max:255'],
+        'items.*.specification'       => ['nullable', 'string'],
+        'items.*.uom'                 => ['required', Rule::in(Requestitem::getUomOptions())],
+        'items.*.qty'                 => ['required'],
+        'items.*.price'               => $isMultiVendor ? ['nullable'] : ['required'],
+        'items.*.vendors'             => $isMultiVendor ? ['nullable', 'array'] : ['prohibited'],
+        'items.*.vendors.*.vendor_id' => $isMultiVendor ? ['nullable', 'exists:vendor,id'] : ['prohibited'],
+        'items.*.vendors.*.price'     => $isMultiVendor ? ['nullable'] : ['prohibited'],
+        'items.*.selected_vendor'     => $isMultiVendor ? ['nullable', 'integer'] : ['prohibited'],
+        'links.*.link'                => ['nullable', 'max:255'],
+    ]);
+
+    // ============================================================
+    // 6. HITUNG TOTAL AMOUNT
+    // ============================================================
+    $previousStatus = $formrequest->status;
+
+    $totalAmount = collect($validated['items'])->sum(function ($item) use ($parseQty, $parsePrice, $isMultiVendor) {
+        if ($isMultiVendor) {
+            $selectedVendorIndex = isset($item['selected_vendor']) ? (int) $item['selected_vendor'] : null;
+            $vendors             = $item['vendors'] ?? [];
+            $selectedPrice       = ($selectedVendorIndex !== null && isset($vendors[$selectedVendorIndex]))
+                ? $vendors[$selectedVendorIndex]['price'] ?? '0'
+                : '0';
+            return $parseQty($item['qty']) * $parsePrice($selectedPrice);
+        }
+        return $parseQty($item['qty']) * $parsePrice($item['price'] ?? '0');
+    });
+
+    $companyName = null;
+    if (!empty($validated['company_id'])) {
+        $companyName = Company::on('hrx')
+            ->where('id', $validated['company_id'])
+            ->value('name');
+    }
+
+    // ============================================================
+    // 7. UPDATE DATABASE
+    // ============================================================
+    DB::beginTransaction();
+    try {
+        $formrequest->update([
+            'vendor_id'           => $validated['vendor_id'] ?? null,
+            'company_id'          => $validated['company_id'] ?? null,
+            'request_date'        => $validated['request_date'],
+            'deadline'            => $validated['deadline'],
+            'title'               => $validated['title'],
+            'ca_number'           => $validated['ca_number'] ?? null,
+            'notes'               => $validated['notes'] ?? null,
+            'notes_fa'            => $validated['notes_fa'] ?? null,
+            'notes_dir'           => $validated['notes_dir'] ?? null,
+            'notes_ga'            => $validated['notes_ga'] ?? null,
+            'transfer'            => $companyName,
+            'pic_capex_notes'     => $validated['pic_capex_notes'] ?? null,
+            'destination'         => $validated['destination'] ?? null,
+            'assets'              => $isCAPEX
+                ? $validated['assets']
+                : ($validated['assets'] ?? $formrequest->assets),
+            'store_id'            => $isPR
+                ? $validated['store_id']
+                : ($validated['store_id'] ?? $formrequest->store_id),
+            'document_type_id'    => $isPayreq
+                ? $validated['document_type_id']
+                : ($validated['document_type_id'] ?? $formrequest->document_type_id),
+            'payment_type_payreq' => $isPayreq
+                ? $validated['payment_type_payreq']
+                : ($validated['payment_type_payreq'] ?? $formrequest->payment_type_payreq),
+            'capex_type_id'       => $isCAPEX
+                ? $validated['capex_type_id']
+                : ($validated['capex_type_id'] ?? $formrequest->capex_type_id),
+            'total_amount'        => round($totalAmount, 2),
+            'status'              => $validated['status'],
+        ]);
+
+        // ============================================================
+        // 8. APPROVAL LOGIC
+        // ============================================================
+        $approval = Requestapproval::firstOrCreate(['request_id' => $formrequest->id]);
+
+        if ($validated['status'] === 'Approved Manager' && $previousStatus !== 'Approved Manager') {
+            $approval->update(array_filter([
+                'approver1'         => auth()->id(),
+                'approver1_at'      => now(),
+                'capex_approver'    => !empty($formrequest->capex_type_id) ? auth()->id() : null,
+                'capex_approver_at' => !empty($formrequest->capex_type_id) ? now() : null,
+            ]));
+        }
+
+        if ($validated['status'] === 'Approved Director' && $previousStatus !== 'Approved Director') {
+            $approval->update([
+                'approver2'    => auth()->id(),
+                'approver2_at' => now(),
+            ]);
+        }
+
+        if ($validated['status'] === 'Approved GA' && $previousStatus !== 'Approved GA') {
+            $approval->update([
+                'pr_approver'    => auth()->id(),
+                'pr_approver_at' => now(),
+            ]);
+        }
+
+        // ============================================================
+        // 9. HAPUS & RECREATE ITEMS, VENDORS, LINKS
+        // ============================================================
+        $existingItemIds = Requestitem::where('request_id', $formrequest->id)->pluck('id');
+        ItemVendorQuotation::whereIn('request_item_id', $existingItemIds)->delete();
+        Requestitem::where('request_id', $formrequest->id)->delete();
+        Requestlink::where('request_id', $formrequest->id)->delete();
+
+        foreach ($validated['items'] as $item) {
+            $qty   = $parseQty($item['qty']);
+            $price = $isMultiVendor ? 0 : $parsePrice($item['price'] ?? '0');
+
+            $newItem = Requestitem::create([
+                'request_id'    => $formrequest->id,
+                'item_name'     => $item['item_name'],
+                'specification' => $item['specification'] ?? null,
+                'qty'           => $qty,
+                'uom'           => $item['uom'],
+                'price'         => $price,
+                'total_price'   => $isMultiVendor ? 0 : round($qty * $price, 2),
+            ]);
+
+            if ($isMultiVendor && !empty($item['vendors'])) {
+                $selectedVendorIndex = isset($item['selected_vendor']) ? (int) $item['selected_vendor'] : null;
+
+                foreach ($item['vendors'] as $vIdx => $vendorData) {
+                    if (empty($vendorData['vendor_id'])) continue;
+
+                    ItemVendorQuotation::create([
+                        'request_item_id' => $newItem->id,
+                        'vendor_id'       => $vendorData['vendor_id'],
+                        'price'           => $parsePrice($vendorData['price'] ?? '0'),
+                        'is_selected'     => ($selectedVendorIndex !== null && $vIdx == $selectedVendorIndex),
+                    ]);
+                }
+
+                if ($selectedVendorIndex !== null && isset($item['vendors'][$selectedVendorIndex])) {
+                    $selectedPrice    = $parsePrice($item['vendors'][$selectedVendorIndex]['price'] ?? '0');
+                    $selectedVendorId = $item['vendors'][$selectedVendorIndex]['vendor_id'] ?? null;
+
+                    $newItem->update([
+                        'price'       => $selectedPrice,
+                        'total_price' => round($qty * $selectedPrice, 2),
+                    ]);
+
+                    if ($selectedVendorId) {
+                        $formrequest->update(['vendor_id' => $selectedVendorId]);
+                    }
+                }
+            }
+        }
+
+        foreach ($validated['links'] ?? [] as $link) {
+            if (empty($link['link'])) continue;
+            $formrequest->links()->create(['link' => $link['link']]);
+        }
+
+        DB::commit();
+
+        // ── Post-commit: WA + Email ───────────────────────────────
+        $waStatuses = [
+            'Submitted',
+            'Approved Manager', 'Rejected Manager',
+            'Approved IT',      'Rejected IT',
+            'Approved BD',      'Rejected BD',
+            'Approved GA',      'Rejected GA',
+            'Approved Director','Rejected Director',
+        ];
+
+        if (in_array($validated['status'], $waStatuses) && $validated['status'] !== $previousStatus) {
+            app(\App\Services\WhatsappService::class)
+                ->notifyRequestStatus($validated['status'], $formrequest);
+        }
+
+        // Email khusus Approved GA untuk PR
+        if ($isPR && $validated['status'] === 'Approved GA' && $previousStatus !== 'Approved GA') {
+            $this->sendToPositionEmployees($formrequest);
+        }
+
+        // Email untuk semua status lainnya
+        $this->dispatchEmails($validated['status'], $previousStatus, $formrequest);
+
+        return redirect()->route('request')->with('success', 'Request updated successfully.');
+
+    } catch (\Throwable $e) {
+        DB::rollBack();
+        Log::error('UPDATE ERROR', ['message' => $e->getMessage()]);
+        return back()->withInput()->with('error', 'Failed: ' . $e->getMessage());
+    }
+}
 }
